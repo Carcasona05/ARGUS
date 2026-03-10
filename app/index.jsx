@@ -1,46 +1,56 @@
-import React, { useEffect } from 'react'
-import { StyleSheet, Text, View } from 'react-native'
-import { useState } from 'react';
-import Login from '../components/Login';
-import Register from '../components/Register';
-import { useRouter } from 'expo-router'
+import React, { useEffect } from 'react';
+import { View, StyleSheet, ActivityIndicator } from 'react-native';
+import { router } from 'expo-router';
+import ThemedView from '../components/ThemedView';
+import ThemedText from '../components/ThemedText';
 
-export default function Home() {
-  const [showLogin, setShowLogin] = useState(true);
+const LoadingScreen = () => {
+  useEffect(() => {
+    // Navigate to login screen after 2 seconds
+    const timer = setTimeout(() => {
+      router.replace('/(auth)/User_Login');
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
-    <View style={styles.container}>
-      <View style={styles.titleContainer}>
-        <Text style={styles.title}>ARGUS</Text>
-        <Text style={styles.subtitle}>Incident Mapping & Risk Awareness System</Text>
+    <ThemedView style={styles.container}>
+      <View style={styles.content}>
+        <ActivityIndicator size="large" color="#007bff" />
+        <ThemedText variant="title" style={styles.title}>
+          Argus
+        </ThemedText>
+        <ThemedText style={styles.subtitle}>
+          Loading your safety companion...
+        </ThemedText>
       </View>
-      {showLogin ? (
-        <Login onSignUp={() => setShowLogin(false)} />
-      ) : (
-        <Register onSignIn={() => setShowLogin(true)} />
-      )}
-    </View>
+    </ThemedView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f0f0f0',
   },
-  titleContainer: {
+  content: {
     alignItems: 'center',
+    padding: 20,
   },
   title: {
-    fontSize: 48,
+    fontSize: 32,
     fontWeight: 'bold',
-    color: '#333',
+    marginTop: 20,
+    marginBottom: 10,
+    textAlign: 'center',
   },
   subtitle: {
-    fontSize: 18,
-    color: '#666',
-    marginTop: 10,
+    fontSize: 16,
+    textAlign: 'center',
+    opacity: 0.8,
   },
-})
+});
+
+export default LoadingScreen;
