@@ -1,17 +1,12 @@
 import React, { useEffect } from 'react'
 import { StyleSheet, Text, View } from 'react-native'
+import { useState } from 'react';
+import Login from '../components/Login';
+import Register from '../components/Register';
 import { useRouter } from 'expo-router'
 
 export default function Home() {
-  const router = useRouter()
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      router.push('/C_Login')
-    }, 2000)
-
-    return () => clearTimeout(timer)
-  }, [router])
+  const [showLogin, setShowLogin] = useState(true);
 
   return (
     <View style={styles.container}>
@@ -19,8 +14,13 @@ export default function Home() {
         <Text style={styles.title}>ARGUS</Text>
         <Text style={styles.subtitle}>Incident Mapping & Risk Awareness System</Text>
       </View>
+      {showLogin ? (
+        <Login onSignUp={() => setShowLogin(false)} />
+      ) : (
+        <Register onSignIn={() => setShowLogin(true)} />
+      )}
     </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
