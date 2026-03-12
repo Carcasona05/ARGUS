@@ -1,7 +1,9 @@
 import { Tabs } from 'expo-router';
 import { useColorScheme } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { TouchableOpacity, View } from 'react-native';
 import Colors from '../../constants/Color';
+import NotificationIcon from '../../components/icons/NotificationIcon';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -15,14 +17,20 @@ export default function TabLayout() {
         tabBarStyle: {
           backgroundColor: theme.navBackground,
           borderTopColor: theme.uiBackground,
-          height: 80,
+          height: 85,
         },
         headerStyle: {
           backgroundColor: theme.navBackground,
         },
         headerTintColor: theme.title,
+        headerTitleAlign: 'center',
         headerTitleStyle: {
           fontWeight: 'bold',
+          fontSize: 20,
+        },
+        tabBarLabelStyle: {
+          textAlign: 'center',  // Centers the title
+          width: '100%', // Ensures the title takes up the full space
         },
       }}
     >
@@ -32,6 +40,11 @@ export default function TabLayout() {
           title: 'Home',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home" color={color} size={size} />
+          ),
+          headerRight: () => (
+            <TouchableOpacity style={{ marginRight: 15 }}>
+              <NotificationIcon size={24} color={theme.iconColorFocused} />
+            </TouchableOpacity>
           ),
         }}
       />

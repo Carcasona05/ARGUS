@@ -14,9 +14,9 @@ uiBackground: "#2f2b3d",
 
 light: {
 text: "#625f72",
-title: "#201e2b",
-background: "#fffef8",
-navBackground: "#e8e7ef",
+title: "#294880",
+background: "#E7ECFF",
+navBackground: "#ffffff",
 iconColor: "#686477",
 iconColorFocused: "#201e2b",
 uiBackground: "#d6d5e1",

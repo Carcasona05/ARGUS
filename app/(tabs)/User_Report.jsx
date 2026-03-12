@@ -68,20 +68,17 @@ const UserReport = () => {
   return (
     <ThemedView style={styles.container}>
       {/* Top Header */}
-      
+      <Divboxwhite  style={{ width: '97%' }}>
+        <View style={styles.rowContainer}>
+          <ThemedHeader style={{ marginBottom: 10 }}>Reports</ThemedHeader>
+          
+          {/* New Report Button */}
+          <TouchableOpacity style={styles.newReportButton}>
+            <ThemedText style={styles.newReportText}>+ New Report</ThemedText>
+          </TouchableOpacity>
+        </View>
 
-      {/* New Report Button */}
-      <Divboxwhite>
-        <ThemedHeader style={{marginBottom: 10}}>Reports</ThemedHeader>
-        <TouchableOpacity style={styles.newReportButton}>
-        <ThemedText style={styles.newReportText}>+ New Report</ThemedText>
-        
-        
-      </TouchableOpacity>
-      </Divboxwhite>
-      
-
-      {/* Reports Section */}
+        {/* Reports Section */}
       <View style={styles.reportsSection}>
         <TouchableOpacity style={styles.filterDropdown} onPress={() => setShowFilterDropdown(!showFilterDropdown)}>
           <ThemedText>{filter}</ThemedText>
@@ -110,6 +107,11 @@ const UserReport = () => {
         </View>
       </View>
 
+
+      </Divboxwhite >
+
+      
+
       {/* Report List */}
       <FlatList
         data={reports}
@@ -126,34 +128,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  rowContainer: {
+    flexDirection: 'row', // Align header and button horizontally
+    justifyContent: 'space-between', // Space between the header and the button
+    alignItems: 'center', // Center the items vertically
     padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-  },
-  backButton: {
-    padding: 5,
-  },
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  appTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#294880',
-    marginLeft: 5,
-  },
-  notificationButton: {
-    padding: 5,
   },
   newReportButton: {
-    position: 'absolute',
-    top: 70,
-    right: 15,
     backgroundColor: '#4A7BD8',
     paddingHorizontal: 15,
     paddingVertical: 10,
@@ -164,7 +145,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   reportsSection: {
-    padding: 15,
+    padding: 10,
   },
   filterDropdown: {
     flexDirection: 'row',

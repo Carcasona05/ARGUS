@@ -11,7 +11,7 @@ const MapView = () => (
 
 const styles = StyleSheet.create({
   mapContainer: {
-    height: 200,  // Adjust for map view
+    height: 500,  
     backgroundColor: '#ccc',
     justifyContent: 'center',
     alignItems: 'center',

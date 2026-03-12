@@ -1,12 +1,8 @@
 import React from 'react';
-import { Text, StyleSheet, useColorScheme } from 'react-native';
+import { Text, StyleSheet } from 'react-native';
 import Colors from '../constants/Color';
 
-const ThemedHeader = ({ style, children, variant = 'header', ...props }) => {
-  const scheme = useColorScheme();
-  const theme = Colors[scheme] ?? Colors.light;
-  const color = variant === 'title' ? theme.title : theme.text;
-
+const ThemedHeader = ({ style, children, variant = 'header', color = '#294880', ...props }) => {
   return (
     <Text style={[{ color }, styles[variant] || styles.header, style]} {...props}>
       {children}

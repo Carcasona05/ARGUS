@@ -59,7 +59,7 @@ const UserHome = () => {
       <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.scrollContent}>
         <Divboxwhite>
           <ThemedHeader style={{marginBottom: 10}}>Dashboard</ThemedHeader>
-          <MapView />
+          <MapView style={{ width: '100%', height: 500 }} />
           <CautionBox />
 
 
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
   },
-  // RecentIncidents styles
+ 
   incidentsContainer: {
     marginVertical: 10,
   },

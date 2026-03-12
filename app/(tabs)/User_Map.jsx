@@ -3,6 +3,8 @@ import { View, StyleSheet, TextInput, TouchableOpacity, ScrollView } from 'react
 import ThemedView from '../../components/ThemedView';
 import ThemedText from '../../components/ThemedText';
 import MapView from '../../components/MapView';
+import Divboxwhite from '../../components/Divboxwhite';
+import ThemedHeader from '../../components/ThemedHeader';
 
 const UserMap = () => {
   const [searchText, setSearchText] = useState('');
@@ -10,8 +12,16 @@ const UserMap = () => {
   const [timeRange, setTimeRange] = useState('Last 24 Hours');
 
   return (
+
+    
     <ThemedView style={styles.container}>
       {/* Top Header Section */}
+
+       <Divboxwhite>
+          <ThemedHeader style={{marginBottom: 10}}>Map</ThemedHeader>
+          <MapView style={{ width: '100%', height: 600 }} />
+        </Divboxwhite>
+
       <View style={styles.header}>
         <ThemedText style={styles.appTitle}>SafeZone</ThemedText>
         <TextInput

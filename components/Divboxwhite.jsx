@@ -17,11 +17,11 @@ const styles = StyleSheet.create({
     marginVertical: 5,  // Optional: add vertical margin for spacing between multiple boxes
     borderRadius: 5,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 2},
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-    width: '98%',  // Fixed width with margin 5px on both sides
+    width: '97%',  // Fixed width with margin 5px on both sides
   },
 });
 
