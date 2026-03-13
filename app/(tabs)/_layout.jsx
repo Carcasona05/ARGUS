@@ -1,39 +1,35 @@
 import { Tabs } from 'expo-router';
-import { useColorScheme } from 'react-native';
+import { useColorScheme, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { TouchableOpacity, View } from 'react-native';
+import { TouchableOpacity } from 'react-native';
 import Colors from '../../constants/Color';
 import NotificationIcon from '../../components/icons/NotificationIcon';
+import BottomNavBar from '../../components/BottomNavBar';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme] ?? Colors.light;
 
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: theme.iconColorFocused,
-        tabBarInactiveTintColor: theme.iconColor,
-        tabBarStyle: {
-          backgroundColor: theme.navBackground,
-          borderTopColor: theme.uiBackground,
-          height: 85,
-        },
-        headerStyle: {
-          backgroundColor: theme.navBackground,
-        },
-        headerTintColor: theme.title,
-        headerTitleAlign: 'center',
-        headerTitleStyle: {
-          fontWeight: 'bold',
-          fontSize: 20,
-        },
-        tabBarLabelStyle: {
-          textAlign: 'center',  // Centers the title
-          width: '100%', // Ensures the title takes up the full space
-        },
-      }}
-    >
+    <View style={{ flex: 1 }}>
+      <Tabs
+        screenOptions={{
+          tabBarActiveTintColor: theme.iconColorFocused,
+          tabBarInactiveTintColor: theme.iconColor,
+          tabBarStyle: {
+            display: 'none', // Hide the built-in tab bar
+          },
+          headerStyle: {
+            backgroundColor: theme.navBackground,
+          },
+          headerTintColor: theme.title,
+          headerTitleAlign: 'center',
+          headerTitleStyle: {
+            fontWeight: 'bold',
+            fontSize: 20,
+          },
+        }}
+      >
       <Tabs.Screen
         name="User_Home"
         options={{
@@ -84,6 +80,8 @@ export default function TabLayout() {
           ),
         }}
       />
-    </Tabs>
+      </Tabs>
+      <BottomNavBar />
+    </View>
   );
 }

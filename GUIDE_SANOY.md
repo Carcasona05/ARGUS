@@ -31,10 +31,6 @@ Any other necessary details for user registration.
 Ensure all the fields are aligned properly, and the overall design is user-friendly.
 
 4. # User_Home.jsx (Home/Dashboard)
-Goal: Update the home screen with icons, better layout, and dynamic content.
-
-Steps:
-Add a caution icon to the caution box on the home screen to visually indicate areas of concern or high risk.
 Increase the height of the MapView for better visibility and interaction.
 In the Recent Incident Cards, add:
 An icon (e.g., a warning or alert icon).
@@ -45,7 +41,6 @@ The time of the incident (e.g., "5 minutes ago").
 5. # User_Map.jsx (Map Screen)
 Goal: Improve the map screen layout and add filtering options.
 Steps:
-Add a filter icon in the top bar that only appears on the Map screen.
 When the filter icon is clicked, show a dropdown form that includes:
 A search bar for the user to search for incidents.
 A dropdown for incident types (e.g., crime, accidents).
@@ -56,7 +51,6 @@ Increase the height of the MapView to give more space for the map.
 
 6. # User_Map.jsx (Continued)
 Goal: Show incident statistics and list below the map.
-
 Steps:
 Below the map, show the total count of incidents for the area currently displayed.
 Display a list of incidents in the current map area, providing details like:
@@ -65,11 +59,6 @@ Description
 Incident time
 
 7. # User_Report.jsx (Reports Screen)
-
-Goal: Ensure that the "+ New Report" button is aligned with the Reports header.
-Steps:
-The "+ New Report" button should be aligned with the "Reports" header on the screen.
-Position the "+ New Report" button to the right side of the header.
 Ensure that the layout is responsive and visually balanced between the header and the button.
 
 
@@ -77,10 +66,9 @@ Ensure that the layout is responsive and visually balanced between the header an
 Title:
 
 Reports: This is the main heading of the reports section, prominently displayed at the top of the screen.
-New Report Button:
-+ New Report Button: Located on the right side of the title, this button allows users to create a new report. It stands out with a blue background and white text. It’s likely clickable and triggers the report creation screen or form.
+
 Filters Section:
-Viewing Filter Dropdown: Displays options for filtering the reports by type (e.g., "Robbery"). Users can click on different types of crime (like Robbery 10 in the example) to view related reports.
+Viewing Filter Dropdown: Displays options for filtering the reports by type (e.g., "Robbery"). Users can click on different types of crime (like Robbery 10 in the example) to view related reports. # PLEASE CHANGE THE FILTER i think its kinda messy
 
 Clear Filter Button: A button to reset all applied filters. It clears any selections made under the "Viewing" filter section.
 

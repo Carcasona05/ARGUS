@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import ThemedView from '../../components/ThemedView';
 import ThemedText from '../../components/ThemedText';
 import Divboxwhite from '../../components/Divboxwhite';
 import ThemedHeader from '../../components/ThemedHeader';
 
 const UserReport = () => {
+  const router = useRouter();
   const [filter, setFilter] = useState('All Reports');
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
 
@@ -73,7 +75,7 @@ const UserReport = () => {
           <ThemedHeader style={{ marginBottom: 10 }}>Reports</ThemedHeader>
           
           {/* New Report Button */}
-          <TouchableOpacity style={styles.newReportButton}>
+          <TouchableOpacity style={styles.newReportButton} onPress={() => router.push('/User_PostReport')}>
             <ThemedText style={styles.newReportText}>+ New Report</ThemedText>
           </TouchableOpacity>
         </View>

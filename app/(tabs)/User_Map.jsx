@@ -23,7 +23,6 @@ const UserMap = () => {
         </Divboxwhite>
 
       <View style={styles.header}>
-        <ThemedText style={styles.appTitle}>SafeZone</ThemedText>
         <TextInput
           style={styles.searchBar}
           placeholder="Search Here..."
