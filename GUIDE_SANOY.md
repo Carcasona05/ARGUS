@@ -64,7 +64,6 @@ Ensure that the layout is responsive and visually balanced between the header an
 
 - Header Section (Reports Overview)
 Title:
-
 Reports: This is the main heading of the reports section, prominently displayed at the top of the screen.
 
 Filters Section:
@@ -73,34 +72,6 @@ Viewing Filter Dropdown: Displays options for filtering the reports by type (e.g
 Clear Filter Button: A button to reset all applied filters. It clears any selections made under the "Viewing" filter section.
 
 
-- Report Listings (Main Content Area)
-
-Each report listing is displayed as a card-style layout with the following elements:
-Location Icon & Crime Type:
-Location Icon (Pin Icon): A small icon that signifies the location of the incident. It’s located next to the crime type.
-Crime Type (e.g., Robbery): The type of the crime is displayed in bold text. In the example, "Robbery" is shown.
-
-Location & Description:
-Location: The address or location of the crime, shown after the crime type. Example: "Langtad Str…".
-Description: A brief description of the incident, giving more context. In this example, it reads: "Victim got hold up for wallet and phone."
-
-Time of Report:
-Time Ago (e.g., 30 mins ago): The report displays how long ago the incident occurred, indicating how fresh or relevant the report is. Example: "30 mins ago."
-
-- Status & Interactions
-
-Each report card includes status indicators, as well as interactive elements like reactions:
-Status:
-In Review: Displayed in a pinkish label. Indicates that the report is under review.
-Verified: Displayed in a green label. Indicates that the report has been verified.
-
-Like/Dislike Button:
-Reactions: Beneath the description and time, users can interact with the report through likes (represented as a thumbs-up icon) or other types of reactions. Each report shows the number of reactions (e.g., 12).
-
--. Design/Styling Details:
-Card Layout: Each report is encapsulated in a card with clear borders and distinct background colors based on status (e.g., pink for "In Review", green for "Verified").
-Spacing and Margins: Each element (e.g., location icon, description, status, reactions) is spaced well to maintain readability and visual balance.
-Buttons: Buttons like the “Clear Filter” and “New Report” are clearly distinguishable, with adequate padding and colors that make them easy to spot.
 
 
 8. # User Tips
@@ -130,10 +101,6 @@ Emergency Contact Information:
 Call 911 Emergency: A prominent red button that allows users to call emergency services directly. The button is large, making it easy to spot.
 Nearby Police: Contact information for the nearest police station, displayed with a placeholder for a phone number (e.g., "XXXX-XXX-XXXX").
 
- - Design & Visual Styling Details:
-Background Colors: The safety tip sections are separated by distinct background colors. For instance, the "New Safety Tip" section has a yellow background to make it stand out, while other sections are displayed with white or light backgrounds.
-Icons: Each category has a relevant icon (e.g., a location pin for "Personal Safety Tips"), contributing to the visual clarity and organization of the layout.
-Spacing and Alignment: The layout is well-spaced, with each section clearly separated. Text is aligned for easy reading, and buttons like "Read More" and "Call 911 Emergency" are designed for quick access.
 
 - User Interaction Elements:
 Read More Button: Clicking on the "Read More" button for the new safety tip allows users to explore further details about the tip.
@@ -141,8 +108,8 @@ Category Links: Each category (e.g., "Personal Safety Tips", "Walking Alone At N
 
 9. # User_Settings.jsx
 - Header Section (Settings Overview)
-Title:
 
+Title:
 Settings: This is the main header for the settings screen, indicating that the options below will allow the user to customize their preferences.
 
 -  Settings Categories (List of Options)
