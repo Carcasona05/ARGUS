@@ -28,6 +28,11 @@ export default function TabLayout() {
             fontWeight: 'bold',
             fontSize: 20,
           },
+          headerRight: () => (
+            <TouchableOpacity style={{ marginRight: 15 }}>
+              <NotificationIcon size={28} color={theme.iconColorFocused} badge />
+            </TouchableOpacity>
+          ),
         }}
       >
       <Tabs.Screen
@@ -39,7 +44,7 @@ export default function TabLayout() {
           ),
           headerRight: () => (
             <TouchableOpacity style={{ marginRight: 15 }}>
-              <NotificationIcon size={24} color={theme.iconColorFocused} />
+              <NotificationIcon size={28} color={theme.iconColorFocused} badge />
             </TouchableOpacity>
           ),
         }}

@@ -6,6 +6,7 @@ import ThemedView from '../../components/ThemedView';
 import ThemedText from '../../components/ThemedText';
 import Divboxwhite from '../../components/Divboxwhite';
 import ThemedHeader from '../../components/ThemedHeader';
+import ReportItem from '../../components/ReportItem'; // Import the ReportItem component
 
 const UserReport = () => {
   const router = useRouter();
@@ -52,28 +53,24 @@ const UserReport = () => {
   ];
 
   const renderReport = ({ item }) => (
-    <View style={styles.reportItem}>
-      <ThemedText style={styles.crimeType}>{item.crimeType}</ThemedText>
-      <View style={styles.locationRow}>
-        <Ionicons name="location" size={16} color="#294880" />
-        <ThemedText style={styles.location}>{item.location}</ThemedText>
-      </View>
-      <ThemedText style={styles.time}>{item.time}</ThemedText>
-      <View style={[styles.statusBadge, item.status === 'Verified' ? styles.verified : styles.inReview]}>
-        <ThemedText style={styles.statusText}>{item.status}</ThemedText>
-      </View>
-      <ThemedText style={styles.description}>{item.description}</ThemedText>
-      <ThemedText style={styles.comments}>{item.comments} comments</ThemedText>
-    </View>
+    <ReportItem 
+      location={item.location}
+      incidentType={item.crimeType}
+      status={item.status}
+      description={item.description}
+      timeAgo={item.time}
+      likes={item.comments} // Assuming likes are the same as comments for now
+      comments={item.comments}
+    />
   );
 
   return (
     <ThemedView style={styles.container}>
       {/* Top Header */}
-      <Divboxwhite  style={{ width: '97%' }}>
+      <Divboxwhite style={{ width: '97%' }}>
         <View style={styles.rowContainer}>
           <ThemedHeader style={{ marginBottom: 10 }}>Reports</ThemedHeader>
-          
+
           {/* New Report Button */}
           <TouchableOpacity style={styles.newReportButton} onPress={() => router.push('/User_PostReport')}>
             <ThemedText style={styles.newReportText}>+ New Report</ThemedText>
@@ -81,46 +78,33 @@ const UserReport = () => {
         </View>
 
         {/* Reports Section */}
-      <View style={styles.reportsSection}>
-        <TouchableOpacity style={styles.filterDropdown} onPress={() => setShowFilterDropdown(!showFilterDropdown)}>
-          <ThemedText>{filter}</ThemedText>
-          <Ionicons name="chevron-down" size={16} color="#294880" />
-        </TouchableOpacity>
-        {showFilterDropdown && (
-          <View style={styles.dropdownOptions}>
-            <TouchableOpacity onPress={() => { setFilter('All Reports'); setShowFilterDropdown(false); }}>
-              <ThemedText>All Reports</ThemedText>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => { setFilter('My Reports'); setShowFilterDropdown(false); }}>
-              <ThemedText>My Reports</ThemedText>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => { setFilter('Saved Reports'); setShowFilterDropdown(false); }}>
-              <ThemedText>Saved Reports</ThemedText>
-            </TouchableOpacity>
-          </View>
-        )}
-        <View style={styles.filterButtons}>
-          <TouchableOpacity style={styles.applyButton}>
-            <ThemedText style={styles.buttonText}>Apply Filters</ThemedText>
+        <View style={styles.reportsSection}>
+          <TouchableOpacity style={styles.filterDropdown} onPress={() => setShowFilterDropdown(!showFilterDropdown)}>
+            <ThemedText>{filter}</ThemedText>
+            <Ionicons name="chevron-down" size={16} color="#294880" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.clearButton}>
-            <ThemedText style={styles.buttonText}>Clear Filters</ThemedText>
-          </TouchableOpacity>
+          {showFilterDropdown && (
+            <View style={styles.dropdownOptions}>
+              <TouchableOpacity onPress={() => { setFilter('All Reports'); setShowFilterDropdown(false); }}>
+                <ThemedText>All Reports</ThemedText>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => { setFilter('My Reports'); setShowFilterDropdown(false); }}>
+                <ThemedText>My Reports</ThemedText>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => { setFilter('Saved Reports'); setShowFilterDropdown(false); }}>
+                <ThemedText>Saved Reports</ThemedText>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
-      </View>
+      </Divboxwhite>
 
-
-      </Divboxwhite >
-
-      
-
-      {/* Report List */}
+      {/* Reports List */}
       <FlatList
         data={reports}
         renderItem={renderReport}
         keyExtractor={(item) => item.id}
-        style={styles.reportList}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={styles.listContainer}
       />
     </ThemedView>
   );
@@ -129,124 +113,46 @@ const UserReport = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    padding: 10,
   },
   rowContainer: {
-    flexDirection: 'row', // Align header and button horizontally
-    justifyContent: 'space-between', // Space between the header and the button
-    alignItems: 'center', // Center the items vertically
-    padding: 15,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   newReportButton: {
-    backgroundColor: '#4A7BD8',
+    backgroundColor: '#294880',
     paddingHorizontal: 15,
-    paddingVertical: 10,
-    borderRadius: 20,
+    paddingVertical: 8,
+    borderRadius: 5,
   },
   newReportText: {
     color: '#fff',
     fontWeight: 'bold',
   },
   reportsSection: {
-    padding: 10,
+    marginTop: 10,
   },
   filterDropdown: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'center',
     padding: 10,
-    borderWidth: 1,
-    borderColor: '#ccc',
+    backgroundColor: '#f0f0f0',
     borderRadius: 5,
-    marginBottom: 10,
   },
   dropdownOptions: {
-    backgroundColor: '#f9f9f9',
-    borderWidth: 1,
-    borderColor: '#ccc',
+    position: 'absolute',
+    top: 50,
+    left: 0,
+    right: 0,
+    backgroundColor: '#fff',
     borderRadius: 5,
-    marginBottom: 10,
+    elevation: 5,
+    zIndex: 1,
   },
-  filterButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  applyButton: {
-    backgroundColor: '#ff0000',
-    padding: 10,
-    borderRadius: 5,
-    flex: 1,
-    marginRight: 5,
-    alignItems: 'center',
-  },
-  clearButton: {
-    backgroundColor: '#ccc',
-    padding: 10,
-    borderRadius: 5,
-    flex: 1,
-    marginLeft: 5,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  reportList: {
-    flex: 1,
-  },
-  listContent: {
-    padding: 15,
-    paddingBottom: 20,
-  },
-  reportItem: {
-    backgroundColor: '#f9f9f9',
-    padding: 15,
-    marginBottom: 10,
-    borderRadius: 5,
-    borderWidth: 1,
-    borderColor: '#ddd',
-  },
-  crimeType: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#294880',
-    marginBottom: 5,
-  },
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 5,
-  },
-  location: {
-    marginLeft: 5,
-  },
-  time: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 5,
-  },
-  statusBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 10,
-    marginBottom: 5,
-  },
-  verified: {
-    backgroundColor: '#4CAF50',
-  },
-  inReview: {
-    backgroundColor: '#F44336',
-  },
-  statusText: {
-    color: '#fff',
-    fontSize: 12,
-  },
-  description: {
-    marginBottom: 5,
-  },
-  comments: {
-    fontSize: 14,
-    color: '#666',
+  listContainer: {
+    paddingBottom: 100, // Space for bottom nav
   },
 });
 
