@@ -30,7 +30,7 @@ const UserSettings = () => {
         {/* Settings List Section */}
         <Divboxwhite width="98%" style={styles.divBox}>
           <View style={styles.settingsList}>
-            <TouchableOpacity style={styles.item}>
+            <TouchableOpacity style={styles.item} onPress={() => router.push('/User_ProfileSettings')}>
               <Ionicons name="location" size={24} color="#FFCC00" />
               <ThemedText style={styles.itemText}>Personal Information</ThemedText>
               <Ionicons name="chevron-forward" size={20} color="#294880" />
@@ -50,9 +50,9 @@ const UserSettings = () => {
               <ThemedText style={styles.itemText}>Crime Alert Settings</ThemedText>
               <Ionicons name="chevron-forward" size={20} color="#294880" />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.item}>
+            <TouchableOpacity style={styles.item} onPress={() => router.push('/User_Password&Security')}>
               <Ionicons name="lock-closed" size={24} color="#FFCC00" />
-              <ThemedText style={styles.itemText}>Privacy & Security</ThemedText>
+              <ThemedText style={styles.itemText}>Password & Security</ThemedText>
               <Ionicons name="chevron-forward" size={20} color="#294880" />
             </TouchableOpacity>
             <TouchableOpacity style={styles.item}>

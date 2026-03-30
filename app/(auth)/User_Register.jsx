@@ -1,110 +1,246 @@
-import React from 'react';
-import { View, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Image,
+  Dimensions,
+  SafeAreaView,
+  Platform,
+  Alert,
+} from 'react-native';
+import { MaterialIcons, FontAwesome } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import ThemedView from '../../components/ThemedView';
-import ThemedText from '../../components/ThemedText';
+
+const { width, height } = Dimensions.get('window');
 
 export default function Register() {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  const handleRegister = () => {
+    // Basic validation
+    if (!name.trim() || !email.trim() || !password || !confirmPassword) {
+      Alert.alert('Error', 'Please fill in all fields.');
+      return;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Alert.alert('Error', 'Please enter a valid email address.');
+      return;
+    }
+
+    // Password validation
+    if (password.length < 6) {
+      Alert.alert('Error', 'Password must be at least 6 characters long.');
+      return;
+    }
+
+    // Confirm password validation
+    if (password !== confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match.');
+      return;
+    }
+
+    // TODO: Add actual registration logic here (API call, etc.)
+    // For now, just navigate to home
+    Alert.alert('Success', 'Registration successful!', [
+      { text: 'OK', onPress: () => router.replace('/(tabs)/User_Home') }
+    ]);
+  };
+
   return (
-    <View style={styles.screenContainer}>
+    <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        <ThemedText style={styles.title}>Register</ThemedText>
-        <View style={styles.inputContainer}>
-          <MaterialIcons name="person" size={20} color="#007bff" style={styles.icon} />
-          <TextInput style={styles.input} placeholder="Name" />
+        {/* Top Logo */}
+        <Image
+          source={require('../../assets/img/logotext.png')}
+          style={styles.logo}
+        />
+
+        {/* Register Title */}
+        <Text style={styles.title}>Register</Text>
+
+        {/* Name Input */}
+        <View style={styles.inputWrapper}>
+          <MaterialIcons name="person" size={20} color="#2F4F8F" style={styles.inputIcon} />
+          <TextInput
+            style={styles.input}
+            placeholder="Name"
+            placeholderTextColor="#6E7FA5"
+            value={name}
+            onChangeText={setName}
+          />
         </View>
-        <View style={styles.inputContainer}>
-          <MaterialIcons name="email" size={20} color="#007bff" style={styles.icon} />
-          <TextInput style={styles.input} placeholder="Email Address" />
+
+        {/* Email Input */}
+        <View style={styles.inputWrapper}>
+          <MaterialIcons name="email" size={20} color="#2F4F8F" style={styles.inputIcon} />
+          <TextInput
+            style={styles.input}
+            placeholder="Email Address"
+            placeholderTextColor="#6E7FA5"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
         </View>
-        <View style={styles.inputContainer}>
-          <MaterialIcons name="lock" size={20} color="#007bff" style={styles.icon} />
-          <TextInput style={styles.input} placeholder="Password" secureTextEntry />
+
+        {/* Password Input */}
+        <View style={styles.inputWrapper}>
+          <FontAwesome name="lock" size={20} color="#2F4F8F" style={styles.inputIcon} />
+          <TextInput
+            style={styles.input}
+            placeholder="Password"
+            placeholderTextColor="#6E7FA5"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+          />
         </View>
-        <TouchableOpacity style={styles.registerButton} onPress={() => router.replace('/(tabs)/User_Home')}>
-          <ThemedText style={styles.registerText}>Register</ThemedText>
+
+        {/* Confirm Password Input */}
+        <View style={styles.inputWrapper}>
+          <FontAwesome name="lock" size={20} color="#2F4F8F" style={styles.inputIcon} />
+          <TextInput
+            style={styles.input}
+            placeholder="Confirm Password"
+            placeholderTextColor="#6E7FA5"
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            secureTextEntry
+          />
+        </View>
+
+        {/* Register Button */}
+        <TouchableOpacity style={styles.loginButton} onPress={handleRegister} activeOpacity={0.85}>
+          <Text style={styles.loginButtonText}>Register</Text>
         </TouchableOpacity>
-        <View style={styles.signinContainer}>
-          <ThemedText style={styles.signinText}>Already have an account?</ThemedText>
+
+        {/* Sign In Section */}
+        <View style={styles.signupSection}>
+          <View style={styles.lineRow}>
+            <View style={styles.line} />
+            <Text style={styles.signupQuestion}>Already have an account?</Text>
+            <View style={styles.line} />
+          </View>
+
           <TouchableOpacity onPress={() => router.push('/(auth)/User_Login')}>
-            <ThemedText style={styles.signinLink}>Sign In</ThemedText>
+            <Text style={styles.signupLink}>Sign In</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Bottom Banner */}
+        <Image
+          source={require('../../assets/img/bannerdark.png')}
+          style={styles.bottomBanner}
+          resizeMode="cover"
+        />
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  screenContainer: {
+  safeArea: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#F8F8F8',
   },
   container: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 24,
-    width: 320,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    flex: 1,
+    alignItems: 'center',
+    backgroundColor: '#F8F8F8',
+    paddingTop: Platform.OS === 'android' ? 30 : 10,
+  },
+  logo: {
+    width: 1.2 * width,
+    height: 210,
+    resizeMode: 'contain',
+    marginTop: 10,
+    marginBottom: -30,
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#222',
-    textAlign: 'center',
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#294880',
     marginBottom: 24,
   },
-  inputContainer: {
+  inputWrapper: {
+    width: '86%',
+    height: 48,
+    borderWidth: 1.2,
+    borderColor: '#8EA3CE',
+    borderRadius: 6,
+    backgroundColor: '#EEF2F8',
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#007bff',
-    borderRadius: 8,
+    paddingHorizontal: 10,
     marginBottom: 16,
-    paddingHorizontal: 8,
-    backgroundColor: '#f9f9f9',
   },
-  icon: {
-    marginRight: 8,
+  inputIcon: {
+    marginRight: 10,
   },
   input: {
     flex: 1,
-    height: 44,
-    fontSize: 16,
-    color: '#333',
+    height: '100%',
+    color: '#294880',
+    fontSize: 14,
   },
-  registerButton: {
-    backgroundColor: '#007bff',
-    borderRadius: 8,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  registerText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 18,
-  },
-  signinContainer: {
-    flexDirection: 'row',
+  loginButton: {
+    width: '86%',
+    height: 48,
+    borderRadius: 6,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 8,
+    backgroundColor: '#007bff',
+    marginBottom: 36,
   },
-  signinText: {
-    color: '#333',
-    marginRight: 4,
+  loginButtonText: {
+    color: '#FFFFFF',
+    fontSize: 17,
+    fontWeight: '700',
   },
-  signinLink: {
-    color: '#007bff',
-    fontWeight: 'bold',
+  signupSection: {
+    width: '86%',
+    alignItems: 'center',
+    marginBottom: 150,
+  },
+  lineRow: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  line: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#A8B6D4',
+  },
+  signupQuestion: {
+    marginHorizontal: 10,
+    fontSize: 12,
+    color: '#6C7B9D',
+  },
+  signupLink: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#294880',
     textDecorationLine: 'underline',
+  },
+  bottomBanner: {
+    position: 'absolute',
+    bottom: -height * 0.12,
+    left: -width * 0.05,
+    width: width * 1.1,
+    height: height * 0.36,
+    
   },
 });

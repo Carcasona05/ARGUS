@@ -85,6 +85,22 @@ export default function TabLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="User_ProfileSettings"
+        options={{
+          title: 'Personal Information',
+          headerShown: false,
+          tabBarButton: () => null, // Hide from tab bar
+        }}
+      />
+      <Tabs.Screen
+        name="User_Password&Security"
+        options={{
+          title: 'Password & Security',
+          headerShown: false,
+          tabBarButton: () => null, // Hide from tab bar
+        }}
+      />
       </Tabs>
       <BottomNavBar />
     </View>
