@@ -22,10 +22,7 @@ const UserSettings = () => {
     <ThemedView style={styles.container}>
       <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.scrollContent}>
         
-        {/* Header Section */}
-        <Divboxwhite width="98%" style={styles.divBox}>
-          <ThemedHeader>Settings</ThemedHeader>
-        </Divboxwhite>
+        
 
         {/* Settings List Section */}
         <Divboxwhite width="98%" style={styles.divBox}>

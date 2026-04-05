@@ -205,12 +205,15 @@ const styles = StyleSheet.create({
   },
   backButton: {
     padding: 5,
+    top: 8,
   },
   title: {
     flex: 1,
+    top: 8,
     textAlign: 'center',
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
+    color: '#294880',
   },
   placeholder: {
     width: 34, // To balance the back button
