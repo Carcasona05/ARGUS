@@ -1,148 +1,53 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Switch } from 'react-native';
-import ThemedView from '../../components/ThemedView';
-import ThemedText from '../../components/ThemedText';
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router'; // For navigation
-import ThemedHeader from '../../components/ThemedHeader';
-import Divboxwhite from '../../components/Divboxwhite';
+import React, { useState } from 'react'; 
+import { View, StyleSheet, ScrollView, TouchableOpacity, Switch, } from 'react-native'; 
+import { Ionicons } from '@expo/vector-icons'; import { useRouter } from 'expo-router'; 
+import ThemedView from '../../components/ThemedView'; import ThemedText from '../../components/ThemedText'; 
 
-const UserSettings = () => {
-  const [notifications, setNotifications] = useState(true);
-  const router = useRouter();
+const UserSettings = () => { 
+	const router = useRouter(); 
+	const [notifications, setNotifications] = useState(true); 
+	const [crimeAlerts, setCrimeAlerts] = useState(true); 
+	const handleLogout = () => { router.push('../(auth)/User_Login'); }; 
+	const SettingItem = ({ icon, iconBg, iconColor, title, subtitle, onPress, rightComponent, showBorder = true, }) => ( 
+		<TouchableOpacity style={[styles.settingItem, !showBorder && styles.noBorder]} activeOpacity={0.88} onPress={onPress} disabled={!onPress} > <View style={[styles.iconWrap, { backgroundColor: iconBg }]}> <Ionicons name={icon} size={18} color={iconColor} /> </View> <View style={styles.settingTextWrap}> <ThemedText style={styles.settingTitle}>{title}</ThemedText> {subtitle ? ( <ThemedText style={styles.settingSubtitle}>{subtitle}</ThemedText> ) : null} </View> {rightComponent} </TouchableOpacity> ); return ( <ThemedView style={styles.container}> 
+		<ScrollView style={styles.scrollContainer} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} > 
+		<View style={styles.headerSection}> <ThemedText style={styles.pageTitle}>Settings</ThemedText> 
+		<ThemedText style={styles.pageSubtitle}> Manage your account, notifications, privacy, and security preferences. </ThemedText>
+		 </View> 
+		<View style={styles.profileCard}> <View style={styles.avatarCircle}> <Ionicons name="person" size={24} color="#294880" /> 
+		</View> 
+		<View style={styles.profileInfo}> <ThemedText style={styles.profileName}>SafeZone User</ThemedText> <ThemedText style={styles.profileEmail}> youraccount@email.com 
+		</ThemedText> </View> 
+		<TouchableOpacity style={styles.editButton} activeOpacity={0.88} onPress={() => router.push('/User_ProfileSettings')} >
+		 <ThemedText style={styles.editButtonText}>Edit</ThemedText> </TouchableOpacity> </View> <View style={styles.sectionCard}> 
+		 <ThemedText style={styles.sectionTitle}>Account</ThemedText> 
+		 <SettingItem icon="person-outline" iconBg="#EEF3FF" iconColor="#294880" title="Personal Information" subtitle="Update your basic profile details" onPress={() => router.push('/User_ProfileSettings')} rightComponent={ <Ionicons name="chevron-forward" size={18} color="#94A3B8" /> } /> 
+		 <SettingItem icon="lock-closed-outline" iconBg="#F2EEFF" iconColor="#6C4CE3" title="Password & Security" subtitle="Change password and secure your account" onPress={() => router.push('/User_Password&Security')} rightComponent={ <Ionicons name="chevron-forward" size={18} color="#94A3B8" /> } showBorder={false} /> </View> <View style={styles.sectionCard}> <ThemedText style={styles.sectionTitle}>Preferences</ThemedText> <SettingItem icon="notifications-outline" iconBg="#FFF4DD" iconColor="#E7A11A" title="Notifications" subtitle="Receive app updates and important reminders" rightComponent={ <Switch trackColor={{ false: '#D1D5DB', true: '#BFD2FF' }} thumbColor={notifications ? '#294880' : '#F9FAFB'} onValueChange={setNotifications} value={notifications} /> } /> 
+		 <SettingItem icon="warning-outline" iconBg="#FFEAEA" iconColor="#D64545" title="Crime Alert Settings" subtitle="Enable alerts for incidents near your location" rightComponent={ <Switch trackColor={{ false: '#D1D5DB', true: '#FFD2D2' }} thumbColor={crimeAlerts ? '#D64545' : '#F9FAFB'} onValueChange={setCrimeAlerts} value={crimeAlerts} /> } /> <SettingItem icon="help-circle-outline" iconBg="#EAF8F0" iconColor="#2E9E5B" title="Help & Support" subtitle="Get assistance and answers to common issues" onPress={() => {}} rightComponent={ <Ionicons name="chevron-forward" size={18} color="#94A3B8" /> } showBorder={false} /> </View> <View style={styles.dangerCard}> <View style={styles.dangerTop}> <View style={styles.dangerIconWrap}> <Ionicons name="log-out-outline" size={20} color="#D64545" /> </View> <View style={styles.dangerTextWrap}> 
+		 <ThemedText style={styles.dangerTitle}>Logout</ThemedText>
+		  <ThemedText style={styles.dangerSubtitle}> Sign out of your account on this device. </ThemedText> </View> 
+		  </View> <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.88} >
+		   <ThemedText style={styles.logoutText}>Logout</ThemedText> </TouchableOpacity> </View> </ScrollView> </ThemedView> ); }; 
 
-  const handleLogout = () => {
-    // Navigate to the User_Login screen (adjust to your route)
-    router.push('../(auth)/User_Login');
-  };
 
-  const toggleSwitch = () => setNotifications((previousState) => !previousState);
+		const styles = StyleSheet.create({ 
+      container: { flex: 1, backgroundColor: '#F3F6FB', }, 
 
-  return (
-    <ThemedView style={styles.container}>
-      <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.scrollContent}>
-        
-        
+      scrollContainer: { flex: 1, }, 
 
-        {/* Settings List Section */}
-        <Divboxwhite width="98%" style={styles.divBox}>
-          <View style={styles.settingsList}>
-            <TouchableOpacity style={styles.item} onPress={() => router.push('/User_ProfileSettings')}>
-              <Ionicons name="location" size={24} color="#FFCC00" />
-              <ThemedText style={styles.itemText}>Personal Information</ThemedText>
-              <Ionicons name="chevron-forward" size={20} color="#294880" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.item}>
-              <Ionicons name="notifications" size={24} color="#FFCC00" />
-              <ThemedText style={styles.itemText}>Notifications</ThemedText>
-              <Switch
-                trackColor={{ false: '#767577', true: '#81b0ff' }}
-                thumbColor={notifications ? '#294880' : '#f4f3f4'}
-                onValueChange={toggleSwitch}
-                value={notifications}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.item}>
-              <Ionicons name="alert-circle" size={24} color="#FFCC00" />
-              <ThemedText style={styles.itemText}>Crime Alert Settings</ThemedText>
-              <Ionicons name="chevron-forward" size={20} color="#294880" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.item} onPress={() => router.push('/User_Password&Security')}>
-              <Ionicons name="lock-closed" size={24} color="#FFCC00" />
-              <ThemedText style={styles.itemText}>Password & Security</ThemedText>
-              <Ionicons name="chevron-forward" size={20} color="#294880" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.item}>
-              <Ionicons name="help-circle" size={24} color="#FFCC00" />
-              <ThemedText style={styles.itemText}>Help & Support</ThemedText>
-              <Ionicons name="chevron-forward" size={20} color="#294880" />
-            </TouchableOpacity>
-          </View>
-        </Divboxwhite>
+			scrollContent: { paddingHorizontal: 14, paddingTop: 14, paddingBottom: 28, }, 
+      
+      headerSection: { marginBottom: 16, },
 
-        {/* Logout Button Section */}
-        <Divboxwhite width="98%" style={styles.divBox}>
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <ThemedText style={styles.logoutText}>Logout</ThemedText>
-          </TouchableOpacity>
-        </Divboxwhite>
+			pageTitle: { fontSize: 28, fontWeight: '800', color: '#294880', marginBottom: 6, }, 
 
-      </ScrollView>
-
-      {/* Bottom Navigation Bar */}
-      {/* You can add the bottom navigation here if needed */}
-    </ThemedView>
-  );
-};
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#E7ECFF', // Background color for the container
-  },
-  scrollContainer: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: 10,
-    paddingBottom: 10,
-  },
-  divBox: {
-    marginBottom: 10,
-    padding: 10,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#294880',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  subtitle: {
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 20,
-    color: '#294880',
-  },
-  settingsList: {
-    width: '100%',
-  },
-  item: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
-    marginBottom: 10,
-    backgroundColor: '#fff',
-  },
-  itemText: {
-    fontSize: 18,
-    marginLeft: 15,
-    color: '#294880',
-    flex: 1,
-  },
-  logoutButton: {
-    marginTop: 20,
-    paddingVertical: 12,
-    paddingHorizontal: 30,
-    backgroundColor: '#FF5A5F',
-    borderRadius: 5,
-  },
-  logoutText: {
-    fontSize: 18,
-    color: '#fff',
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  bottomNav: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    backgroundColor: '#fff',
-    paddingVertical: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#ddd',
-  },
-});
-
+      pageSubtitle: { fontSize: 13, lineHeight: 20, color: '#68758A', }, 
+      
+      profileCard: { backgroundColor: '#FFFFFF', borderRadius: 22, padding: 16, borderWidth: 1, borderColor: '#E7ECF3', flexDirection: 'row', alignItems: 'center', marginBottom: 14, }, 
+      
+      avatarCircle: { width: 52, height: 52, borderRadius: 26, backgroundColor: '#EEF3FF', alignItems: 'center', justifyContent: 'center', marginRight: 12, }, profileInfo: { flex: 1, }, profileName: { fontSize: 16, fontWeight: '800', color: '#1F2A37', marginBottom: 4, }, profileEmail: { fontSize: 12, color: '#6B7280', }, editButton: { backgroundColor: '#294880', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, }, editButtonText: { color: '#FFFFFF', fontSize: 12, fontWeight: '800', }, sectionCard: { backgroundColor: '#FFFFFF', borderRadius: 22, paddingHorizontal: 14, paddingTop: 16, paddingBottom: 4, borderWidth: 1, borderColor: '#E7ECF3', marginBottom: 14, }, sectionTitle: { fontSize: 18, fontWeight: '800', color: '#1F2A37', marginBottom: 8, }, settingItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#EEF2F7', }, noBorder: { borderBottomWidth: 0, }, iconWrap: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', marginRight: 12, }, settingTextWrap: { flex: 1, marginRight: 10, }, 
+      settingTitle: { fontSize: 14, fontWeight: '700', color: '#1F2A37', marginBottom: 3, }, settingSubtitle: { fontSize: 12, lineHeight: 18, color: '#6B7280', }, dangerCard: { backgroundColor: '#FFFFFF', borderRadius: 22, padding: 16, borderWidth: 1, borderColor: '#F6D8D8', }, 
+      dangerTop: { flexDirection: 'row', marginBottom: 14, }, dangerIconWrap: { width: 42, height: 42, borderRadius: 21, backgroundColor: '#FDEBEC', alignItems: 'center', justifyContent: 'center', marginRight: 12, }, dangerTextWrap: { flex: 1, }, 
+      dangerTitle: { fontSize: 17, fontWeight: '800', color: '#C0392B', marginBottom: 4, }, dangerSubtitle: { fontSize: 13, lineHeight: 19, color: '#5F6B7A', }, logoutButton: { backgroundColor: '#D64545', borderRadius: 999, paddingVertical: 13, alignItems: 'center', justifyContent: 'center', }, logoutText: { fontSize: 13, color: '#FFFFFF', fontWeight: '800', }, }); 
 export default UserSettings;
+
