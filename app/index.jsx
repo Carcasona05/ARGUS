@@ -1,14 +1,14 @@
-import React, { useEffect } from 'react';
-import { View, StyleSheet, ActivityIndicator } from 'react-native';
-import { router } from 'expo-router';
-import ThemedView from '../components/ThemedView';
-import ThemedText from '../components/ThemedText';
+import React, { useEffect } from "react";
+import { View, StyleSheet, ActivityIndicator } from "react-native";
+import { router } from "expo-router";
+import ThemedView from "../components/ThemedView";
+import ThemedText from "../components/ThemedText";
 
 const LoadingScreen = () => {
   useEffect(() => {
     // Navigate to login screen after 2 seconds
     const timer = setTimeout(() => {
-      router.replace('/(auth)/User_Login');
+      router.replace("/(auth)/User_Login");
     }, 2000);
 
     return () => clearTimeout(timer);
@@ -32,23 +32,23 @@ const LoadingScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   content: {
-    alignItems: 'center',
+    alignItems: "center",
     padding: 20,
   },
   title: {
     fontSize: 32,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginTop: 20,
     marginBottom: 10,
-    textAlign: 'center',
+    textAlign: "center",
   },
   subtitle: {
     fontSize: 16,
-    textAlign: 'center',
+    textAlign: "center",
     opacity: 0.8,
   },
 });

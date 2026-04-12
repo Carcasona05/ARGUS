@@ -1,99 +1,188 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, FlatList, TextInput } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import ThemedView from '../../components/ThemedView';
-import ThemedText from '../../components/ThemedText';
-import Divboxwhite from '../../components/Divboxwhite';
-import ThemedHeader from '../../components/ThemedHeader';
-import BottomNavBar from '../../components/BottomNavBar';
-import ReportItem from '../../components/ReportItem';
-import Colors from '../../constants/Color';
-import { useColorScheme } from 'react-native';
+import React, { useState } from "react";
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  TextInput,
+} from "react-native";
+import Svg, { Path, Line, Circle, Text as SvgText } from "react-native-svg";
+import ThemedView from "../../components/ThemedView";
+import ThemedText from "../../components/ThemedText";
+import Divboxwhite from "../../components/Divboxwhite";
+import ThemedHeader from "../../components/ThemedHeader";
+
+const polarToCartesian = (cx, cy, r, angle) => {
+  const rad = ((angle - 90) * Math.PI) / 180;
+  return {
+    x: cx + r * Math.cos(rad),
+    y: cy + r * Math.sin(rad),
+  };
+};
+
+const describeArc = (cx, cy, r, startAngle, endAngle) => {
+  const start = polarToCartesian(cx, cy, r, endAngle);
+  const end = polarToCartesian(cx, cy, r, startAngle);
+  const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+
+  return `M ${start.x} ${start.y} A ${r} ${r} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`;
+};
+
+const SpeedometerChart = ({ value = 20, min = 0, max = 50 }) => {
+  const safeValue = Math.max(min, Math.min(value, max));
+
+  const width = 260;
+  const height = 170;
+  const cx = width / 2;
+  const cy = 125;
+  const radius = 82;
+
+  const segmentColors = [
+    "#D32F2F", // red
+    "#F57C00", // orange
+    "#FBC02D", // yellow
+    "#9CCC65", // yellow-green
+    "#2E7D32", // green
+  ];
+
+  const segmentAngles = [-90, -54, -18, 18, 54, 90];
+  const needleAngle = -90 + ((safeValue - min) / (max - min)) * 180;
+  const needleEnd = polarToCartesian(cx, cy, radius - 18, needleAngle);
+
+  return (
+    <View style={styles.speedometerWrapper}>
+      <Svg width={width} height={height}>
+        {segmentColors.map((color, index) => (
+          <Path
+            key={index}
+            d={describeArc(
+              cx,
+              cy,
+              radius,
+              segmentAngles[index],
+              segmentAngles[index + 1],
+            )}
+            stroke={color}
+            strokeWidth={16}
+            fill="none"
+            strokeLinecap="round"
+          />
+        ))}
+
+        <Line
+          x1={cx}
+          y1={cy}
+          x2={needleEnd.x}
+          y2={needleEnd.y}
+          stroke="#294880"
+          strokeWidth={4}
+          strokeLinecap="round"
+        />
+
+        <Circle cx={cx} cy={cy} r={8} fill="#294880" />
+
+        <SvgText
+          x={cx - 12}
+          y={98}
+          fontSize="18"
+          fontWeight="bold"
+          fill="#294880"
+        >
+          {safeValue}
+        </SvgText>
+
+        <SvgText x={28} y={135} fontSize="14" fontWeight="600" fill="#6B7280">
+          0
+        </SvgText>
+
+        <SvgText x={218} y={135} fontSize="14" fontWeight="600" fill="#6B7280">
+          50
+        </SvgText>
+      </Svg>
+
+      <View style={styles.legendRow}>
+        <View style={styles.legendItem}>
+          <View style={[styles.legendColor, { backgroundColor: "#D32F2F" }]} />
+          <ThemedText style={styles.legendText}>Red</ThemedText>
+        </View>
+
+        <View style={styles.legendItem}>
+          <View style={[styles.legendColor, { backgroundColor: "#F57C00" }]} />
+          <ThemedText style={styles.legendText}>Orange</ThemedText>
+        </View>
+
+        <View style={styles.legendItem}>
+          <View style={[styles.legendColor, { backgroundColor: "#FBC02D" }]} />
+          <ThemedText style={styles.legendText}>Yellow</ThemedText>
+        </View>
+
+        <View style={styles.legendItem}>
+          <View style={[styles.legendColor, { backgroundColor: "#9CCC65" }]} />
+          <ThemedText style={styles.legendText}>Yellow-Green</ThemedText>
+        </View>
+
+        <View style={styles.legendItem}>
+          <View style={[styles.legendColor, { backgroundColor: "#2E7D32" }]} />
+          <ThemedText style={styles.legendText}>Green</ThemedText>
+        </View>
+      </View>
+    </View>
+  );
+};
 
 const UserProfileSettings = () => {
-  const router = useRouter();
-  const colorScheme = useColorScheme();
-  const theme = Colors[colorScheme] ?? Colors.light;
-  const [activeFilter, setActiveFilter] = useState('All');
   const [editMode, setEditMode] = useState(false);
-  const [editableDetails, setEditableDetails] = useState({
-    username: 'Mika',
-    location: 'Langtad, Argao, Cebu',
-    email: 'mika@gmail.com',
+
+  const [userDetails, setUserDetails] = useState({
+    username: "Mika",
+    location: "Langtad, Argao, Cebu",
+    email: "mika@gmail.com",
+    credibilityScore: 20,
   });
-  const [tempDetails, setTempDetails] = useState({ ...editableDetails });
+
+  const [tempDetails, setTempDetails] = useState(userDetails);
 
   const handleEdit = () => {
-    setTempDetails({ ...editableDetails });
+    setTempDetails(userDetails);
     setEditMode(true);
   };
 
   const handleSave = () => {
-    setEditableDetails({ ...tempDetails });
+    setUserDetails(tempDetails);
     setEditMode(false);
   };
 
   const handleCancel = () => {
+    setTempDetails(userDetails);
     setEditMode(false);
   };
 
   const updateTempDetail = (key, value) => {
-    setTempDetails({ ...tempDetails, [key]: value });
+    setTempDetails((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
   };
-
-  const userDetails = {
-    ...editableDetails,
-    credibilityScore: '20 pts',
-  };
-
-  const posts = [
-    {
-      id: '1',
-      crimeType: 'Robbery',
-      location: 'Langtad Str...',
-      time: '30 mins ago',
-      status: 'In Review',
-      description: 'Victim got holdap for wallet and phone',
-      likes: 12,
-      comments: 5,
-    },
-    {
-      id: '2',
-      crimeType: 'Suspicious Activity',
-      location: 'Arroyo Blvd...',
-      time: '1 hour ago',
-      status: 'Verified',
-      description: 'Suspicious person loitering',
-      likes: 8,
-      comments: 3,
-    },
-  ];
-
-  const filteredPosts = activeFilter === 'All' ? posts : posts.filter(post => post.status === activeFilter);
 
   return (
     <ThemedView style={styles.container}>
-      {/* Top App Bar */}
-      <View style={[styles.topBar, { backgroundColor: theme.navBackground }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="chevron-back" size={24} color={theme.iconColorFocused} />
-        </TouchableOpacity>
-        <ThemedText style={styles.title}>Personal Information</ThemedText>
-        <View style={styles.placeholder} />
-      </View>
-
-      {/* Scrollable Content */}
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
-        {/* Details Card */}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
         <Divboxwhite style={styles.detailsCard}>
           <View style={styles.cardHeader}>
-            <ThemedHeader style={styles.cardTitle}>Details</ThemedHeader>
+            <ThemedHeader style={styles.cardTitle}>
+              Personal Information
+            </ThemedHeader>
+
             {editMode ? (
               <View style={styles.editButtons}>
                 <TouchableOpacity onPress={handleCancel}>
                   <ThemedText style={styles.cancelText}>Cancel</ThemedText>
                 </TouchableOpacity>
+
                 <TouchableOpacity onPress={handleSave}>
                   <ThemedText style={styles.saveText}>Save</ThemedText>
                 </TouchableOpacity>
@@ -104,88 +193,61 @@ const UserProfileSettings = () => {
               </TouchableOpacity>
             )}
           </View>
+
           <View style={styles.detailsRow}>
             <ThemedText style={styles.label}>Username</ThemedText>
             {editMode ? (
               <TextInput
                 style={styles.input}
                 value={tempDetails.username}
-                onChangeText={(value) => updateTempDetail('username', value)}
+                onChangeText={(value) => updateTempDetail("username", value)}
+                placeholder="Enter username"
               />
             ) : (
-              <ThemedText style={styles.value}>{userDetails.username}</ThemedText>
+              <ThemedText style={styles.value}>
+                {userDetails.username}
+              </ThemedText>
             )}
           </View>
+
           <View style={styles.detailsRow}>
             <ThemedText style={styles.label}>Current Location</ThemedText>
             {editMode ? (
               <TextInput
                 style={styles.input}
                 value={tempDetails.location}
-                onChangeText={(value) => updateTempDetail('location', value)}
+                onChangeText={(value) => updateTempDetail("location", value)}
+                placeholder="Enter location"
               />
             ) : (
-              <ThemedText style={styles.value}>{userDetails.location}</ThemedText>
+              <ThemedText style={styles.value}>
+                {userDetails.location}
+              </ThemedText>
             )}
           </View>
+
           <View style={styles.detailsRow}>
             <ThemedText style={styles.label}>Email</ThemedText>
             {editMode ? (
               <TextInput
                 style={styles.input}
                 value={tempDetails.email}
-                onChangeText={(value) => updateTempDetail('email', value)}
+                onChangeText={(value) => updateTempDetail("email", value)}
                 keyboardType="email-address"
+                autoCapitalize="none"
+                placeholder="Enter email"
               />
             ) : (
               <ThemedText style={styles.value}>{userDetails.email}</ThemedText>
             )}
           </View>
-          <View style={styles.detailsRow}>
-            <ThemedText style={styles.label}>Credibility Score</ThemedText>
-            <ThemedText style={styles.value}>{userDetails.credibilityScore}</ThemedText>
+
+          <View style={styles.scoreSection}>
+            <ThemedText style={styles.scoreTitle}>Credibility Score</ThemedText>
+            <SpeedometerChart value={userDetails.credibilityScore} />
           </View>
         </Divboxwhite>
-
-        {/* Posts Section Header */}
-        <View style={styles.postsHeader}>
-          <ThemedHeader style={styles.postsTitle}>Posts</ThemedHeader>
-          <View style={styles.filters}>
-            <TouchableOpacity
-              style={[styles.filterPill, activeFilter === 'Verified' && styles.activeFilter, { backgroundColor: activeFilter === 'Verified' ? '#d4edda' : '#f8f9fa' }]}
-              onPress={() => setActiveFilter(activeFilter === 'Verified' ? 'All' : 'Verified')}
-            >
-              <ThemedText style={[styles.filterText, activeFilter === 'Verified' && { color: '#155724' }]}>Verified (2)</ThemedText>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.filterPill, activeFilter === 'In Review' && styles.activeFilter, { backgroundColor: activeFilter === 'In Review' ? '#f8d7da' : '#f8f9fa' }]}
-              onPress={() => setActiveFilter(activeFilter === 'In Review' ? 'All' : 'In Review')}
-            >
-              <ThemedText style={[styles.filterText, activeFilter === 'In Review' && { color: '#721c24' }]}>In Review (2)</ThemedText>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Post Cards List */}
-        <FlatList
-          data={filteredPosts}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <ReportItem
-              location={item.location}
-              incidentType={item.crimeType}
-              status={item.status}
-              description={item.description}
-              timeAgo={item.time}
-              likes={item.likes}
-              comments={item.comments}
-            />
-          )}
-          scrollEnabled={false}
-        />
       </ScrollView>
-
-      
     </ThemedView>
   );
 };
@@ -194,118 +256,116 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: 80,
-    paddingHorizontal: 16,
-    paddingTop: 10,
-    justifyContent: 'center',
-    backgroundColor: '#fff',
-  },
-  backButton: {
-    padding: 5,
-    top: 8,
-  },
-  title: {
-    flex: 1,
-    top: 8,
-    textAlign: 'center',
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#294880',
-  },
-  placeholder: {
-    width: 34, // To balance the back button
-  },
   scrollView: {
     flex: 1,
   },
   content: {
-    marginTop: 8,
-    paddingHorizontal: 8,
+    paddingHorizontal: 12,
+    paddingTop: 12,
+    paddingBottom: 24,
   },
   detailsCard: {
-    padding: 15,
-    marginBottom: 20,
+    padding: 16,
+    borderRadius: 18,
   },
   cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 15,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 18,
   },
   cardTitle: {
-    fontSize: 18,
+    fontSize: 20,
+    color: "#294880",
   },
   editButtons: {
-    flexDirection: 'row',
-  },
-  cancelText: {
-    color: '#6c757d',
-    fontSize: 16,
-    marginRight: 15,
-  },
-  saveText: {
-    color: '#007bff',
-    fontSize: 16,
+    flexDirection: "row",
+    alignItems: "center",
   },
   editText: {
-    color: '#007bff',
-    fontSize: 16,
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#294880",
+  },
+  cancelText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#7A7A7A",
+    marginRight: 14,
+  },
+  saveText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#294880",
   },
   detailsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 10,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E8EDF5",
   },
   label: {
-    fontSize: 14,
-    color: '#6c757d',
     flex: 1,
+    fontSize: 14,
+    color: "#6B7280",
   },
   value: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#000',
     flex: 1,
-    textAlign: 'right',
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#111827",
+    textAlign: "right",
   },
   input: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#000',
     flex: 1,
-    textAlign: 'right',
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#111827",
+    textAlign: "right",
     borderBottomWidth: 1,
-    borderBottomColor: '#007bff',
-    paddingVertical: 2,
+    borderBottomColor: "#294880",
+    paddingVertical: 4,
   },
-  postsHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 15,
+  scoreSection: {
+    paddingTop: 20,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  postsTitle: {
-    fontSize: 18,
+  scoreTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#294880",
+    marginBottom: 12,
   },
-  filters: {
-    flexDirection: 'row',
+  speedometerWrapper: {
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
   },
-  filterPill: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 15,
-    marginLeft: 10,
+  legendRow: {
+    marginTop: 2,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: 8,
   },
-  activeFilter: {
-    borderWidth: 1,
-    borderColor: '#007bff',
+  legendItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginHorizontal: 4,
+    marginVertical: 4,
   },
-  filterText: {
-    fontSize: 12,
-    color: '#6c757d',
+  legendColor: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 5,
+  },
+  legendText: {
+    fontSize: 11,
+    color: "#6B7280",
   },
 });
 

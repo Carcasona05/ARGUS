@@ -1,108 +1,144 @@
-import { Tabs } from 'expo-router';
-import { useColorScheme, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { TouchableOpacity } from 'react-native';
-import Colors from '../../constants/Color';
-import NotificationIcon from '../../components/icons/NotificationIcon';
-import BottomNavBar from '../../components/BottomNavBar';
+import { Tabs, useRouter } from "expo-router";
+import {
+  useColorScheme,
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import Colors from "../../constants/Color";
+import BottomNavBar from "../../components/BottomNavBar";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme] ?? Colors.light;
+  const router = useRouter();
+
+  const getScreenTitle = (routeName) => {
+    switch (routeName) {
+      case "User_Home":
+        return "ARGUS";
+      case "User_Map":
+        return "Map";
+      case "User_PostReport":
+        return "Post Report";
+      case "User_Notification":
+        return "Notifications";
+      case "User_Profile":
+        return "Profile";
+      case "User_ProfileSettings":
+        return "Personal Information";
+      case "User_Settings":
+        return "Settings";
+      default:
+        return "ARGUS";
+    }
+  };
 
   return (
     <View style={{ flex: 1 }}>
       <Tabs
-        screenOptions={{
-          tabBarActiveTintColor: theme.iconColorFocused,
-          tabBarInactiveTintColor: theme.iconColor,
+        screenOptions={({ route }) => ({
           tabBarStyle: {
-            display: 'none', // Hide the built-in tab bar
+            display: "none",
           },
           headerStyle: {
             backgroundColor: theme.navBackground,
           },
-          headerTintColor: theme.title,
-          headerTitleAlign: 'center',
-          headerTitleStyle: {
-            fontWeight: 'bold',
-            fontSize: 20,
-          },
+          headerShadowVisible: false,
+          headerTitle: "",
+          headerLeft: () => (
+            <View style={styles.headerLeftContainer}>
+              <Text style={styles.headerTitleText}>
+                {getScreenTitle(route.name)}
+              </Text>
+            </View>
+          ),
           headerRight: () => (
-            <TouchableOpacity style={{ marginRight: 15 }}>
-              <NotificationIcon size={28} color={theme.iconColorFocused} badge />
+            <TouchableOpacity
+              style={styles.profileButton}
+              onPress={() => router.push("/User_Settings")}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="settings-outline" size={28} color="#294880" />
             </TouchableOpacity>
           ),
-        }}
+        })}
       >
-      <Tabs.Screen
-        name="User_Home"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home" color={color} size={size} />
-          ),
-          headerRight: () => (
-            <TouchableOpacity style={{ marginRight: 15 }}>
-              <NotificationIcon size={28} color={theme.iconColorFocused} badge />
-            </TouchableOpacity>
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="User_Map"
-        options={{
-          title: 'Map',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="map" color={color} size={size} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="User_Report"
-        options={{
-          title: 'Reports',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="add-circle" color={color} size={size} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="User_Tips"
-        options={{
-          title: 'Tips',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="bulb" color={color} size={size} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="User_Settings"
-        options={{
-          title: 'Settings',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="settings" color={color} size={size} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="User_ProfileSettings"
-        options={{
-          title: 'Personal Information',
-          headerShown: false,
-          tabBarButton: () => null, // Hide from tab bar
-        }}
-      />
-      <Tabs.Screen
-        name="User_Password&Security"
-        options={{
-          title: 'Password & Security',
-          headerShown: false,
-          tabBarButton: () => null, // Hide from tab bar
-        }}
-      />
+        <Tabs.Screen
+          name="User_Home"
+          options={{
+            title: "Home",
+          }}
+        />
+
+        <Tabs.Screen
+          name="User_Map"
+          options={{
+            title: "Map",
+          }}
+        />
+
+        <Tabs.Screen
+          name="User_PostReport"
+          options={{
+            title: "Post Report",
+          }}
+        />
+
+        <Tabs.Screen
+          name="User_Notification"
+          options={{
+            title: "Notifications",
+          }}
+        />
+
+        <Tabs.Screen
+          name="User_Profile"
+          options={{
+            title: "Profile",
+          }}
+        />
+
+        <Tabs.Screen
+          name="User_ProfileSettings"
+          options={{
+            title: "Personal Information",
+            tabBarButton: () => null,
+          }}
+        />
+
+        <Tabs.Screen
+          name="User_Settings"
+          options={{
+            title: "Settings",
+            tabBarButton: () => null,
+          }}
+        />
       </Tabs>
+
       <BottomNavBar />
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  headerLeftContainer: {
+    marginLeft: 15,
+    justifyContent: "center",
+  },
+
+  headerTitleText: {
+    fontSize: 28,
+    fontWeight: "800",
+    color: "#294880",
+    marginBottom: 6,
+  },
+
+  profileButton: {
+    marginRight: 15,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+});

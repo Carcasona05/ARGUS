@@ -1,8 +1,16 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import React from "react";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
-const ReportItem = ({ location, incidentType, status, description, timeAgo, likes, comments }) => {
+const ReportItem = ({
+  location,
+  incidentType,
+  status,
+  description,
+  timeAgo,
+  likes,
+  comments,
+}) => {
   return (
     <View style={styles.card}>
       <View style={styles.headerRow}>
@@ -13,7 +21,12 @@ const ReportItem = ({ location, incidentType, status, description, timeAgo, like
             <Text style={styles.location}>{location}</Text>
           </View>
         </View>
-        <View style={[styles.statusBadge, status === 'Verified' ? styles.verified : styles.inReview]}>
+        <View
+          style={[
+            styles.statusBadge,
+            status === "Verified" ? styles.verified : styles.inReview,
+          ]}
+        >
           <Text style={styles.statusText}>{status}</Text>
         </View>
       </View>
@@ -39,25 +52,25 @@ const ReportItem = ({ location, incidentType, status, description, timeAgo, like
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 10,
     padding: 15,
     marginBottom: 15,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
   },
   headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
     marginBottom: 10,
   },
   leftSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     flex: 1,
   },
   textSection: {
@@ -66,12 +79,12 @@ const styles = StyleSheet.create({
   },
   incidentType: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#294880',
+    fontWeight: "bold",
+    color: "#294880",
   },
   location: {
     fontSize: 14,
-    color: '#555',
+    color: "#555",
     marginTop: 2,
   },
   statusBadge: {
@@ -80,43 +93,43 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
   },
   verified: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: "#4CAF50",
   },
   inReview: {
-    backgroundColor: '#FF9800',
+    backgroundColor: "#FF9800",
   },
   statusText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 12,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   description: {
     fontSize: 14,
-    color: '#777',
+    color: "#777",
     marginBottom: 10,
     lineHeight: 20,
   },
   footerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   timeAgo: {
     fontSize: 12,
-    color: '#aaa',
+    color: "#aaa",
   },
   actions: {
-    flexDirection: 'row',
+    flexDirection: "row",
   },
   action: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginLeft: 15,
   },
   actionText: {
     fontSize: 12,
     marginLeft: 5,
-    color: '#555',
+    color: "#555",
   },
 });
 

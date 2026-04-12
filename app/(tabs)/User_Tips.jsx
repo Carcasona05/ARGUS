@@ -1,49 +1,49 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
   Linking,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import ThemedView from '../../components/ThemedView';
-import ThemedText from '../../components/ThemedText';
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import ThemedView from "../../components/ThemedView";
+import ThemedText from "../../components/ThemedText";
 
 const UserTips = () => {
   const [expandedTip, setExpandedTip] = useState(null);
 
   const categories = [
     {
-      title: 'Personal Safety Tips',
-      icon: 'shield-checkmark-outline',
+      title: "Personal Safety Tips",
+      icon: "shield-checkmark-outline",
       content:
-        'Stay alert, avoid distractions in public places, keep your phone accessible, and let someone know where you are going when traveling alone.',
+        "Stay alert, avoid distractions in public places, keep your phone accessible, and let someone know where you are going when traveling alone.",
     },
     {
-      title: 'Walking Alone At Night',
-      icon: 'moon-outline',
+      title: "Walking Alone At Night",
+      icon: "moon-outline",
       content:
-        'Stick to well-lit streets, avoid isolated shortcuts, stay aware of nearby people, and keep valuables out of sight while walking.',
+        "Stick to well-lit streets, avoid isolated shortcuts, stay aware of nearby people, and keep valuables out of sight while walking.",
     },
     {
-      title: 'Commute Protection',
-      icon: 'bus-outline',
+      title: "Commute Protection",
+      icon: "bus-outline",
       content:
-        'Wait in visible areas, verify public transport details before boarding, avoid showing expensive gadgets, and stay near trusted passengers when possible.',
+        "Wait in visible areas, verify public transport details before boarding, avoid showing expensive gadgets, and stay near trusted passengers when possible.",
     },
     {
-      title: 'Home and Property Security',
-      icon: 'home-outline',
+      title: "Home and Property Security",
+      icon: "home-outline",
       content:
-        'Lock doors and windows, install lights around entry points, avoid posting your location publicly, and double-check gates before leaving home.',
+        "Lock doors and windows, install lights around entry points, avoid posting your location publicly, and double-check gates before leaving home.",
     },
   ];
 
   const quickTips = [
-    'Avoid using your phone while crossing dark streets.',
-    'Share your live location with a trusted contact.',
-    'Use busy, well-lit roads instead of shortcuts.',
+    "Avoid using your phone while crossing dark streets.",
+    "Share your live location with a trusted contact.",
+    "Use busy, well-lit roads instead of shortcuts.",
   ];
 
   const toggleTip = (index) => {
@@ -51,7 +51,7 @@ const UserTips = () => {
   };
 
   const callEmergency = () => {
-    Linking.openURL('tel:911');
+    Linking.openURL("tel:911");
   };
 
   return (
@@ -95,9 +95,7 @@ const UserTips = () => {
 
         <View style={styles.quickTipsCard}>
           <View style={styles.sectionHeaderRow}>
-            <ThemedText style={styles.sectionTitle}>
-              Quick Reminders
-            </ThemedText>
+            <ThemedText style={styles.sectionTitle}>Quick Reminders</ThemedText>
           </View>
 
           {quickTips.map((tip, index) => (
@@ -109,9 +107,7 @@ const UserTips = () => {
         </View>
 
         <View style={styles.categorySection}>
-          <ThemedText style={styles.sectionTitle}>
-            Safety Categories
-          </ThemedText>
+          <ThemedText style={styles.sectionTitle}>Safety Categories</ThemedText>
 
           {categories.map((category, index) => {
             const isExpanded = expandedTip === index;
@@ -138,7 +134,7 @@ const UserTips = () => {
                   </View>
 
                   <Ionicons
-                    name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                    name={isExpanded ? "chevron-up" : "chevron-down"}
                     size={20}
                     color="#294880"
                   />
@@ -192,11 +188,10 @@ const UserTips = () => {
   );
 };
 
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F3F6FB',
+    backgroundColor: "#F3F6FB",
   },
   scrollContainer: {
     flex: 1,
@@ -212,32 +207,32 @@ const styles = StyleSheet.create({
   },
   pageTitle: {
     fontSize: 28,
-    fontWeight: '800',
-    color: '#294880',
+    fontWeight: "800",
+    color: "#294880",
     marginBottom: 6,
   },
   pageSubtitle: {
     fontSize: 13,
     lineHeight: 20,
-    color: '#68758A',
+    color: "#68758A",
   },
 
   featureCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 22,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#E7ECF3',
+    borderColor: "#E7ECF3",
     marginBottom: 14,
-    flexDirection: 'row',
+    flexDirection: "row",
   },
   featureIconWrap: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#FFF4DD',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#FFF4DD",
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: 12,
   },
   featureContent: {
@@ -245,41 +240,41 @@ const styles = StyleSheet.create({
   },
   featureLabel: {
     fontSize: 11,
-    fontWeight: '800',
-    color: '#B9770E',
+    fontWeight: "800",
+    color: "#B9770E",
     marginBottom: 4,
   },
   featureTitle: {
     fontSize: 18,
-    fontWeight: '800',
-    color: '#1F2A37',
+    fontWeight: "800",
+    color: "#1F2A37",
     marginBottom: 6,
   },
   featureDescription: {
     fontSize: 13,
     lineHeight: 20,
-    color: '#5F6B7A',
+    color: "#5F6B7A",
     marginBottom: 12,
   },
   readMoreButton: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#294880',
+    alignSelf: "flex-start",
+    backgroundColor: "#294880",
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 999,
   },
   readMoreText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 12,
-    fontWeight: '800',
+    fontWeight: "800",
   },
 
   quickTipsCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 22,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#E7ECF3',
+    borderColor: "#E7ECF3",
     marginBottom: 14,
   },
   sectionHeaderRow: {
@@ -287,19 +282,19 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '800',
-    color: '#1F2A37',
+    fontWeight: "800",
+    color: "#1F2A37",
   },
   quickTipItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    alignItems: "flex-start",
     marginBottom: 10,
   },
   quickTipDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#294880',
+    backgroundColor: "#294880",
     marginTop: 6,
     marginRight: 10,
   },
@@ -307,30 +302,30 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 13,
     lineHeight: 20,
-    color: '#5F6B7A',
+    color: "#5F6B7A",
   },
 
   categorySection: {
     marginBottom: 14,
   },
   categoryCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 18,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#E7ECF3',
-    overflow: 'hidden',
+    borderColor: "#E7ECF3",
+    overflow: "hidden",
   },
   categoryHeader: {
     paddingHorizontal: 14,
     paddingVertical: 15,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   categoryLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     flex: 1,
     marginRight: 12,
   },
@@ -338,16 +333,16 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: '#EEF3FF',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#EEF3FF",
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: 10,
   },
   categoryText: {
     flex: 1,
     fontSize: 14,
-    fontWeight: '700',
-    color: '#294880',
+    fontWeight: "700",
+    color: "#294880",
   },
   categoryBody: {
     paddingHorizontal: 14,
@@ -357,27 +352,27 @@ const styles = StyleSheet.create({
   categoryContent: {
     fontSize: 13,
     lineHeight: 20,
-    color: '#5F6B7A',
+    color: "#5F6B7A",
   },
 
   emergencyCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 22,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#F6D8D8',
+    borderColor: "#F6D8D8",
   },
   emergencyTop: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginBottom: 14,
   },
   emergencyIconWrap: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#D64545',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#D64545",
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: 12,
   },
   emergencyTextWrap: {
@@ -385,34 +380,34 @@ const styles = StyleSheet.create({
   },
   emergencyTitle: {
     fontSize: 17,
-    fontWeight: '800',
-    color: '#C0392B',
+    fontWeight: "800",
+    color: "#C0392B",
     marginBottom: 4,
   },
   emergencySubtitle: {
     fontSize: 13,
     lineHeight: 19,
-    color: '#5F6B7A',
+    color: "#5F6B7A",
   },
   emergencyButton: {
-    backgroundColor: '#D64545',
+    backgroundColor: "#D64545",
     borderRadius: 999,
     paddingVertical: 13,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
     marginBottom: 10,
   },
   emergencyButtonText: {
-    color: '#FFFFFF',
-    fontWeight: '800',
+    color: "#FFFFFF",
+    fontWeight: "800",
     fontSize: 13,
     marginLeft: 8,
   },
   policeContact: {
     fontSize: 13,
-    color: '#6B7280',
-    textAlign: 'center',
+    color: "#6B7280",
+    textAlign: "center",
   },
 });
 

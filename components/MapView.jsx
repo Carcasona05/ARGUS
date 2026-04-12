@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import ThemedText from './ThemedText';
+import React from "react";
+import { View, StyleSheet } from "react-native";
+import ThemedText from "./ThemedText";
 
 const MapView = () => (
   <View style={styles.mapContainer}>
@@ -11,10 +11,10 @@ const MapView = () => (
 
 const styles = StyleSheet.create({
   mapContainer: {
-    height: 500,  
-    backgroundColor: '#ccc',
-    justifyContent: 'center',
-    alignItems: 'center',
+    height: 500,
+    backgroundColor: "#ccc",
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
 
