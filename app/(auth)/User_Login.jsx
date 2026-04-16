@@ -32,6 +32,7 @@ export default function UserLogin() {
   const [password, setPassword] = useState("");
   const [showForgotModal, setShowForgotModal] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
+  const [adminTapCount, setAdminTapCount] = useState(0);
 
   useFocusEffect(
     useCallback(() => {
@@ -40,6 +41,23 @@ export default function UserLogin() {
       }
     }, []),
   );
+
+  const handleHiddenAdminTap = () => {
+    setAdminTapCount((prev) => {
+      const next = prev + 1;
+
+      if (next >= 5) {
+        if (Platform.OS === "web") {
+          router.push("/(auth)/Admin_Login");
+        } else {
+          Alert.alert("Admin Access", "Admin login is available on web only.");
+        }
+        return 0;
+      }
+
+      return next;
+    });
+  };
 
   const handleLogin = () => {
     const cleanEmail = email.trim().toLowerCase();
@@ -101,10 +119,12 @@ export default function UserLogin() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        <Image
-          source={require("../../assets/img/logotext.png")}
-          style={styles.logo}
-        />
+        <TouchableOpacity activeOpacity={1} onPress={handleHiddenAdminTap}>
+          <Image
+            source={require("../../assets/img/logotext.png")}
+            style={styles.logo}
+          />
+        </TouchableOpacity>
 
         <Text style={styles.title}>Login</Text>
 

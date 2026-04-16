@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
 
   plusButton: {
     position: "absolute",
-    left: "50%",
+    left: "53%",
     backgroundColor: "#294880",
     justifyContent: "center",
     alignItems: "center",
