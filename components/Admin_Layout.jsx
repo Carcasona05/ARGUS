@@ -14,12 +14,7 @@ export default function Admin_Layout({ children }) {
       icon: "grid",
       iconType: "Feather",
     },
-    {
-      label: "Incident Map",
-      route: "/(admin)/Admin_Map",
-      icon: "location-outline",
-      iconType: "Ionicons",
-    },
+
     {
       label: "Analytics",
       route: "/(admin)/Admin_Analytics",
@@ -38,16 +33,17 @@ export default function Admin_Layout({ children }) {
       icon: "description",
       iconType: "MaterialIcons",
     },
-    {
-      label: "Settings",
-      route: "/(admin)/Admin_Settings",
-      icon: "settings-outline",
-      iconType: "Ionicons",
-    },
+
     {
       label: "Logs",
       route: "/(admin)/Admin_Logs",
       icon: "list-outline",
+      iconType: "Ionicons",
+    },
+    {
+      label: "Settings",
+      route: "/(admin)/Admin_Settings",
+      icon: "settings-outline",
       iconType: "Ionicons",
     },
   ];
