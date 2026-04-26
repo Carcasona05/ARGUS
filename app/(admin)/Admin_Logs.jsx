@@ -5,6 +5,7 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Admin_Layout from "../../components/Admin_Layout";
@@ -27,7 +28,7 @@ const COLORS = {
   pendingSoft: "#EEF3FB",
 };
 
-const LOG_DATA = [
+const INITIAL_LOG_DATA = [
   {
     id: "LOG-0001",
     type: "Approval",
@@ -163,6 +164,9 @@ function TypeBadge({ label }) {
 
 export default function Admin_Logs() {
   const [activeFilter, setActiveFilter] = useState("All");
+  const [logs, setLogs] = useState(INITIAL_LOG_DATA);
+  const [openActionId, setOpenActionId] = useState(null);
+  const [selectedReport, setSelectedReport] = useState(null);
 
   const filters = [
     "All",
@@ -174,14 +178,14 @@ export default function Admin_Logs() {
   ];
 
   const filteredLogs = useMemo(() => {
-    if (activeFilter === "All") return LOG_DATA;
-    return LOG_DATA.filter((item) => item.type === activeFilter);
-  }, [activeFilter]);
+    if (activeFilter === "All") return logs;
+    return logs.filter((item) => item.type === activeFilter);
+  }, [activeFilter, logs]);
 
   const summaryCards = [
     {
       title: "Total Logs",
-      value: LOG_DATA.length.toString(),
+      value: logs.length.toString(),
       subtext: "Activity records",
       icon: "receipt-outline",
       iconBg: COLORS.primarySoft,
@@ -190,12 +194,14 @@ export default function Admin_Logs() {
     },
     {
       title: "Admin Actions",
-      value: LOG_DATA.filter(
-        (item) =>
-          item.type === "Approval" ||
-          item.type === "Rejection" ||
-          item.type === "Admin Action",
-      ).length.toString(),
+      value: logs
+        .filter(
+          (item) =>
+            item.type === "Approval" ||
+            item.type === "Rejection" ||
+            item.type === "Admin Action",
+        )
+        .length.toString(),
       subtext: "Manual operations",
       icon: "person-circle-outline",
       iconBg: COLORS.primarySoft,
@@ -204,9 +210,9 @@ export default function Admin_Logs() {
     },
     {
       title: "AI Processing",
-      value: LOG_DATA.filter(
-        (item) => item.type === "AI Processing",
-      ).length.toString(),
+      value: logs
+        .filter((item) => item.type === "AI Processing")
+        .length.toString(),
       subtext: "Automated checks",
       icon: "hardware-chip-outline",
       iconBg: COLORS.successSoft,
@@ -215,9 +221,9 @@ export default function Admin_Logs() {
     },
     {
       title: "System Events",
-      value: LOG_DATA.filter(
-        (item) => item.type === "System Event",
-      ).length.toString(),
+      value: logs
+        .filter((item) => item.type === "System Event")
+        .length.toString(),
       subtext: "Alerts and errors",
       icon: "alert-circle-outline",
       iconBg: COLORS.dangerSoft,
@@ -235,6 +241,39 @@ export default function Admin_Logs() {
     "Admin Action",
     "System Event",
   ];
+
+  const handleViewReport = (row) => {
+    setSelectedReport(row);
+    setOpenActionId(null);
+  };
+
+  const handleDeleteReport = (row) => {
+    setOpenActionId(null);
+
+    Alert.alert(
+      "Delete Report",
+      `Are you sure you want to delete ${row.target}?`,
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => {
+            setLogs((prevLogs) =>
+              prevLogs.filter((item) => item.id !== row.id),
+            );
+
+            if (selectedReport?.id === row.id) {
+              setSelectedReport(null);
+            }
+          },
+        },
+      ],
+    );
+  };
 
   return (
     <Admin_Layout>
@@ -263,6 +302,7 @@ export default function Admin_Logs() {
 
                   <View style={styles.summaryTextWrap}>
                     <Text style={styles.summaryTitle}>{card.title}</Text>
+
                     <View style={styles.summaryValueRow}>
                       <Text style={styles.summaryValue}>{card.value}</Text>
                       <Text
@@ -278,6 +318,70 @@ export default function Admin_Logs() {
                 </View>
               ))}
             </View>
+
+            {selectedReport && (
+              <View style={styles.viewReportCard}>
+                <View style={styles.viewReportHeader}>
+                  <View>
+                    <Text style={styles.viewReportTitle}>Viewing Report</Text>
+                    <Text style={styles.viewReportSubtitle}>
+                      {selectedReport.target}
+                    </Text>
+                  </View>
+
+                  <TouchableOpacity
+                    style={styles.closeViewButton}
+                    onPress={() => setSelectedReport(null)}
+                  >
+                    <Ionicons
+                      name="close-outline"
+                      size={22}
+                      color={COLORS.text}
+                    />
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.viewReportGrid}>
+                  <View style={styles.viewInfoBox}>
+                    <Text style={styles.viewInfoLabel}>Log ID</Text>
+                    <Text style={styles.viewInfoValue}>
+                      {selectedReport.id}
+                    </Text>
+                  </View>
+
+                  <View style={styles.viewInfoBox}>
+                    <Text style={styles.viewInfoLabel}>Type</Text>
+                    <Text style={styles.viewInfoValue}>
+                      {selectedReport.type}
+                    </Text>
+                  </View>
+
+                  <View style={styles.viewInfoBox}>
+                    <Text style={styles.viewInfoLabel}>Actor</Text>
+                    <Text style={styles.viewInfoValue}>
+                      {selectedReport.actor}
+                    </Text>
+                  </View>
+
+                  <View style={styles.viewInfoBox}>
+                    <Text style={styles.viewInfoLabel}>Status</Text>
+                    <Text style={styles.viewInfoValue}>
+                      {selectedReport.status}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.viewDescriptionBox}>
+                  <Text style={styles.viewInfoLabel}>Action Details</Text>
+                  <Text style={styles.viewDescriptionText}>
+                    {selectedReport.action}
+                  </Text>
+                  <Text style={styles.viewTimeText}>
+                    {selectedReport.timestamp}
+                  </Text>
+                </View>
+              </View>
+            )}
 
             <View style={styles.tableCard}>
               <View style={styles.tableHeaderTop}>
@@ -296,6 +400,7 @@ export default function Admin_Logs() {
                 >
                   {filters.map((filter) => {
                     const isActive = filter === activeFilter;
+
                     return (
                       <TouchableOpacity
                         key={filter}
@@ -303,7 +408,10 @@ export default function Admin_Logs() {
                           styles.filterButton,
                           isActive && styles.filterButtonActive,
                         ]}
-                        onPress={() => setActiveFilter(filter)}
+                        onPress={() => {
+                          setActiveFilter(filter);
+                          setOpenActionId(null);
+                        }}
                       >
                         <Text
                           style={[
@@ -343,10 +451,19 @@ export default function Admin_Logs() {
                     <Text style={[styles.tableHeadText, styles.colStatus]}>
                       Status
                     </Text>
+                    <Text style={[styles.tableHeadText, styles.colTableAction]}>
+                      Action
+                    </Text>
                   </View>
 
                   {filteredLogs.map((row) => (
-                    <View key={row.id} style={styles.tableBodyRow}>
+                    <View
+                      key={row.id}
+                      style={[
+                        styles.tableBodyRow,
+                        openActionId === row.id && styles.activeTableBodyRow,
+                      ]}
+                    >
                       <Text style={[styles.tableCellText, styles.colLogId]}>
                         {row.id}
                       </Text>
@@ -363,6 +480,7 @@ export default function Admin_Logs() {
                             color={COLORS.primary}
                           />
                         </View>
+
                         <Text style={styles.actorText}>{row.actor}</Text>
                       </View>
 
@@ -384,6 +502,58 @@ export default function Admin_Logs() {
                       <View style={styles.colStatus}>
                         <StatusBadge label={row.status} />
                       </View>
+
+                      <View style={styles.colTableAction}>
+                        <TouchableOpacity
+                          style={styles.dotsButton}
+                          onPress={() =>
+                            setOpenActionId(
+                              openActionId === row.id ? null : row.id,
+                            )
+                          }
+                        >
+                          <Ionicons
+                            name="ellipsis-vertical"
+                            size={18}
+                            color={COLORS.primary}
+                          />
+                        </TouchableOpacity>
+
+                        {openActionId === row.id && (
+                          <View style={styles.actionMenu}>
+                            <TouchableOpacity
+                              style={styles.actionMenuItem}
+                              onPress={() => handleViewReport(row)}
+                            >
+                              <Ionicons
+                                name="eye-outline"
+                                size={16}
+                                color={COLORS.primary}
+                              />
+                              <Text style={styles.actionMenuText}>View</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                              style={styles.actionMenuItem}
+                              onPress={() => handleDeleteReport(row)}
+                            >
+                              <Ionicons
+                                name="trash-outline"
+                                size={16}
+                                color={COLORS.danger}
+                              />
+                              <Text
+                                style={[
+                                  styles.actionMenuText,
+                                  { color: COLORS.danger },
+                                ]}
+                              >
+                                Delete Report
+                              </Text>
+                            </TouchableOpacity>
+                          </View>
+                        )}
+                      </View>
                     </View>
                   ))}
                 </View>
@@ -396,9 +566,7 @@ export default function Admin_Logs() {
               <Text style={styles.sideCardTitle}>Activity Breakdown</Text>
 
               {activityBreakdown.map((type) => {
-                const count = LOG_DATA.filter(
-                  (item) => item.type === type,
-                ).length;
+                const count = logs.filter((item) => item.type === type).length;
 
                 return (
                   <View key={type} style={styles.breakdownRow}>
@@ -442,28 +610,34 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
+
   scrollContent: {
     paddingBottom: 28,
   },
+
   contentWrap: {
     flexDirection: "row",
     gap: 20,
     alignItems: "flex-start",
   },
+
   leftSection: {
     flex: 1,
     minWidth: 0,
   },
+
   rightSection: {
     width: 300,
     gap: 14,
   },
+
   summaryRow: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 14,
     marginBottom: 16,
   },
+
   summaryCard: {
     flex: 1,
     minWidth: 210,
@@ -476,6 +650,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
+
   summaryIconWrap: {
     width: 52,
     height: 52,
@@ -484,62 +659,164 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginRight: 14,
   },
+
   summaryTextWrap: {
     flex: 1,
   },
+
   summaryTitle: {
     fontSize: 14,
     color: COLORS.textMuted,
     marginBottom: 6,
     fontWeight: "500",
   },
+
   summaryValueRow: {
     flexDirection: "row",
     alignItems: "baseline",
     gap: 8,
     flexWrap: "wrap",
   },
+
   summaryValue: {
     fontSize: 21,
     fontWeight: "800",
     color: COLORS.text,
   },
+
   summarySubtext: {
     fontSize: 13,
     fontWeight: "600",
   },
+
+  viewReportCard: {
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: COLORS.primaryBorder,
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 16,
+  },
+
+  viewReportHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 14,
+  },
+
+  viewReportTitle: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: COLORS.primary,
+  },
+
+  viewReportSubtitle: {
+    fontSize: 13,
+    color: COLORS.textMuted,
+    marginTop: 3,
+  },
+
+  closeViewButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: COLORS.surfaceSoft,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  viewReportGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+  },
+
+  viewInfoBox: {
+    flex: 1,
+    minWidth: 180,
+    backgroundColor: COLORS.surfaceSoft,
+    borderWidth: 1,
+    borderColor: COLORS.primaryBorder,
+    borderRadius: 12,
+    padding: 12,
+  },
+
+  viewInfoLabel: {
+    fontSize: 12,
+    color: COLORS.textMuted,
+    fontWeight: "600",
+    marginBottom: 5,
+  },
+
+  viewInfoValue: {
+    fontSize: 14,
+    color: COLORS.text,
+    fontWeight: "800",
+  },
+
+  viewDescriptionBox: {
+    marginTop: 12,
+    backgroundColor: COLORS.surfaceSoft,
+    borderWidth: 1,
+    borderColor: COLORS.primaryBorder,
+    borderRadius: 12,
+    padding: 12,
+  },
+
+  viewDescriptionText: {
+    fontSize: 14,
+    color: COLORS.text,
+    lineHeight: 20,
+  },
+
+  viewTimeText: {
+    fontSize: 12,
+    color: COLORS.textMuted,
+    marginTop: 8,
+    fontWeight: "600",
+  },
+
   tableCard: {
     backgroundColor: COLORS.white,
     borderWidth: 1,
     borderColor: COLORS.primaryBorder,
     borderRadius: 16,
-    overflow: "hidden",
+    overflow: "visible",
   },
+
   tableHeaderTop: {
     borderBottomWidth: 1,
     borderBottomColor: COLORS.primaryBorder,
     paddingHorizontal: 20,
     paddingVertical: 14,
     backgroundColor: COLORS.surfaceSoft,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
   },
+
   tableHeaderTextWrap: {
     marginBottom: 12,
   },
+
   tableTitle: {
     fontSize: 16,
     fontWeight: "800",
     color: COLORS.primary,
   },
+
   tableSubtitle: {
     fontSize: 12,
     color: COLORS.textMuted,
     marginTop: 4,
     lineHeight: 18,
   },
+
   filtersRow: {
     gap: 10,
     paddingRight: 8,
   },
+
   filterButton: {
     height: 34,
     paddingHorizontal: 14,
@@ -550,18 +827,22 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+
   filterButtonActive: {
     backgroundColor: COLORS.primary,
     borderColor: COLORS.primary,
   },
+
   filterButtonText: {
     fontSize: 13,
     fontWeight: "600",
     color: COLORS.primary,
   },
+
   filterButtonTextActive: {
     color: COLORS.white,
   },
+
   tableHeadRow: {
     height: 46,
     backgroundColor: COLORS.surfaceSoft,
@@ -571,11 +852,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 20,
   },
+
   tableHeadText: {
     fontSize: 13,
     color: COLORS.textMuted,
     fontWeight: "600",
   },
+
   tableBodyRow: {
     minHeight: 68,
     borderBottomWidth: 1,
@@ -584,38 +867,61 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 20,
     backgroundColor: COLORS.white,
+    position: "relative",
+    zIndex: 1,
   },
+
+  activeTableBodyRow: {
+    zIndex: 999,
+  },
+
   tableCellText: {
     fontSize: 13,
     color: COLORS.text,
   },
+
   colLogId: {
     width: 110,
   },
+
   colType: {
     width: 150,
     justifyContent: "center",
   },
+
   colActor: {
     width: 220,
   },
+
   colAction: {
     width: 360,
   },
+
   colTarget: {
     width: 140,
   },
+
   colTime: {
     width: 180,
   },
+
   colStatus: {
     width: 120,
     justifyContent: "center",
   },
+
+  colTableAction: {
+    width: 100,
+    justifyContent: "center",
+    alignItems: "center",
+    position: "relative",
+  },
+
   actorCell: {
     flexDirection: "row",
     alignItems: "center",
   },
+
   actorIconWrap: {
     width: 30,
     height: 30,
@@ -625,12 +931,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginRight: 10,
   },
+
   actorText: {
     flex: 1,
     fontSize: 13,
     color: COLORS.text,
     fontWeight: "600",
   },
+
   typeBadge: {
     alignSelf: "flex-start",
     paddingHorizontal: 12,
@@ -638,21 +946,69 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primarySoft,
     borderRadius: 999,
   },
+
   typeBadgeText: {
     color: COLORS.primary,
     fontSize: 12,
     fontWeight: "700",
   },
+
   statusBadge: {
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 999,
     alignSelf: "flex-start",
   },
+
   statusBadgeText: {
     fontWeight: "700",
     fontSize: 12,
   },
+
+  dotsButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: COLORS.primarySoft,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  actionMenu: {
+    position: "absolute",
+    top: 48,
+    right: 8,
+    width: 165,
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: COLORS.primaryBorder,
+    borderRadius: 12,
+    paddingVertical: 6,
+    shadowColor: "#000000",
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    shadowOffset: {
+      width: 0,
+      height: 6,
+    },
+    elevation: 10,
+    zIndex: 9999,
+  },
+
+  actionMenuItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+
+  actionMenuText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: COLORS.primary,
+  },
+
   sideCard: {
     backgroundColor: COLORS.white,
     borderWidth: 1,
@@ -660,6 +1016,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     overflow: "hidden",
   },
+
   sideCardTitle: {
     fontSize: 15,
     fontWeight: "800",
@@ -670,6 +1027,7 @@ const styles = StyleSheet.create({
     borderBottomColor: COLORS.primaryBorder,
     backgroundColor: COLORS.surfaceSoft,
   },
+
   breakdownRow: {
     paddingHorizontal: 18,
     paddingVertical: 13,
@@ -679,28 +1037,34 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
+
   breakdownText: {
     color: COLORS.text,
     fontSize: 13,
     flex: 1,
     marginRight: 12,
   },
+
   breakdownCount: {
     color: COLORS.primary,
     fontWeight: "800",
     fontSize: 14,
   },
+
   notesContent: {
     padding: 18,
   },
+
   notesHeading: {
     color: COLORS.text,
     fontWeight: "700",
     marginBottom: 8,
   },
+
   notesHeadingSpacing: {
     marginTop: 14,
   },
+
   notesText: {
     color: COLORS.textMuted,
     lineHeight: 21,

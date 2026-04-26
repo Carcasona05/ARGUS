@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Admin_Layout from "../../components/Admin_Layout";
+import Admin_ViewReport from "../../components/Admin_ViewReport";
 
 const COLORS = {
   primary: "#294880",
@@ -36,9 +37,12 @@ const SUBMITTED_REPORTS = [
     location: "Colon Street, Barangay 6, Cebu City",
     timestamp: "2026-04-18 08:31 PM",
     status: "Pending",
-    evidence: "1 Photo",
     description:
       "Witness reported a phone snatching incident near the sidewalk.",
+    submittedBy: "Anonymous Reporter",
+    priority: "Medium",
+    aiConfidence: "86%",
+    assignedAdmin: "Unassigned",
   },
   {
     id: "ARG-REP-1002",
@@ -47,8 +51,11 @@ const SUBMITTED_REPORTS = [
     location: "Osmeña Boulevard, Cebu City",
     timestamp: "2026-04-18 07:52 PM",
     status: "Verified",
-    evidence: "2 Photos",
     description: "Vehicle parked across one lane and slowed traffic flow.",
+    submittedBy: "Anonymous Reporter",
+    priority: "High",
+    aiConfidence: "91%",
+    assignedAdmin: "Admin Maria Santos",
   },
   {
     id: "ARG-REP-1003",
@@ -57,8 +64,11 @@ const SUBMITTED_REPORTS = [
     location: "Fuente Circle, Cebu City",
     timestamp: "2026-04-18 07:14 PM",
     status: "Rejected",
-    evidence: "No File",
     description: "Reported suspicious loitering near the entrance area.",
+    submittedBy: "Anonymous Reporter",
+    priority: "Low",
+    aiConfidence: "58%",
+    assignedAdmin: "Admin John Reyes",
   },
   {
     id: "ARG-REP-1004",
@@ -67,8 +77,11 @@ const SUBMITTED_REPORTS = [
     location: "Mabolo, Barangay Kasambagan, Cebu City",
     timestamp: "2026-04-18 06:48 PM",
     status: "Resolved",
-    evidence: "1 Video",
     description: "Roadside flooding observed after heavy rainfall.",
+    submittedBy: "Anonymous Reporter",
+    priority: "High",
+    aiConfidence: "94%",
+    assignedAdmin: "Admin Carla Lim",
   },
   {
     id: "ARG-REP-1005",
@@ -77,8 +90,11 @@ const SUBMITTED_REPORTS = [
     location: "Carbon Market Area, Cebu City",
     timestamp: "2026-04-17 11:12 PM",
     status: "Pending",
-    evidence: "1 Photo",
     description: "Noise and verbal altercation reported by nearby residents.",
+    submittedBy: "Anonymous Reporter",
+    priority: "Medium",
+    aiConfidence: "79%",
+    assignedAdmin: "Unassigned",
   },
 ];
 
@@ -171,9 +187,7 @@ function TabButton({ label, active, onPress }) {
       onPress={onPress}
       style={[styles.tabButton, active && styles.tabButtonActive]}
     >
-      <Text
-        style={[styles.tabButtonText, active && styles.tabButtonTextActive]}
-      >
+      <Text style={[styles.tabButtonText, active && styles.tabButtonTextActive]}>
         {label}
       </Text>
     </TouchableOpacity>
@@ -185,8 +199,10 @@ export default function Admin_Reports() {
   const [searchText, setSearchText] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [generatedTypeFilter, setGeneratedTypeFilter] = useState("All");
+  const [selectedReport, setSelectedReport] = useState(null);
 
   const statusFilters = ["All", "Pending", "Verified", "Rejected", "Resolved"];
+
   const generatedTypeFilters = [
     "All",
     "Incident Summary",
@@ -197,11 +213,15 @@ export default function Admin_Reports() {
 
   const filteredSubmittedReports = useMemo(() => {
     return SUBMITTED_REPORTS.filter((item) => {
+      const search = searchText.toLowerCase();
+
       const matchesSearch =
-        item.id.toLowerCase().includes(searchText.toLowerCase()) ||
-        item.type.toLowerCase().includes(searchText.toLowerCase()) ||
-        item.location.toLowerCase().includes(searchText.toLowerCase()) ||
-        item.status.toLowerCase().includes(searchText.toLowerCase());
+        item.id.toLowerCase().includes(search) ||
+        item.category.toLowerCase().includes(search) ||
+        item.type.toLowerCase().includes(search) ||
+        item.location.toLowerCase().includes(search) ||
+        item.status.toLowerCase().includes(search) ||
+        item.description.toLowerCase().includes(search);
 
       const matchesStatus =
         statusFilter === "All" ? true : item.status === statusFilter;
@@ -212,11 +232,13 @@ export default function Admin_Reports() {
 
   const filteredGeneratedReports = useMemo(() => {
     return GENERATED_REPORTS.filter((item) => {
+      const search = searchText.toLowerCase();
+
       const matchesSearch =
-        item.id.toLowerCase().includes(searchText.toLowerCase()) ||
-        item.title.toLowerCase().includes(searchText.toLowerCase()) ||
-        item.type.toLowerCase().includes(searchText.toLowerCase()) ||
-        item.scope.toLowerCase().includes(searchText.toLowerCase());
+        item.id.toLowerCase().includes(search) ||
+        item.title.toLowerCase().includes(search) ||
+        item.type.toLowerCase().includes(search) ||
+        item.scope.toLowerCase().includes(search);
 
       const matchesType =
         generatedTypeFilter === "All"
@@ -239,9 +261,8 @@ export default function Admin_Reports() {
     },
     {
       title: "Pending Reports",
-      value: SUBMITTED_REPORTS.filter(
-        (item) => item.status === "Pending",
-      ).length.toString(),
+      value: SUBMITTED_REPORTS.filter((item) => item.status === "Pending")
+        .length.toString(),
       subtext: "Awaiting review",
       icon: "time-outline",
       iconBg: COLORS.warningSoft,
@@ -250,9 +271,8 @@ export default function Admin_Reports() {
     },
     {
       title: "Verified Reports",
-      value: SUBMITTED_REPORTS.filter(
-        (item) => item.status === "Verified",
-      ).length.toString(),
+      value: SUBMITTED_REPORTS.filter((item) => item.status === "Verified")
+        .length.toString(),
       subtext: "Approved records",
       icon: "shield-checkmark-outline",
       iconBg: COLORS.successSoft,
@@ -272,377 +292,422 @@ export default function Admin_Reports() {
 
   return (
     <Admin_Layout>
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.contentWrap}>
-          <View style={styles.leftSection}>
-            <View style={styles.summaryRow}>
-              {summaryCards.map((card) => (
-                <View key={card.title} style={styles.summaryCard}>
-                  <View
-                    style={[
-                      styles.summaryIconWrap,
-                      { backgroundColor: card.iconBg },
-                    ]}
-                  >
+      <View style={styles.pageWrapper}>
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.contentWrap}>
+            <View style={styles.leftSection}>
+              <View style={styles.summaryRow}>
+                {summaryCards.map((card) => (
+                  <View key={card.title} style={styles.summaryCard}>
+                    <View
+                      style={[
+                        styles.summaryIconWrap,
+                        { backgroundColor: card.iconBg },
+                      ]}
+                    >
+                      <Ionicons
+                        name={card.icon}
+                        size={24}
+                        color={card.iconColor}
+                      />
+                    </View>
+
+                    <View style={styles.summaryTextWrap}>
+                      <Text style={styles.summaryTitle}>{card.title}</Text>
+
+                      <View style={styles.summaryValueRow}>
+                        <Text style={styles.summaryValue}>{card.value}</Text>
+
+                        <Text
+                          style={[
+                            styles.summarySubtext,
+                            { color: card.subColor },
+                          ]}
+                        >
+                          {card.subtext}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                ))}
+              </View>
+
+              <View style={styles.sectionCard}>
+                <View style={styles.sectionHeader}>
+                  <View style={styles.tabRow}>
+                    <TabButton
+                      label="Submitted Reports"
+                      active={activeTab === "Submitted Reports"}
+                      onPress={() => setActiveTab("Submitted Reports")}
+                    />
+
+                    <TabButton
+                      label="Generated Reports"
+                      active={activeTab === "Generated Reports"}
+                      onPress={() => setActiveTab("Generated Reports")}
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.toolbar}>
+                  <View style={styles.searchWrap}>
                     <Ionicons
-                      name={card.icon}
-                      size={24}
-                      color={card.iconColor}
+                      name="search-outline"
+                      size={18}
+                      color={COLORS.textMuted}
+                    />
+
+                    <TextInput
+                      value={searchText}
+                      onChangeText={setSearchText}
+                      placeholder={
+                        activeTab === "Submitted Reports"
+                          ? "Search by ID, category, type, location, or status"
+                          : "Search by title, type, scope, or ID"
+                      }
+                      placeholderTextColor={COLORS.textMuted}
+                      style={styles.searchInput}
                     />
                   </View>
 
-                  <View style={styles.summaryTextWrap}>
-                    <Text style={styles.summaryTitle}>{card.title}</Text>
-                    <View style={styles.summaryValueRow}>
-                      <Text style={styles.summaryValue}>{card.value}</Text>
-                      <Text
-                        style={[
-                          styles.summarySubtext,
-                          { color: card.subColor },
-                        ]}
-                      >
-                        {card.subtext}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-              ))}
-            </View>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.filterRow}
+                  >
+                    {(activeTab === "Submitted Reports"
+                      ? statusFilters
+                      : generatedTypeFilters
+                    ).map((filter) => {
+                      const active =
+                        activeTab === "Submitted Reports"
+                          ? statusFilter === filter
+                          : generatedTypeFilter === filter;
 
-            <View style={styles.sectionCard}>
-              <View style={styles.sectionHeader}>
-                <View style={styles.tabRow}>
-                  <TabButton
-                    label="Submitted Reports"
-                    active={activeTab === "Submitted Reports"}
-                    onPress={() => setActiveTab("Submitted Reports")}
-                  />
-                  <TabButton
-                    label="Generated Reports"
-                    active={activeTab === "Generated Reports"}
-                    onPress={() => setActiveTab("Generated Reports")}
-                  />
-                </View>
-              </View>
-
-              <View style={styles.toolbar}>
-                <View style={styles.searchWrap}>
-                  <Ionicons
-                    name="search-outline"
-                    size={18}
-                    color={COLORS.textMuted}
-                  />
-                  <TextInput
-                    value={searchText}
-                    onChangeText={setSearchText}
-                    placeholder={
-                      activeTab === "Submitted Reports"
-                        ? "Search by ID, type, location, or status"
-                        : "Search by title, type, scope, or ID"
-                    }
-                    placeholderTextColor={COLORS.textMuted}
-                    style={styles.searchInput}
-                  />
-                </View>
-
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.filterRow}
-                >
-                  {(activeTab === "Submitted Reports"
-                    ? statusFilters
-                    : generatedTypeFilters
-                  ).map((filter) => {
-                    const active =
-                      activeTab === "Submitted Reports"
-                        ? statusFilter === filter
-                        : generatedTypeFilter === filter;
-
-                    return (
-                      <TouchableOpacity
-                        key={filter}
-                        style={[
-                          styles.filterButton,
-                          active && styles.filterButtonActive,
-                        ]}
-                        onPress={() =>
-                          activeTab === "Submitted Reports"
-                            ? setStatusFilter(filter)
-                            : setGeneratedTypeFilter(filter)
-                        }
-                      >
-                        <Text
+                      return (
+                        <TouchableOpacity
+                          key={filter}
                           style={[
-                            styles.filterButtonText,
-                            active && styles.filterButtonTextActive,
+                            styles.filterButton,
+                            active && styles.filterButtonActive,
                           ]}
+                          onPress={() =>
+                            activeTab === "Submitted Reports"
+                              ? setStatusFilter(filter)
+                              : setGeneratedTypeFilter(filter)
+                          }
                         >
-                          {filter}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </ScrollView>
-              </View>
+                          <Text
+                            style={[
+                              styles.filterButtonText,
+                              active && styles.filterButtonTextActive,
+                            ]}
+                          >
+                            {filter}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ScrollView>
+                </View>
 
-              {activeTab === "Submitted Reports" ? (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                  <View>
-                    <View style={styles.tableHeadRow}>
-                      <Text style={[styles.tableHeadText, styles.colId]}>
-                        Report ID
-                      </Text>
-                      <Text style={[styles.tableHeadText, styles.colCategory]}>
-                        Category
-                      </Text>
-                      <Text style={[styles.tableHeadText, styles.colType]}>
-                        Type
-                      </Text>
-                      <Text style={[styles.tableHeadText, styles.colLocation]}>
-                        Location
-                      </Text>
-                      <Text style={[styles.tableHeadText, styles.colTime]}>
-                        Timestamp
-                      </Text>
-                      <Text style={[styles.tableHeadText, styles.colStatus]}>
-                        Status
-                      </Text>
-                      <Text style={[styles.tableHeadText, styles.colEvidence]}>
-                        Evidence
-                      </Text>
-                      <Text
-                        style={[styles.tableHeadText, styles.colDescription]}
-                      >
-                        Description
-                      </Text>
-                      <Text style={[styles.tableHeadText, styles.colAction]}>
-                        Action
-                      </Text>
-                    </View>
-
-                    {filteredSubmittedReports.map((row) => (
-                      <View key={row.id} style={styles.tableBodyRow}>
-                        <Text style={[styles.tableCellText, styles.colId]}>
-                          {row.id}
-                        </Text>
-                        <Text
-                          style={[styles.tableCellText, styles.colCategory]}
-                        >
-                          {row.category}
-                        </Text>
-                        <Text
-                          style={[
-                            styles.tableCellText,
-                            styles.colType,
-                            styles.typeText,
-                          ]}
-                        >
-                          {row.type}
-                        </Text>
-                        <Text
-                          style={[styles.tableCellText, styles.colLocation]}
-                          numberOfLines={2}
-                        >
-                          {row.location}
-                        </Text>
-                        <Text style={[styles.tableCellText, styles.colTime]}>
-                          {row.timestamp}
+                {activeTab === "Submitted Reports" ? (
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                    <View>
+                      <View style={styles.tableHeadRow}>
+                        <Text style={[styles.tableHeadText, styles.colId]}>
+                          Report ID
                         </Text>
 
-                        <View style={styles.colStatus}>
-                          <StatusBadge label={row.status} />
-                        </View>
+                        <Text style={[styles.tableHeadText, styles.colCategory]}>
+                          Category
+                        </Text>
 
-                        <Text
-                          style={[styles.tableCellText, styles.colEvidence]}
-                        >
-                          {row.evidence}
+                        <Text style={[styles.tableHeadText, styles.colType]}>
+                          Type
+                        </Text>
+
+                        <Text style={[styles.tableHeadText, styles.colLocation]}>
+                          Location
+                        </Text>
+
+                        <Text style={[styles.tableHeadText, styles.colTime]}>
+                          Timestamp
+                        </Text>
+
+                        <Text style={[styles.tableHeadText, styles.colStatus]}>
+                          Status
                         </Text>
 
                         <Text
-                          style={[styles.tableCellText, styles.colDescription]}
-                          numberOfLines={2}
+                          style={[styles.tableHeadText, styles.colDescription]}
                         >
-                          {row.description}
+                          Description
                         </Text>
 
-                        <View style={styles.colAction}>
-                          <TouchableOpacity style={styles.viewButton}>
-                            <Text style={styles.viewButtonText}>
-                              View Details
-                            </Text>
-                          </TouchableOpacity>
-                        </View>
+                        <Text style={[styles.tableHeadText, styles.colAction]}>
+                          Action
+                        </Text>
                       </View>
-                    ))}
-                  </View>
-                </ScrollView>
-              ) : (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                  <View>
-                    <View style={styles.tableHeadRow}>
-                      <Text style={[styles.tableHeadText, styles.genColId]}>
-                        Report ID
-                      </Text>
-                      <Text style={[styles.tableHeadText, styles.genColTitle]}>
-                        Report Title
-                      </Text>
-                      <Text style={[styles.tableHeadText, styles.genColType]}>
-                        Type
-                      </Text>
-                      <Text style={[styles.tableHeadText, styles.genColScope]}>
-                        Scope
-                      </Text>
-                      <Text style={[styles.tableHeadText, styles.genColDate]}>
-                        Date Generated
-                      </Text>
-                      <Text style={[styles.tableHeadText, styles.genColFormat]}>
-                        Format
-                      </Text>
-                      <Text style={[styles.tableHeadText, styles.genColBy]}>
-                        Generated By
-                      </Text>
-                      <Text style={[styles.tableHeadText, styles.genColAction]}>
-                        Action
-                      </Text>
-                    </View>
 
-                    {filteredGeneratedReports.map((row) => (
-                      <View key={row.id} style={styles.tableBodyRow}>
-                        <Text style={[styles.tableCellText, styles.genColId]}>
-                          {row.id}
-                        </Text>
-                        <Text
-                          style={[styles.tableCellText, styles.genColTitle]}
-                        >
-                          {row.title}
-                        </Text>
-                        <Text style={[styles.tableCellText, styles.genColType]}>
-                          {row.type}
-                        </Text>
-                        <Text
-                          style={[styles.tableCellText, styles.genColScope]}
-                        >
-                          {row.scope}
-                        </Text>
-                        <Text style={[styles.tableCellText, styles.genColDate]}>
-                          {row.dateGenerated}
-                        </Text>
-                        <Text
-                          style={[styles.tableCellText, styles.genColFormat]}
-                        >
-                          {row.format}
-                        </Text>
-                        <Text style={[styles.tableCellText, styles.genColBy]}>
-                          {row.generatedBy}
-                        </Text>
+                      {filteredSubmittedReports.map((row) => (
+                        <View key={row.id} style={styles.tableBodyRow}>
+                          <Text style={[styles.tableCellText, styles.colId]}>
+                            {row.id}
+                          </Text>
 
-                        <View style={styles.genColAction}>
-                          <View style={styles.downloadActions}>
-                            <TouchableOpacity style={styles.smallActionButton}>
-                              <Text style={styles.smallActionButtonText}>
-                                PDF
-                              </Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.smallActionButton}>
-                              <Text style={styles.smallActionButtonText}>
-                                CSV
-                              </Text>
+                          <Text
+                            style={[styles.tableCellText, styles.colCategory]}
+                            numberOfLines={2}
+                          >
+                            {row.category}
+                          </Text>
+
+                          <Text
+                            style={[
+                              styles.tableCellText,
+                              styles.colType,
+                              styles.typeText,
+                            ]}
+                            numberOfLines={1}
+                          >
+                            {row.type}
+                          </Text>
+
+                          <Text
+                            style={[styles.tableCellText, styles.colLocation]}
+                            numberOfLines={2}
+                          >
+                            {row.location}
+                          </Text>
+
+                          <Text style={[styles.tableCellText, styles.colTime]}>
+                            {row.timestamp}
+                          </Text>
+
+                          <View style={styles.colStatus}>
+                            <StatusBadge label={row.status} />
+                          </View>
+
+                          <Text
+                            style={[styles.tableCellText, styles.colDescription]}
+                            numberOfLines={2}
+                          >
+                            {row.description}
+                          </Text>
+
+                          <View style={styles.colAction}>
+                            <TouchableOpacity
+                              style={styles.iconActionButton}
+                              onPress={() => setSelectedReport(row)}
+                              activeOpacity={0.75}
+                            >
+                              <Ionicons
+                                name="document-text-outline"
+                                size={18}
+                                color={COLORS.primary}
+                              />
                             </TouchableOpacity>
                           </View>
                         </View>
+                      ))}
+                    </View>
+                  </ScrollView>
+                ) : (
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                    <View>
+                      <View style={styles.tableHeadRow}>
+                        <Text style={[styles.tableHeadText, styles.genColId]}>
+                          Report ID
+                        </Text>
+
+                        <Text style={[styles.tableHeadText, styles.genColTitle]}>
+                          Report Title
+                        </Text>
+
+                        <Text style={[styles.tableHeadText, styles.genColType]}>
+                          Type
+                        </Text>
+
+                        <Text style={[styles.tableHeadText, styles.genColScope]}>
+                          Scope
+                        </Text>
+
+                        <Text style={[styles.tableHeadText, styles.genColDate]}>
+                          Date Generated
+                        </Text>
+
+                        <Text style={[styles.tableHeadText, styles.genColFormat]}>
+                          Format
+                        </Text>
+
+                        <Text style={[styles.tableHeadText, styles.genColBy]}>
+                          Generated By
+                        </Text>
+
+                        <Text style={[styles.tableHeadText, styles.genColAction]}>
+                          Action
+                        </Text>
                       </View>
-                    ))}
-                  </View>
-                </ScrollView>
-              )}
+
+                      {filteredGeneratedReports.map((row) => (
+                        <View key={row.id} style={styles.tableBodyRow}>
+                          <Text style={[styles.tableCellText, styles.genColId]}>
+                            {row.id}
+                          </Text>
+
+                          <Text
+                            style={[styles.tableCellText, styles.genColTitle]}
+                            numberOfLines={1}
+                          >
+                            {row.title}
+                          </Text>
+
+                          <Text style={[styles.tableCellText, styles.genColType]}>
+                            {row.type}
+                          </Text>
+
+                          <Text style={[styles.tableCellText, styles.genColScope]}>
+                            {row.scope}
+                          </Text>
+
+                          <Text style={[styles.tableCellText, styles.genColDate]}>
+                            {row.dateGenerated}
+                          </Text>
+
+                          <Text
+                            style={[styles.tableCellText, styles.genColFormat]}
+                          >
+                            {row.format}
+                          </Text>
+
+                          <Text style={[styles.tableCellText, styles.genColBy]}>
+                            {row.generatedBy}
+                          </Text>
+
+                          <View style={styles.genColAction}>
+                            <View style={styles.downloadActions}>
+                              <TouchableOpacity style={styles.smallActionButton}>
+                                <Text style={styles.smallActionButtonText}>
+                                  PDF
+                                </Text>
+                              </TouchableOpacity>
+
+                              <TouchableOpacity style={styles.smallActionButton}>
+                                <Text style={styles.smallActionButtonText}>
+                                  CSV
+                                </Text>
+                              </TouchableOpacity>
+                            </View>
+                          </View>
+                        </View>
+                      ))}
+                    </View>
+                  </ScrollView>
+                )}
+              </View>
+            </View>
+
+            <View style={styles.rightSection}>
+              <View style={styles.sideCard}>
+                <Text style={styles.sideCardTitle}>Reports Overview</Text>
+
+                <View style={styles.breakdownRow}>
+                  <Text style={styles.breakdownText}>Pending</Text>
+                  <Text style={styles.breakdownCount}>
+                    {
+                      SUBMITTED_REPORTS.filter(
+                        (item) => item.status === "Pending"
+                      ).length
+                    }
+                  </Text>
+                </View>
+
+                <View style={styles.breakdownRow}>
+                  <Text style={styles.breakdownText}>Verified</Text>
+                  <Text style={styles.breakdownCount}>
+                    {
+                      SUBMITTED_REPORTS.filter(
+                        (item) => item.status === "Verified"
+                      ).length
+                    }
+                  </Text>
+                </View>
+
+                <View style={styles.breakdownRow}>
+                  <Text style={styles.breakdownText}>Rejected</Text>
+                  <Text style={styles.breakdownCount}>
+                    {
+                      SUBMITTED_REPORTS.filter(
+                        (item) => item.status === "Rejected"
+                      ).length
+                    }
+                  </Text>
+                </View>
+
+                <View style={styles.breakdownRow}>
+                  <Text style={styles.breakdownText}>Resolved</Text>
+                  <Text style={styles.breakdownCount}>
+                    {
+                      SUBMITTED_REPORTS.filter(
+                        (item) => item.status === "Resolved"
+                      ).length
+                    }
+                  </Text>
+                </View>
+
+                <View style={styles.breakdownRow}>
+                  <Text style={styles.breakdownText}>Generated Files</Text>
+                  <Text style={styles.breakdownCount}>
+                    {GENERATED_REPORTS.length}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.sideCard}>
+                <Text style={styles.sideCardTitle}>Reports Module Notes</Text>
+
+                <View style={styles.notesContent}>
+                  <Text style={styles.notesHeading}>Submitted Reports</Text>
+
+                  <Text style={styles.notesText}>
+                    Shows all incident submissions with search, status tracking,
+                    and full record management.
+                  </Text>
+
+                  <Text style={[styles.notesHeading, styles.notesHeadingSpacing]}>
+                    Generated Reports
+                  </Text>
+
+                  <Text style={styles.notesText}>
+                    Stores exported summaries such as incident summary, hotspot
+                    analysis, sentiment analysis, and validation performance.
+                  </Text>
+                </View>
+              </View>
             </View>
           </View>
+        </ScrollView>
 
-          <View style={styles.rightSection}>
-            <View style={styles.sideCard}>
-              <Text style={styles.sideCardTitle}>Reports Overview</Text>
-
-              <View style={styles.breakdownRow}>
-                <Text style={styles.breakdownText}>Pending</Text>
-                <Text style={styles.breakdownCount}>
-                  {
-                    SUBMITTED_REPORTS.filter(
-                      (item) => item.status === "Pending",
-                    ).length
-                  }
-                </Text>
-              </View>
-              <View style={styles.breakdownRow}>
-                <Text style={styles.breakdownText}>Verified</Text>
-                <Text style={styles.breakdownCount}>
-                  {
-                    SUBMITTED_REPORTS.filter(
-                      (item) => item.status === "Verified",
-                    ).length
-                  }
-                </Text>
-              </View>
-              <View style={styles.breakdownRow}>
-                <Text style={styles.breakdownText}>Rejected</Text>
-                <Text style={styles.breakdownCount}>
-                  {
-                    SUBMITTED_REPORTS.filter(
-                      (item) => item.status === "Rejected",
-                    ).length
-                  }
-                </Text>
-              </View>
-              <View style={styles.breakdownRow}>
-                <Text style={styles.breakdownText}>Resolved</Text>
-                <Text style={styles.breakdownCount}>
-                  {
-                    SUBMITTED_REPORTS.filter(
-                      (item) => item.status === "Resolved",
-                    ).length
-                  }
-                </Text>
-              </View>
-              <View style={styles.breakdownRow}>
-                <Text style={styles.breakdownText}>Generated Files</Text>
-                <Text style={styles.breakdownCount}>
-                  {GENERATED_REPORTS.length}
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.sideCard}>
-              <Text style={styles.sideCardTitle}>Reports Module Notes</Text>
-
-              <View style={styles.notesContent}>
-                <Text style={styles.notesHeading}>Submitted Reports</Text>
-                <Text style={styles.notesText}>
-                  Shows all incident submissions with search, status tracking,
-                  evidence viewing, and full record management.
-                </Text>
-
-                <Text style={[styles.notesHeading, styles.notesHeadingSpacing]}>
-                  Generated Reports
-                </Text>
-                <Text style={styles.notesText}>
-                  Stores exported summaries such as incident summary, hotspot
-                  analysis, sentiment analysis, and validation performance.
-                </Text>
-              </View>
-            </View>
-          </View>
-        </View>
-      </ScrollView>
+        <Admin_ViewReport
+          visible={!!selectedReport}
+          report={selectedReport}
+          onClose={() => setSelectedReport(null)}
+        />
+      </View>
     </Admin_Layout>
   );
 }
 
 const styles = StyleSheet.create({
+  pageWrapper: {
+    flex: 1,
+    position: "relative",
+  },
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
@@ -834,32 +899,31 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   colId: {
-    width: 120,
+    width: 130,
   },
   colCategory: {
-    width: 220,
+    width: 250,
   },
   colType: {
-    width: 140,
+    width: 160,
   },
   colLocation: {
-    width: 220,
+    width: 260,
   },
   colTime: {
-    width: 180,
+    width: 190,
   },
   colStatus: {
-    width: 120,
+    width: 130,
     justifyContent: "center",
   },
-  colEvidence: {
-    width: 100,
-  },
   colDescription: {
-    width: 280,
+    width: 330,
   },
   colAction: {
-    width: 140,
+    width: 110,
+    justifyContent: "center",
+    alignItems: "center",
   },
   genColId: {
     width: 110,
@@ -896,29 +960,13 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontSize: 12,
   },
-  scoreBadge: {
-    minWidth: 84,
-    paddingVertical: 7,
-    paddingHorizontal: 14,
-    borderRadius: 8,
+  iconActionButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    backgroundColor: COLORS.primarySoft,
     alignItems: "center",
     justifyContent: "center",
-  },
-  scoreBadgeText: {
-    fontSize: 13,
-    fontWeight: "700",
-  },
-  viewButton: {
-    alignSelf: "flex-start",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: COLORS.primarySoft,
-    borderRadius: 10,
-  },
-  viewButtonText: {
-    color: COLORS.primary,
-    fontWeight: "700",
-    fontSize: 12,
   },
   downloadActions: {
     flexDirection: "row",

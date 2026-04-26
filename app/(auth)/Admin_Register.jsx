@@ -8,6 +8,7 @@ import {
   Image,
   Dimensions,
   SafeAreaView,
+  Platform,
   Alert,
   ScrollView,
 } from "react-native";
@@ -29,10 +30,16 @@ export default function Admin_Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleRegister = () => {
+    if (Platform.OS !== "web") {
+      Alert.alert("Restricted", "Admin register is available on web only.");
+      return;
+    }
+
     const cleanName = fullName.trim();
     const cleanEmail = email.trim().toLowerCase();
 
@@ -42,6 +49,7 @@ export default function Admin_Register() {
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
     if (!emailRegex.test(cleanEmail)) {
       Alert.alert("Error", "Please enter a valid email address.");
       return;
@@ -71,9 +79,51 @@ export default function Admin_Register() {
           text: "OK",
           onPress: () => router.replace("/(admin)/Admin_Dashboard"),
         },
-      ]
+      ],
     );
   };
+
+  if (Platform.OS !== "web") {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.page}>
+          <Image
+            source={require("../../assets/img/bannerdark.png")}
+            style={styles.backgroundBanner}
+            resizeMode="cover"
+          />
+
+          <View style={styles.overlay} />
+
+          <View style={[styles.container, styles.centerContent]}>
+            <View style={styles.webCard}>
+              <Image
+                source={require("../../assets/img/logotext.png")}
+                style={styles.logo}
+                resizeMode="contain"
+              />
+
+              <Text style={styles.title}>Admin Register</Text>
+
+              <Text style={styles.webOnlyText}>
+                This page is available on web only.
+              </Text>
+
+              <TouchableOpacity
+                style={styles.registerButton}
+                onPress={() => router.replace("/(auth)/User_Login")}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.registerButtonText}>
+                  Back to User Login
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -99,6 +149,7 @@ export default function Admin_Register() {
               />
 
               <Text style={styles.title}>Admin Register</Text>
+
               <Text style={styles.subtitle}>
                 Create an admin account for ARGUS web access
               </Text>
@@ -110,6 +161,7 @@ export default function Admin_Register() {
                   color="#2F4F8F"
                   style={styles.inputIcon}
                 />
+
                 <TextInput
                   style={styles.input}
                   placeholder="Full Name"
@@ -126,9 +178,10 @@ export default function Admin_Register() {
                   color="#2F4F8F"
                   style={styles.inputIcon}
                 />
+
                 <TextInput
                   style={styles.input}
-                  placeholder="Admin Email"
+                  placeholder="Admin Email Address"
                   placeholderTextColor="#6E7FA5"
                   value={email}
                   onChangeText={setEmail}
@@ -144,15 +197,20 @@ export default function Admin_Register() {
                   color="#2F4F8F"
                   style={styles.inputIcon}
                 />
+
                 <TextInput
                   style={styles.input}
-                  placeholder="Password"
+                  placeholder="Admin Password"
                   placeholderTextColor="#6E7FA5"
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
                 />
-                <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  activeOpacity={0.7}
+                >
                   <Ionicons
                     name={showPassword ? "eye-off-outline" : "eye-outline"}
                     size={20}
@@ -168,18 +226,19 @@ export default function Admin_Register() {
                   color="#2F4F8F"
                   style={styles.inputIcon}
                 />
+
                 <TextInput
                   style={styles.input}
-                  placeholder="Confirm Password"
+                  placeholder="Confirm Admin Password"
                   placeholderTextColor="#6E7FA5"
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
                   secureTextEntry={!showConfirmPassword}
                 />
+
                 <TouchableOpacity
-                  onPress={() =>
-                    setShowConfirmPassword(!showConfirmPassword)
-                  }
+                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                  activeOpacity={0.7}
                 >
                   <Ionicons
                     name={
@@ -196,17 +255,33 @@ export default function Admin_Register() {
                 onPress={handleRegister}
                 activeOpacity={0.85}
               >
-                <Text style={styles.registerButtonText}>Register</Text>
+                <Text style={styles.registerButtonText}>Register as Admin</Text>
               </TouchableOpacity>
 
               <View style={styles.bottomSection}>
-                <Text style={styles.bottomText}>
-                  Already have an admin account?
-                </Text>
+                <View style={styles.lineRow}>
+                  <View style={styles.line} />
+
+                  <Text style={styles.signupQuestion}>
+                    Already have an admin account?
+                  </Text>
+
+                  <View style={styles.line} />
+                </View>
+
                 <TouchableOpacity
                   onPress={() => router.replace("/(auth)/Admin_Login")}
+                  activeOpacity={0.75}
                 >
                   <Text style={styles.loginLink}>Back to Admin Login</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => router.replace("/(auth)/User_Login")}
+                  style={styles.backLinkWrap}
+                  activeOpacity={0.75}
+                >
+                  <Text style={styles.backLink}>Back to User Login</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -230,17 +305,16 @@ const styles = StyleSheet.create({
 
   backgroundBanner: {
     position: "absolute",
-    width: width * 0.8,
-    height: height * 1.1,
-    bottom: -height * 0.50,
-    left: width * 0.08,
-    opacity: 0.54,
-      
+    width: width * 1.2,
+    height: height * 1.05,
+    bottom: -height * 0.08,
+    left: -width * 0.08,
+    opacity: 0.14,
   },
 
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(248, 248, 248, 0)",
+    backgroundColor: "rgba(248,248,248,0.72)",
   },
 
   scrollContainer: {
@@ -254,6 +328,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 30,
     paddingHorizontal: 20,
+    backgroundColor: "transparent",
+  },
+
+  centerContent: {
+    justifyContent: "center",
   },
 
   webCard: {
@@ -266,7 +345,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#D9E2F2",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 6 },
+    shadowOffset: {
+      width: 0,
+      height: 6,
+    },
     shadowOpacity: 0.08,
     shadowRadius: 14,
     elevation: 4,
@@ -316,6 +398,7 @@ const styles = StyleSheet.create({
     height: "100%",
     color: "#294880",
     fontSize: 14,
+    outlineStyle: "none",
   },
 
   registerButton: {
@@ -339,10 +422,24 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
-  bottomText: {
-    fontSize: 13,
+  lineRow: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 10,
+  },
+
+  line: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "#A8B6D4",
+  },
+
+  signupQuestion: {
+    marginHorizontal: 10,
+    fontSize: 12,
     color: "#6C7B9D",
-    marginBottom: 8,
   },
 
   loginLink: {
@@ -350,5 +447,22 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#294880",
     textDecorationLine: "underline",
+  },
+
+  backLinkWrap: {
+    marginTop: 14,
+  },
+
+  backLink: {
+    fontSize: 13,
+    color: "#5A6F9E",
+    textDecorationLine: "underline",
+  },
+
+  webOnlyText: {
+    fontSize: 15,
+    color: "#5A6F9E",
+    textAlign: "center",
+    marginBottom: 24,
   },
 });
