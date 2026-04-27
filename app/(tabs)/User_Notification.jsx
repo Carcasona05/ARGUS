@@ -238,8 +238,11 @@ const SectionHeader = ({ title, action }) => {
   return (
     <View style={styles.sectionHeader}>
       <ThemedText style={styles.sectionTitle}>{title}</ThemedText>
+
       {action ? (
-        <ThemedText style={styles.sectionAction}>{action}</ThemedText>
+        <TouchableOpacity activeOpacity={0.8}>
+          <ThemedText style={styles.sectionAction}>{action}</ThemedText>
+        </TouchableOpacity>
       ) : null}
     </View>
   );
@@ -255,6 +258,7 @@ const User_Notification = () => {
       >
         <View style={styles.sectionBlock}>
           <SectionHeader title="Your Reports" action="See All" />
+
           {userReports.map((item) => (
             <ReportStatusCard key={item.id} item={item} />
           ))}
@@ -265,6 +269,7 @@ const User_Notification = () => {
             title="Incident Reports Near Your Location"
             action="Open Map"
           />
+
           {nearbyIncidents.map((item) => (
             <NearbyIncidentCard key={item.id} item={item} />
           ))}
@@ -272,6 +277,7 @@ const User_Notification = () => {
 
         <View style={styles.sectionBlock}>
           <SectionHeader title="Recent Account Login" action="Manage" />
+
           {loginActivity.map((item) => (
             <LoginCard key={item.id} item={item} />
           ))}
@@ -297,22 +303,6 @@ const styles = StyleSheet.create({
     paddingBottom: 28,
   },
 
-  pageHeader: {
-    marginBottom: 14,
-  },
-
-  pageTitle: {
-    fontSize: 28,
-    color: "#294880",
-    marginBottom: 6,
-  },
-
-  pageSubtitle: {
-    fontSize: 13,
-    lineHeight: 20,
-    color: "#68758A",
-  },
-
   sectionBlock: {
     marginBottom: 16,
   },
@@ -326,11 +316,13 @@ const styles = StyleSheet.create({
 
   sectionTitle: {
     fontSize: 18,
+    fontWeight: "700",
     color: "#1F2A37",
   },
 
   sectionAction: {
     fontSize: 13,
+    fontWeight: "600",
     color: "#294880",
   },
 
@@ -371,6 +363,7 @@ const styles = StyleSheet.create({
 
   cardTitle: {
     fontSize: 15,
+    fontWeight: "700",
     color: "#1F2937",
     marginBottom: 4,
   },
@@ -388,6 +381,7 @@ const styles = StyleSheet.create({
 
   statusPillText: {
     fontSize: 11,
+    fontWeight: "700",
   },
 
   cardMessage: {
@@ -417,6 +411,7 @@ const styles = StyleSheet.create({
 
   linkText: {
     fontSize: 12,
+    fontWeight: "600",
     color: "#1E5EFF",
   },
 });

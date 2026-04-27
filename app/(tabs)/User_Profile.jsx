@@ -133,8 +133,6 @@ const User_Profile = () => {
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.sectionTitle}>My Incident Reports</Text>
-
         {currentUserReports.map((report) => (
           <ReportPost_Layout
             key={report.id}
@@ -176,8 +174,9 @@ const styles = StyleSheet.create({
   },
   filterContainer: {
     flexDirection: "row",
-    justifyContent: "center",
-    marginHorizontal: 12,
+    justifyContent: "flex-start",
+    alignItems: "center",
+    marginHorizontal: 16,
     marginBottom: 14,
     gap: 8,
   },
@@ -192,18 +191,11 @@ const styles = StyleSheet.create({
   },
   filterText: {
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: "500",
     color: "#294880",
   },
   activeFilterText: {
     color: "#FFFFFF",
-  },
-  sectionTitle: {
-    marginHorizontal: 16,
-    marginBottom: 6,
-    fontSize: 18,
-    fontWeight: "800",
-    color: "#182033",
   },
   reportCardSpacing: {
     marginBottom: 16,
