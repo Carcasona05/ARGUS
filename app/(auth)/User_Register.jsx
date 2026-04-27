@@ -132,12 +132,10 @@ export default function Register() {
               </Text>
 
               <View style={styles.inputWrapper}>
-                <MaterialIcons
-                  name="person"
-                  size={20}
-                  color="#2F4F8F"
-                  style={styles.inputIcon}
-                />
+                <View style={styles.iconBox}>
+                  <MaterialIcons name="person" size={20} color="#2F4F8F" />
+                </View>
+
                 <TextInput
                   style={styles.input}
                   placeholder="Name"
@@ -148,12 +146,10 @@ export default function Register() {
               </View>
 
               <View style={styles.inputWrapper}>
-                <MaterialIcons
-                  name="email"
-                  size={20}
-                  color="#2F4F8F"
-                  style={styles.inputIcon}
-                />
+                <View style={styles.iconBox}>
+                  <MaterialIcons name="email" size={20} color="#2F4F8F" />
+                </View>
+
                 <TextInput
                   style={styles.input}
                   placeholder="Email Address"
@@ -166,12 +162,10 @@ export default function Register() {
               </View>
 
               <View style={styles.inputWrapper}>
-                <FontAwesome
-                  name="lock"
-                  size={20}
-                  color="#2F4F8F"
-                  style={styles.inputIcon}
-                />
+                <View style={styles.iconBox}>
+                  <FontAwesome name="lock" size={21} color="#2F4F8F" />
+                </View>
+
                 <TextInput
                   style={styles.input}
                   placeholder="Password"
@@ -183,12 +177,10 @@ export default function Register() {
               </View>
 
               <View style={styles.inputWrapper}>
-                <FontAwesome
-                  name="lock"
-                  size={20}
-                  color="#2F4F8F"
-                  style={styles.inputIcon}
-                />
+                <View style={styles.iconBox}>
+                  <FontAwesome name="lock" size={21} color="#2F4F8F" />
+                </View>
+
                 <TextInput
                   style={styles.input}
                   placeholder="Confirm Password"
@@ -290,7 +282,10 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
 
-  inputIcon: {
+  iconBox: {
+    width: 28,
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: 10,
   },
 

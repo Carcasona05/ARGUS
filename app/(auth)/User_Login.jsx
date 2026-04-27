@@ -199,12 +199,10 @@ export default function UserLogin() {
               </Text>
 
               <View style={styles.inputWrapper}>
-                <MaterialIcons
-                  name="email"
-                  size={20}
-                  color="#2F4F8F"
-                  style={styles.inputIcon}
-                />
+                <View style={styles.iconBox}>
+                  <MaterialIcons name="email" size={20} color="#2F4F8F" />
+                </View>
+
                 <TextInput
                   style={styles.input}
                   placeholder="Email Address"
@@ -217,12 +215,10 @@ export default function UserLogin() {
               </View>
 
               <View style={styles.inputWrapper}>
-                <FontAwesome
-                  name="lock"
-                  size={20}
-                  color="#2F4F8F"
-                  style={styles.inputIcon}
-                />
+                <View style={styles.iconBox}>
+                  <FontAwesome name="lock" size={22} color="#2F4F8F" />
+                </View>
+
                 <TextInput
                   style={styles.input}
                   placeholder="Password"
@@ -303,12 +299,10 @@ export default function UserLogin() {
                 </Text>
 
                 <View style={styles.modalInputWrapper}>
-                  <MaterialIcons
-                    name="email"
-                    size={20}
-                    color="#2F4F8F"
-                    style={styles.inputIcon}
-                  />
+                  <View style={styles.iconBox}>
+                    <MaterialIcons name="email" size={20} color="#2F4F8F" />
+                  </View>
+
                   <TextInput
                     style={styles.modalInput}
                     placeholder="Enter your email"
@@ -391,7 +385,10 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
 
-  inputIcon: {
+  iconBox: {
+    width: 28,
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: 10,
   },
 
@@ -520,7 +517,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#EEF2F8",
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     marginBottom: 14,
   },
 

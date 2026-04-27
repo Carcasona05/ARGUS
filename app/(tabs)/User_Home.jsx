@@ -151,10 +151,6 @@ const MapPreview = ({ style }) => {
             <View style={styles.mapAlertDot} />
             <ThemedText style={styles.mapInfoTitle}>Area Status</ThemedText>
           </View>
-
-          <View style={styles.liveBadge}>
-            <ThemedText style={styles.liveBadgeText}>LIVE</ThemedText>
-          </View>
         </View>
 
         <ThemedText style={styles.mapInfoSubtitle}>
@@ -243,9 +239,6 @@ const User_Home = () => {
         <View style={styles.sectionBlock}>
           <View style={styles.sectionHeaderRow}>
             <ThemedText style={styles.sectionTitle}>Latest Reports</ThemedText>
-            <TouchableOpacity activeOpacity={0.85}>
-              <ThemedText style={styles.viewAllText}>View All</ThemedText>
-            </TouchableOpacity>
           </View>
 
           <View style={styles.filterRow}>
@@ -339,20 +332,25 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F3F6FB",
   },
+
   scrollContainer: {
     flex: 1,
   },
+
   scrollContent: {
     paddingHorizontal: 14,
     paddingTop: 14,
     paddingBottom: 28,
   },
+
   heroSection: {
     marginBottom: 14,
   },
+
   mapSpacing: {
     marginBottom: 12,
   },
+
   mapCard: {
     height: 250,
     borderRadius: 24,
@@ -362,6 +360,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E2E8F0",
   },
+
   lowZone: {
     position: "absolute",
     width: 110,
@@ -373,6 +372,7 @@ const styles = StyleSheet.create({
     left: 18,
     transform: [{ rotate: "-24deg" }],
   },
+
   moderateZone: {
     position: "absolute",
     width: 110,
@@ -384,6 +384,7 @@ const styles = StyleSheet.create({
     left: 104,
     transform: [{ rotate: "-23deg" }],
   },
+
   highZone: {
     position: "absolute",
     width: 145,
@@ -395,6 +396,7 @@ const styles = StyleSheet.create({
     right: 20,
     transform: [{ rotate: "-24deg" }],
   },
+
   roadLineOne: {
     position: "absolute",
     width: 420,
@@ -404,6 +406,7 @@ const styles = StyleSheet.create({
     left: -20,
     transform: [{ rotate: "-20deg" }],
   },
+
   roadLineTwo: {
     position: "absolute",
     width: 420,
@@ -413,6 +416,7 @@ const styles = StyleSheet.create({
     left: -30,
     transform: [{ rotate: "-18deg" }],
   },
+
   roadLineThree: {
     position: "absolute",
     width: 12,
@@ -422,6 +426,7 @@ const styles = StyleSheet.create({
     left: 92,
     transform: [{ rotate: "22deg" }],
   },
+
   roadLineFour: {
     position: "absolute",
     width: 12,
@@ -431,12 +436,14 @@ const styles = StyleSheet.create({
     right: 72,
     transform: [{ rotate: "18deg" }],
   },
+
   legendWrap: {
     position: "absolute",
     top: 14,
     left: 12,
     flexDirection: "row",
   },
+
   legendChip: {
     flexDirection: "row",
     alignItems: "center",
@@ -446,17 +453,19 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     marginRight: 8,
   },
+
   legendDot: {
     width: 9,
     height: 9,
     borderRadius: 5,
     marginRight: 6,
   },
+
   legendText: {
     fontSize: 11,
-    fontWeight: "700",
     color: "#4A5568",
   },
+
   mapMarker: {
     position: "absolute",
     width: 28,
@@ -467,12 +476,13 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: "#FFFFFF",
   },
+
   markerText: {
     color: "#FFFFFF",
     fontSize: 15,
-    fontWeight: "900",
     marginTop: -1,
   },
+
   userPin: {
     position: "absolute",
     bottom: 70,
@@ -486,12 +496,14 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "#DCE6F8",
   },
+
   userPinDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
     backgroundColor: "#2D8CFF",
   },
+
   userLabel: {
     position: "absolute",
     bottom: 44,
@@ -501,11 +513,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
+
   userLabelText: {
     fontSize: 11,
-    fontWeight: "700",
     color: "#6B7280",
   },
+
   mapInfoCard: {
     position: "absolute",
     left: 12,
@@ -515,15 +528,18 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     padding: 12,
   },
+
   mapInfoTop: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
+
   mapInfoTitleRow: {
     flexDirection: "row",
     alignItems: "center",
   },
+
   mapAlertDot: {
     width: 10,
     height: 10,
@@ -531,32 +547,24 @@ const styles = StyleSheet.create({
     backgroundColor: "#D64545",
     marginRight: 8,
   },
+
   mapInfoTitle: {
     fontSize: 15,
-    fontWeight: "800",
     color: "#1F2937",
   },
+
   mapInfoSubtitle: {
     marginTop: 6,
     fontSize: 12,
     lineHeight: 18,
     color: "#6B7280",
   },
-  liveBadge: {
-    backgroundColor: "#FFE8E8",
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  liveBadgeText: {
-    fontSize: 10,
-    fontWeight: "800",
-    color: "#C53030",
-  },
+
   statsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
   },
+
   statCard: {
     flex: 1,
     backgroundColor: "#FFFFFF",
@@ -568,41 +576,41 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E7ECF3",
   },
+
   statNumber: {
     fontSize: 22,
-    fontWeight: "800",
     color: "#294880",
     marginBottom: 4,
   },
+
   statLabel: {
     fontSize: 11,
     textAlign: "center",
     color: "#6B7280",
     lineHeight: 15,
   },
+
   sectionBlock: {
     marginBottom: 14,
   },
+
   sectionHeaderRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "flex-start",
     alignItems: "center",
     marginBottom: 12,
   },
+
   sectionTitle: {
     fontSize: 18,
-    fontWeight: "800",
     color: "#1F2A37",
   },
-  viewAllText: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#294880",
-  },
+
   filterRow: {
     flexDirection: "row",
     marginBottom: 12,
   },
+
   filterChip: {
     paddingVertical: 8,
     paddingHorizontal: 14,
@@ -610,17 +618,20 @@ const styles = StyleSheet.create({
     backgroundColor: "#E4EBF7",
     marginRight: 8,
   },
+
   activeFilterChip: {
     backgroundColor: "#294880",
   },
+
   filterChipText: {
     fontSize: 12,
-    fontWeight: "700",
     color: "#294880",
   },
+
   activeFilterChipText: {
     color: "#FFFFFF",
   },
+
   reportCardSpacing: {
     marginBottom: 12,
   },
