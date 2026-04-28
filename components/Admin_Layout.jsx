@@ -194,7 +194,7 @@ export default function Admin_Layout({ children }) {
   const handleProfileSettings = () => {
     setShowProfileDropdown(false);
     setShowNotifications(false);
-    router.push("/(admin)/Admin_Settings");
+    router.push("/(admin)/Admin_SuperSettings");
   };
 
   const handleLogout = () => {
