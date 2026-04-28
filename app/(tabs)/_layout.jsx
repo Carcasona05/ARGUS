@@ -26,7 +26,7 @@ export default function TabLayout() {
       case "User_Notification":
         return "Notifications";
       case "User_Profile":
-        return "Profile";
+        return "My Reports";
       case "User_ProfileSettings":
         return "Personal Information";
       case "User_Settings":

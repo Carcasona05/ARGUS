@@ -189,7 +189,11 @@ const LoginCard = ({ item }) => {
         <View style={styles.iconTitleWrap}>
           <View style={[styles.iconBadge, { backgroundColor: "#EEF4FF" }]}>
             <Ionicons
-              name={item.device.toLowerCase().includes("windows") ? "desktop" : "phone-portrait"}
+              name={
+                item.device.toLowerCase().includes("windows")
+                  ? "desktop"
+                  : "phone-portrait"
+              }
               size={18}
               color="#1E5EFF"
             />
@@ -234,7 +238,12 @@ const SectionHeader = ({ title, action }) => {
   return (
     <View style={styles.sectionHeader}>
       <ThemedText style={styles.sectionTitle}>{title}</ThemedText>
-      {action ? <ThemedText style={styles.sectionAction}>{action}</ThemedText> : null}
+
+      {action ? (
+        <TouchableOpacity activeOpacity={0.8}>
+          <ThemedText style={styles.sectionAction}>{action}</ThemedText>
+        </TouchableOpacity>
+      ) : null}
     </View>
   );
 };
@@ -247,22 +256,20 @@ const User_Notification = () => {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.pageHeader}>
-          <ThemedText style={styles.pageTitle}>Notifications</ThemedText>
-          <ThemedText style={styles.pageSubtitle}>
-            Stay updated with your reports, nearby incidents, and account access.
-          </ThemedText>
-        </View>
-
         <View style={styles.sectionBlock}>
           <SectionHeader title="Your Reports" action="See All" />
+
           {userReports.map((item) => (
             <ReportStatusCard key={item.id} item={item} />
           ))}
         </View>
 
         <View style={styles.sectionBlock}>
-          <SectionHeader title="Incident Reports Near Your Location" action="Open Map" />
+          <SectionHeader
+            title="Incident Reports Near Your Location"
+            action="Open Map"
+          />
+
           {nearbyIncidents.map((item) => (
             <NearbyIncidentCard key={item.id} item={item} />
           ))}
@@ -270,6 +277,7 @@ const User_Notification = () => {
 
         <View style={styles.sectionBlock}>
           <SectionHeader title="Recent Account Login" action="Manage" />
+
           {loginActivity.map((item) => (
             <LoginCard key={item.id} item={item} />
           ))}
@@ -284,47 +292,40 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F3F6FB",
   },
+
   scrollContainer: {
     flex: 1,
   },
+
   scrollContent: {
     paddingHorizontal: 14,
     paddingTop: 14,
     paddingBottom: 28,
   },
-  pageHeader: {
-    marginBottom: 14,
-  },
-  pageTitle: {
-    fontSize: 28,
-    fontWeight: "800",
-    color: "#294880",
-    marginBottom: 6,
-  },
-  pageSubtitle: {
-    fontSize: 13,
-    lineHeight: 20,
-    color: "#68758A",
-  },
+
   sectionBlock: {
     marginBottom: 16,
   },
+
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 12,
   },
+
   sectionTitle: {
     fontSize: 18,
-    fontWeight: "800",
+    fontWeight: "700",
     color: "#1F2A37",
   },
+
   sectionAction: {
     fontSize: 13,
-    fontWeight: "700",
+    fontWeight: "600",
     color: "#294880",
   },
+
   card: {
     backgroundColor: "#FFFFFF",
     borderRadius: 22,
@@ -333,17 +334,20 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E7ECF3",
   },
+
   cardTopRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
   },
+
   iconTitleWrap: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     paddingRight: 10,
   },
+
   iconBadge: {
     width: 42,
     height: 42,
@@ -352,29 +356,34 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginRight: 12,
   },
+
   cardTitleWrap: {
     flex: 1,
   },
+
   cardTitle: {
     fontSize: 15,
-    fontWeight: "800",
+    fontWeight: "700",
     color: "#1F2937",
     marginBottom: 4,
   },
+
   cardTime: {
     fontSize: 11,
-    fontWeight: "700",
     color: "#6B7280",
   },
+
   statusPill: {
     borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 5,
   },
+
   statusPillText: {
     fontSize: 11,
-    fontWeight: "800",
+    fontWeight: "700",
   },
+
   cardMessage: {
     fontSize: 13,
     lineHeight: 20,
@@ -382,24 +391,27 @@ const styles = StyleSheet.create({
     marginTop: 12,
     marginBottom: 12,
   },
+
   metaRow: {
     flexDirection: "row",
     alignItems: "center",
   },
+
   metaRowBetween: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
+
   metaText: {
     marginLeft: 6,
     fontSize: 12,
-    fontWeight: "700",
     color: "#667085",
   },
+
   linkText: {
     fontSize: 12,
-    fontWeight: "800",
+    fontWeight: "600",
     color: "#1E5EFF",
   },
 });

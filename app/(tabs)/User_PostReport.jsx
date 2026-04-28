@@ -165,13 +165,6 @@ export default function User_PostReport() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.heroCard}>
-          <ThemedText style={styles.pageTitle}>Create Report</ThemedText>
-          <ThemedText style={styles.pageSubtitle}>
-            Submit the incident details below. Photo evidence is optional.
-          </ThemedText>
-        </View>
-
         <View style={styles.formCard}>
           <View style={styles.fieldContainer}>
             <ThemedText style={styles.label}>Username</ThemedText>
@@ -190,7 +183,9 @@ export default function User_PostReport() {
               value={location}
               onChangeText={setLocation}
               placeholder={
-                loadingLocation ? "Fetching current location..." : "Enter location"
+                loadingLocation
+                  ? "Fetching current location..."
+                  : "Enter location"
               }
               placeholderTextColor="#8A94A6"
             />
@@ -206,7 +201,11 @@ export default function User_PostReport() {
               >
                 <Picker.Item label="Select Incident Category" value="" />
                 {Object.keys(incidentOptions).map((category) => (
-                  <Picker.Item key={category} label={category} value={category} />
+                  <Picker.Item
+                    key={category}
+                    label={category}
+                    value={category}
+                  />
                 ))}
               </Picker>
             </View>
