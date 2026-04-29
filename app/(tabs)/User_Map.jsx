@@ -16,7 +16,11 @@ const INCIDENT_CATEGORY_MAP = {
   Crime: ["Robbery", "Mugging", "Burglary", "Assault", "Car Theft"],
   Traffic: ["Vehicular Accident", "Road Obstruction", "Drunk Driving"],
   Hazard: ["Fire", "Flood", "Fallen Tree"],
-  "Public Safety": ["Suspicious Activity", "Medical Emergency", "Missing Person"],
+  "Public Safety": [
+    "Suspicious Activity",
+    "Medical Emergency",
+    "Missing Person",
+  ],
 };
 
 const TIME_RANGE_OPTIONS = [
@@ -183,7 +187,9 @@ const UserMap = () => {
   const [showFilters, setShowFilters] = useState(false);
 
   const [selectedCategory, setSelectedCategory] = useState("Crime");
-  const [selectedTypes, setSelectedTypes] = useState(INCIDENT_CATEGORY_MAP["Crime"]);
+  const [selectedTypes, setSelectedTypes] = useState(
+    INCIDENT_CATEGORY_MAP["Crime"]
+  );
   const [timeRange, setTimeRange] = useState("Past 24 hours");
 
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
@@ -226,8 +232,12 @@ const UserMap = () => {
 
     setSelectedIncident((prev) => {
       if (prev && filteredIncidents.some((item) => item.id === prev.id)) {
-        return filteredIncidents.find((item) => item.id === prev.id) ?? filteredIncidents[0];
+        return (
+          filteredIncidents.find((item) => item.id === prev.id) ??
+          filteredIncidents[0]
+        );
       }
+
       return filteredIncidents[0];
     });
   }, [filteredIncidents]);
@@ -247,6 +257,7 @@ const UserMap = () => {
         if (prev.length === 1) return prev;
         return prev.filter((item) => item !== type);
       }
+
       return [...prev, type];
     });
   };
@@ -332,7 +343,10 @@ const UserMap = () => {
             style={[
               styles.marker,
               getRiskStyle(incident.risk, styles),
-              { top: incident.top, left: incident.left },
+              {
+                top: incident.top,
+                left: incident.left,
+              },
             ]}
             onPress={() => setSelectedIncident(incident)}
           >
@@ -388,6 +402,8 @@ const UserMap = () => {
           </View>
         )}
 
+        <View style={styles.bottomSafeSpace} />
+
         <View style={styles.bottomPanel}>
           <View style={styles.filtersTag}>
             <ThemedText style={styles.filtersTagText}>
@@ -422,10 +438,10 @@ const UserMap = () => {
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.actionButton}>
-              <ThemedText style={styles.actionButtonText}>Directions</ThemedText>
+              <ThemedText style={styles.actionButtonText}>
+                Directions
+              </ThemedText>
             </TouchableOpacity>
-
-            
           </View>
         </View>
       </View>
@@ -448,7 +464,9 @@ const UserMap = () => {
               </TouchableOpacity>
             </View>
 
-            <ThemedText style={styles.sectionTitle}>Incident Category</ThemedText>
+            <ThemedText style={styles.sectionTitle}>
+              Incident Category
+            </ThemedText>
             <TouchableOpacity
               style={styles.dropdown}
               onPress={() => {
@@ -471,7 +489,8 @@ const UserMap = () => {
                     key={category}
                     style={[
                       styles.dropdownItem,
-                      selectedCategory === category && styles.dropdownItemActive,
+                      selectedCategory === category &&
+                        styles.dropdownItemActive,
                     ]}
                     onPress={() => handleSelectCategory(category)}
                   >
@@ -584,10 +603,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F4F6FA",
   },
+
   mapWrapper: {
     flex: 1,
     position: "relative",
   },
+
   map: {
     width: "100%",
     height: "100%",
@@ -601,6 +622,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
+
   searchBar: {
     flex: 1,
     height: 46,
@@ -613,8 +635,12 @@ const styles = StyleSheet.create({
     shadowColor: "#000",
     shadowOpacity: 0.08,
     shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 },
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
   },
+
   filterIconButton: {
     width: 46,
     height: 46,
@@ -627,8 +653,12 @@ const styles = StyleSheet.create({
     shadowColor: "#000",
     shadowOpacity: 0.08,
     shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 },
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
   },
+
   filterIconText: {
     fontSize: 18,
     color: "#294880",
@@ -642,9 +672,11 @@ const styles = StyleSheet.create({
     right: 12,
     maxHeight: 40,
   },
+
   legendContent: {
     paddingRight: 20,
   },
+
   legendChip: {
     flexDirection: "row",
     alignItems: "center",
@@ -655,12 +687,14 @@ const styles = StyleSheet.create({
     marginRight: 8,
     elevation: 2,
   },
+
   legendDot: {
     width: 10,
     height: 10,
     borderRadius: 10,
     marginRight: 6,
   },
+
   legendText: {
     fontSize: 11,
     fontWeight: "600",
@@ -672,6 +706,7 @@ const styles = StyleSheet.create({
     opacity: 0.22,
     borderRadius: 24,
   },
+
   lowZone: {
     width: 110,
     height: 210,
@@ -680,6 +715,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#84C865",
     transform: [{ rotate: "-20deg" }],
   },
+
   moderateZone: {
     width: 130,
     height: 240,
@@ -688,6 +724,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F5B041",
     transform: [{ rotate: "-18deg" }],
   },
+
   highZone: {
     width: 150,
     height: 350,
@@ -707,15 +744,19 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: "#FFFFFF",
   },
+
   lowMarker: {
     backgroundColor: "#84C865",
   },
+
   moderateMarker: {
     backgroundColor: "#F5B041",
   },
+
   highMarker: {
     backgroundColor: "#D9534F",
   },
+
   markerText: {
     color: "#FFFFFF",
     fontWeight: "800",
@@ -734,12 +775,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+
   userLocationDot: {
     width: 10,
     height: 10,
     borderRadius: 5,
     backgroundColor: "#2F80ED",
   },
+
   userBadge: {
     position: "absolute",
     top: 328,
@@ -750,6 +793,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     elevation: 2,
   },
+
   userBadgeText: {
     fontSize: 11,
     fontWeight: "700",
@@ -760,60 +804,72 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 18,
     right: 18,
-    bottom: 155,
+    bottom: 250,
     backgroundColor: "#FFFFFF",
     borderRadius: 18,
     padding: 14,
-    elevation: 6,
+    elevation: 4,
     shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
   },
+
   incidentCardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
+
   incidentTypeRow: {
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
     marginRight: 8,
   },
+
   smallDangerDot: {
     width: 10,
     height: 10,
     borderRadius: 10,
     marginRight: 6,
   },
+
   incidentTypeText: {
     fontSize: 16,
     fontWeight: "700",
     color: "#1E1E1E",
     flexShrink: 1,
   },
+
   timeText: {
     fontSize: 12,
     color: "#8E8E93",
   },
+
   streetText: {
     marginTop: 6,
     fontSize: 14,
     fontWeight: "700",
     color: "#5E5E5E",
   },
+
   descriptionText: {
     marginTop: 6,
     fontSize: 13,
     color: "#6C6C6C",
     lineHeight: 18,
   },
+
   metaRow: {
     flexDirection: "row",
     flexWrap: "wrap",
     marginTop: 10,
   },
+
   metaChip: {
     backgroundColor: "#EEF2FF",
     borderRadius: 999,
@@ -822,22 +878,41 @@ const styles = StyleSheet.create({
     marginRight: 8,
     marginBottom: 6,
   },
+
   metaChipText: {
     fontSize: 12,
     fontWeight: "700",
     color: "#294880",
   },
 
+  bottomSafeSpace: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 110,
+    backgroundColor: "#000000",
+    opacity: 0.05,
+  },
+
   bottomPanel: {
     position: "absolute",
     left: 10,
     right: 10,
-    bottom: 12,
+    bottom: 110,
     backgroundColor: "rgba(255,255,255,0.96)",
     borderRadius: 20,
     padding: 12,
-    elevation: 8,
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
   },
+
   filtersTag: {
     alignSelf: "flex-start",
     backgroundColor: "#EEF2FF",
@@ -846,16 +921,19 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     marginBottom: 10,
   },
+
   filtersTagText: {
     fontSize: 12,
     fontWeight: "700",
     color: "#294880",
   },
+
   statsRow: {
     flexDirection: "row",
     flexWrap: "wrap",
     marginBottom: 6,
   },
+
   totalLabel: {
     width: "100%",
     fontSize: 13,
@@ -863,32 +941,37 @@ const styles = StyleSheet.create({
     color: "#3A3A3A",
     marginBottom: 4,
   },
+
   breakdownText: {
     fontSize: 12,
     color: "#5E5E5E",
     marginRight: 12,
     marginBottom: 4,
   },
+
   rangeText: {
     fontSize: 12,
     color: "#8E8E93",
     marginBottom: 10,
   },
+
   actionButtons: {
     flexDirection: "row",
     justifyContent: "space-between",
   },
+
   actionButton: {
     flex: 1,
     backgroundColor: "#294880",
-    paddingVertical: 10,
+    paddingVertical: 9,
     borderRadius: 999,
     alignItems: "center",
     marginHorizontal: 4,
   },
+
   actionButtonText: {
     color: "#FFFFFF",
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "700",
   },
 
@@ -900,6 +983,7 @@ const styles = StyleSheet.create({
     paddingTop: 92,
     paddingRight: 14,
   },
+
   filterModal: {
     width: 290,
     maxHeight: "78%",
@@ -908,21 +992,25 @@ const styles = StyleSheet.create({
     padding: 16,
     elevation: 10,
   },
+
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
+
   modalTitle: {
     fontSize: 20,
     fontWeight: "700",
     color: "#222222",
   },
+
   closeText: {
     fontSize: 18,
     color: "#6C6C6C",
     fontWeight: "700",
   },
+
   sectionTitle: {
     marginTop: 16,
     marginBottom: 10,
@@ -942,15 +1030,18 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     backgroundColor: "#FAFBFF",
   },
+
   dropdownText: {
     fontSize: 13,
     color: "#444444",
     fontWeight: "600",
   },
+
   dropdownArrow: {
     fontSize: 16,
     color: "#666666",
   },
+
   dropdownList: {
     marginTop: 8,
     borderWidth: 1,
@@ -959,19 +1050,23 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     backgroundColor: "#FFFFFF",
   },
+
   dropdownItem: {
     paddingHorizontal: 12,
     paddingVertical: 11,
     borderBottomWidth: 1,
     borderBottomColor: "#F1F3F5",
   },
+
   dropdownItemActive: {
     backgroundColor: "#EEF2FF",
   },
+
   dropdownItemText: {
     fontSize: 13,
     color: "#444444",
   },
+
   dropdownItemTextActive: {
     color: "#294880",
     fontWeight: "700",
@@ -981,6 +1076,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
   },
+
   checkboxItem: {
     width: "50%",
     flexDirection: "row",
@@ -988,6 +1084,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     paddingRight: 8,
   },
+
   checkbox: {
     width: 18,
     height: 18,
@@ -999,15 +1096,18 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "#FFFFFF",
   },
+
   checkboxChecked: {
     backgroundColor: "#294880",
     borderColor: "#294880",
   },
+
   checkboxTick: {
     color: "#FFFFFF",
     fontSize: 12,
     fontWeight: "800",
   },
+
   checkboxLabel: {
     flex: 1,
     fontSize: 13,
@@ -1018,6 +1118,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     marginTop: 20,
   },
+
   resetButton: {
     flex: 1,
     marginRight: 8,
@@ -1026,11 +1127,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#EEF2FF",
   },
+
   resetButtonText: {
     color: "#294880",
     fontWeight: "700",
     fontSize: 14,
   },
+
   applyButton: {
     flex: 1.3,
     backgroundColor: "#294880",
@@ -1038,6 +1141,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     alignItems: "center",
   },
+
   applyButtonText: {
     color: "#FFFFFF",
     fontWeight: "700",

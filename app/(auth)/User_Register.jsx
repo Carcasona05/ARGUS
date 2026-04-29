@@ -114,7 +114,7 @@ export default function Register() {
                   {
                     width: isSmallPhone ? 290 : Math.min(width * 0.9, 410),
                     height: isShortScreen ? 135 : isSmallPhone ? 150 : 170,
-                    marginBottom: isShortScreen ? -8 : -4,
+                    marginBottom: isShortScreen ? -5 : 5,
                   },
                 ]}
               />

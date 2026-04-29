@@ -232,11 +232,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderColor: "#FFFFFF",
-    shadowColor: ARGUS_BLUE,
-    shadowOffset: { width: 0, height: 7 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 10,
+    borderWidth: 2,
   },
 });
 

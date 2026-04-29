@@ -182,7 +182,7 @@ export default function UserLogin() {
                     {
                       width: isSmallPhone ? 300 : Math.min(width * 0.95, 430),
                       height: isShortScreen ? 150 : isSmallPhone ? 165 : 190,
-                      marginBottom: isShortScreen ? -12 : -8,
+                      marginBottom: isShortScreen ? -5 : 3,
                     },
                   ]}
                 />
@@ -193,7 +193,7 @@ export default function UserLogin() {
                   styles.title,
                   {
                     fontSize: isSmallPhone ? 22 : 24,
-                    marginBottom: isShortScreen ? 18 : 24,
+                    marginBottom: isShortScreen ? 20 : 24,
                   },
                 ]}
               >
