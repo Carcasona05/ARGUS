@@ -18,36 +18,46 @@ export default function TabLayout() {
   const getScreenTitle = (routeName) => {
     switch (routeName) {
       case "User_Home":
-        return "ARGUS";
+        return "Home";
+
       case "User_Map":
         return "Map";
-      case "User_PostReport":
-        return "Post Report";
-      case "User_Notification":
-        return "Notifications";
+
       case "User_Profile":
         return "My Reports";
-      case "User_ProfileSettings":
-        return "Personal Information";
+
       case "User_Settings":
         return "Settings";
+
+      case "User_PostReport":
+        return "Post Report";
+
+      case "User_Notification":
+        return "Notifications";
+
+      case "User_ProfileSettings":
+        return "Personal Information";
+
       default:
         return "ARGUS";
     }
   };
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={styles.root}>
       <Tabs
         screenOptions={({ route }) => ({
           tabBarStyle: {
             display: "none",
           },
+
           headerStyle: {
-            backgroundColor: theme.navBackground,
+            backgroundColor: theme.navBackground || "#F3F6FB",
           },
+
           headerShadowVisible: false,
           headerTitle: "",
+
           headerLeft: () => (
             <View style={styles.headerLeftContainer}>
               <Text style={styles.headerTitleText}>
@@ -55,13 +65,20 @@ export default function TabLayout() {
               </Text>
             </View>
           ),
+
           headerRight: () => (
             <TouchableOpacity
-              style={styles.profileButton}
-              onPress={() => router.push("/User_Settings")}
+              style={styles.notificationButton}
+              onPress={() => router.push("/User_Notification")}
               activeOpacity={0.8}
             >
-              <Ionicons name="settings-outline" size={28} color="#294880" />
+              <Ionicons
+                name="notifications-outline"
+                size={25}
+                color="#294880"
+              />
+
+              <View style={styles.notificationDot} />
             </TouchableOpacity>
           ),
         })}
@@ -84,6 +101,7 @@ export default function TabLayout() {
           name="User_PostReport"
           options={{
             title: "Post Report",
+            tabBarButton: () => null,
           }}
         />
 
@@ -91,13 +109,14 @@ export default function TabLayout() {
           name="User_Notification"
           options={{
             title: "Notifications",
+            tabBarButton: () => null,
           }}
         />
 
         <Tabs.Screen
           name="User_Profile"
           options={{
-            title: "Profile",
+            title: "My Reports",
           }}
         />
 
@@ -113,7 +132,6 @@ export default function TabLayout() {
           name="User_Settings"
           options={{
             title: "Settings",
-            tabBarButton: () => null,
           }}
         />
       </Tabs>
@@ -124,21 +142,44 @@ export default function TabLayout() {
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: "#F3F6FB",
+  },
+
   headerLeftContainer: {
-    marginLeft: 15,
+    marginLeft: 16,
     justifyContent: "center",
   },
 
   headerTitleText: {
     fontSize: 28,
-    fontWeight: "800",
+    fontWeight: "700",
     color: "#294880",
-    marginBottom: 6,
   },
 
-  profileButton: {
+  notificationButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 15,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#E2E8F2",
     marginRight: 15,
     justifyContent: "center",
     alignItems: "center",
+    position: "relative",
+  },
+
+  notificationDot: {
+    position: "absolute",
+    top: 9,
+    right: 10,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#DC2626",
+    borderWidth: 1.5,
+    borderColor: "#FFFFFF",
   },
 });

@@ -5,10 +5,14 @@ import {
   Text,
   StyleSheet,
   useWindowDimensions,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, usePathname } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+const ARGUS_BLUE = "#294880";
+const INACTIVE = "#6C7A96";
 
 const BottomNavBar = () => {
   const router = useRouter();
@@ -16,34 +20,69 @@ const BottomNavBar = () => {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
 
-  const isSmallScreen = width < 360;
+  const isTinyScreen = width < 340;
+  const isSmallScreen = width >= 340 && width < 390;
+  const isMediumScreen = width >= 390 && width < 430;
 
-  const navWidth = Math.min(width - 24, 420);
-  const navHeight = isSmallScreen ? 68 : 74;
-  const plusSize = isSmallScreen ? 56 : 62;
-  const plusBorder = isSmallScreen ? 5 : 6;
-  const iconSize = isSmallScreen ? 22 : 24;
-  const plusIconSize = isSmallScreen ? 30 : 34;
-  const labelSize = isSmallScreen ? 9 : 10;
+  const sideMargin = isTinyScreen ? 10 : 14;
+  const navWidth = Math.min(width - sideMargin * 2, 430);
 
-  const leftTabs = [
-    { name: "HOME", route: "/User_Home", icon: "home" },
-    { name: "MAPS", route: "/User_Map", icon: "location" },
-  ];
+  const navHeight = isTinyScreen ? 62 : isSmallScreen ? 66 : 70;
+  const iconSize = isTinyScreen ? 19 : isSmallScreen ? 20 : 22;
+  const labelSize = isTinyScreen ? 8 : isSmallScreen ? 9 : 10;
 
-  const rightTabs = [
+  const plusSize = isTinyScreen ? 48 : isSmallScreen ? 52 : 56;
+  const plusIconSize = isTinyScreen ? 27 : isSmallScreen ? 29 : 32;
+
+  const bottomSpace =
+    Platform.OS === "ios"
+      ? Math.max(insets.bottom, 10) + 6
+      : Math.max(insets.bottom, 8) + 8;
+
+  const tabs = [
     {
-      name: "NOTIFICATION",
-      route: "/User_Notification",
-      icon: "notifications",
+      name: "HOME",
+      label: "HOME",
+      route: "/User_Home",
+      icon: "home",
     },
-    { name: "PROFILE", route: "/User_Profile", icon: "person" },
+    {
+      name: "MAP",
+      label: "MAP",
+      route: "/User_Map",
+      icon: "location",
+    },
+    {
+      name: "MY REPORTS",
+      label: isTinyScreen ? "REPORTS" : "MY REPORTS",
+      route: "/User_MyReports",
+      icon: "document-text",
+    },
+    {
+      name: "SETTINGS",
+      label: isTinyScreen ? "SET" : "SETTINGS",
+      route: "/User_Settings",
+      icon: "settings",
+    },
   ];
 
   const isActiveRoute = (route) => {
-    if (route === "/User_Profile") {
+    if (route === "/User_Settings") {
       return (
-        pathname === "/User_Profile" || pathname === "/User_ProfileSettings"
+        pathname === "/User_Settings" ||
+        pathname === "/User_Profile" ||
+        pathname === "/User_ProfileSettings" ||
+        pathname.includes("User_Settings") ||
+        pathname.includes("User_Profile")
+      );
+    }
+
+    if (route === "/User_MyReports") {
+      return (
+        pathname === "/User_MyReports" ||
+        pathname === "/MyUser_RepPostView" ||
+        pathname.includes("User_MyReports") ||
+        pathname.includes("MyUser_RepPostView")
       );
     }
 
@@ -57,36 +96,44 @@ const BottomNavBar = () => {
       <TouchableOpacity
         key={tab.name}
         style={styles.tab}
-        activeOpacity={0.8}
+        activeOpacity={0.75}
         onPress={() => router.push(tab.route)}
       >
         <Ionicons
           name={isActive ? tab.icon : `${tab.icon}-outline`}
           size={iconSize}
-          color={isActive ? "#294880" : "#3F4860"}
+          color={isActive ? ARGUS_BLUE : INACTIVE}
         />
+
         <Text
           numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.75}
           style={[
             styles.label,
             {
               fontSize: labelSize,
-              color: isActive ? "#294880" : "#3F4860",
+              color: isActive ? ARGUS_BLUE : INACTIVE,
+              fontWeight: isActive ? "800" : "700",
+              maxWidth: isTinyScreen ? 58 : isSmallScreen ? 70 : 82,
             },
           ]}
         >
-          {tab.name}
+          {tab.label}
         </Text>
+
+        {isActive && <View style={styles.activeDot} />}
       </TouchableOpacity>
     );
   };
 
   return (
     <View
+      pointerEvents="box-none"
       style={[
         styles.wrapper,
         {
-          bottom: insets.bottom > 0 ? insets.bottom + 6 : 14,
+          bottom: bottomSpace,
         },
       ]}
     >
@@ -97,10 +144,11 @@ const BottomNavBar = () => {
             width: navWidth,
             height: navHeight,
             borderRadius: navHeight / 2,
+            paddingHorizontal: isTinyScreen ? 6 : isSmallScreen ? 8 : 10,
           },
         ]}
       >
-        <View style={styles.sideGroup}>{leftTabs.map(renderTab)}</View>
+        {tabs.map(renderTab)}
 
         <TouchableOpacity
           activeOpacity={0.85}
@@ -111,16 +159,21 @@ const BottomNavBar = () => {
               width: plusSize,
               height: plusSize,
               borderRadius: plusSize / 2,
-              borderWidth: plusBorder,
-              top: -(plusSize * 0.32),
-              marginLeft: -(plusSize / 2),
+              right: isTinyScreen 
+                ? navWidth * 0.075
+                : isSmallScreen
+                ? navWidth * 0.085
+                : isMediumScreen
+                ? navWidth * 0.095
+                : navWidth * 0.105,
+              top: -(plusSize * 1.1),
+              right: isTinyScreen ? 10 : isSmallScreen ? 12 : 14,
+              borderWidth: isTinyScreen ? 4 : 5,
             },
           ]}
         >
           <Ionicons name="add" size={plusIconSize} color="#FFFFFF" />
         </TouchableOpacity>
-
-        <View style={styles.sideGroup}>{rightTabs.map(renderTab)}</View>
       </View>
     </View>
   );
@@ -139,9 +192,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 12,
+    justifyContent: "space-around",
     position: "relative",
+    borderWidth: 1,
+    borderColor: "#E2E8F2",
     shadowColor: "#8AA9E6",
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.18,
@@ -149,38 +203,40 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
 
-  sideGroup: {
-    flex: 1,
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-  },
-
   tab: {
     flex: 1,
+    height: "100%",
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 2,
+    paddingHorizontal: 1,
+    position: "relative",
   },
 
   label: {
-    marginTop: 4,
-    fontWeight: "700",
-    letterSpacing: 0.2,
+    marginTop: 3,
+    letterSpacing: 0.1,
+    textAlign: "center",
+  },
+
+  activeDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 5,
+    backgroundColor: ARGUS_BLUE,
+    marginTop: 3,
   },
 
   plusButton: {
     position: "absolute",
-    left: "53%",
-    backgroundColor: "#294880",
+    backgroundColor: ARGUS_BLUE,
     justifyContent: "center",
     alignItems: "center",
     borderColor: "#FFFFFF",
-    shadowColor: "#8AA9E6",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.2,
+    shadowColor: ARGUS_BLUE,
+    shadowOffset: { width: 0, height: 7 },
+    shadowOpacity: 0.25,
     shadowRadius: 12,
-    elevation: 8,
+    elevation: 10,
   },
 });
 
