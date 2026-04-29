@@ -1,9 +1,9 @@
 import React, { useMemo, useState } from "react";
 import { View, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
+import { useRouter } from "expo-router";
 import ThemedView from "../../components/ThemedView";
 import ThemedText from "../../components/ThemedText";
 import ReportPost_Layout from "../../components/ReportPost_Layout";
-import User_ViewPost from "../../components/User_ViewPost";
 
 const markers = [
   { id: 1, top: 62, left: 62, color: "#F4A62A" },
@@ -162,9 +162,10 @@ const MapPreview = ({ style }) => {
 };
 
 const User_Home = () => {
+  const router = useRouter();
+
   const [selectedFilter, setSelectedFilter] = useState("All");
   const [reports, setReports] = useState(initialReports);
-  const [selectedPost, setSelectedPost] = useState(null);
 
   const filteredReports = useMemo(() => {
     if (selectedFilter === "Verified") {
@@ -187,22 +188,19 @@ const User_Home = () => {
       prevReports.map((report) =>
         report.id === reportId
           ? { ...report, likes: report.likes + 1 }
-          : report,
-      ),
+          : report
+      )
     );
   };
 
   const handleOpenPost = (report) => {
-    setSelectedPost(report);
+    router.push({
+      pathname: "/User_RepPostView",
+      params: {
+        post: JSON.stringify(report),
+      },
+    });
   };
-
-  const handleBackToHome = () => {
-    setSelectedPost(null);
-  };
-
-  if (selectedPost) {
-    return <User_ViewPost post={selectedPost} onBack={handleBackToHome} />;
-  }
 
   return (
     <ThemedView style={styles.container}>
@@ -340,7 +338,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 14,
     paddingTop: 14,
-    paddingBottom: 28,
+    paddingBottom: 110,
   },
 
   heroSection: {

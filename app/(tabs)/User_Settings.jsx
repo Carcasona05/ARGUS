@@ -13,11 +13,14 @@ import ThemedText from "../../components/ThemedText";
 
 const UserSettings = () => {
   const router = useRouter();
+
   const [notifications, setNotifications] = useState(true);
   const [crimeAlerts, setCrimeAlerts] = useState(true);
+
   const handleLogout = () => {
     router.push("../(auth)/User_Login");
   };
+
   const SettingItem = ({
     icon,
     iconBg,
@@ -34,21 +37,22 @@ const UserSettings = () => {
       onPress={onPress}
       disabled={!onPress}
     >
-      {" "}
       <View style={[styles.iconWrap, { backgroundColor: iconBg }]}>
-        {" "}
-        <Ionicons name={icon} size={18} color={iconColor} />{" "}
-      </View>{" "}
+        <Ionicons name={icon} size={18} color={iconColor} />
+      </View>
+
       <View style={styles.settingTextWrap}>
-        {" "}
-        <ThemedText style={styles.settingTitle}>{title}</ThemedText>{" "}
+        <ThemedText style={styles.settingTitle}>{title}</ThemedText>
+
         {subtitle ? (
           <ThemedText style={styles.settingSubtitle}>{subtitle}</ThemedText>
-        ) : null}{" "}
-      </View>{" "}
-      {rightComponent}{" "}
+        ) : null}
+      </View>
+
+      {rightComponent}
     </TouchableOpacity>
   );
+
   return (
     <ThemedView style={styles.container}>
       <ScrollView
@@ -57,51 +61,38 @@ const UserSettings = () => {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.profileCard}>
-          {" "}
           <View style={styles.avatarCircle}>
-            {" "}
             <Ionicons name="person" size={24} color="#294880" />
           </View>
+
           <View style={styles.profileInfo}>
-            {" "}
-            <ThemedText style={styles.profileName}>
-              SafeZone User
-            </ThemedText>{" "}
+            <ThemedText style={styles.profileName}>SafeZone User</ThemedText>
             <ThemedText style={styles.profileEmail}>
-              {" "}
               youraccount@email.com
-            </ThemedText>{" "}
+            </ThemedText>
           </View>
-        </View>{" "}
+        </View>
+
         <View style={styles.sectionCard}>
           <ThemedText style={styles.sectionTitle}>Account</ThemedText>
+
           <SettingItem
-            icon="person-outline"
+            icon="shield-checkmark-outline"
             iconBg="#EEF3FF"
             iconColor="#294880"
-            title="Personal Information"
-            subtitle="Update your basic profile details"
+            title="Account Settings"
+            subtitle="Manage personal information, password, and security"
             onPress={() => router.push("/User_ProfileSettings")}
             rightComponent={
               <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
             }
-          />
-          <SettingItem
-            icon="lock-closed-outline"
-            iconBg="#F2EEFF"
-            iconColor="#6C4CE3"
-            title="Password & Security"
-            subtitle="Change password and secure your account"
-            onPress={() => router.push("/User_Password&Security")}
-            rightComponent={
-              <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
-            }
             showBorder={false}
-          />{" "}
-        </View>{" "}
+          />
+        </View>
+
         <View style={styles.sectionCard}>
-          {" "}
-          <ThemedText style={styles.sectionTitle}>Preferences</ThemedText>{" "}
+          <ThemedText style={styles.sectionTitle}>Preferences</ThemedText>
+
           <SettingItem
             icon="notifications-outline"
             iconBg="#FFF4DD"
@@ -117,6 +108,7 @@ const UserSettings = () => {
               />
             }
           />
+
           <SettingItem
             icon="warning-outline"
             iconBg="#FFEAEA"
@@ -131,7 +123,8 @@ const UserSettings = () => {
                 value={crimeAlerts}
               />
             }
-          />{" "}
+          />
+
           <SettingItem
             icon="help-circle-outline"
             iconBg="#EAF8F0"
@@ -143,54 +136,51 @@ const UserSettings = () => {
               <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
             }
             showBorder={false}
-          />{" "}
-        </View>{" "}
+          />
+        </View>
+
         <View style={styles.dangerCard}>
-          {" "}
           <View style={styles.dangerTop}>
-            {" "}
             <View style={styles.dangerIconWrap}>
-              {" "}
-              <Ionicons name="log-out-outline" size={20} color="#D64545" />{" "}
-            </View>{" "}
+              <Ionicons name="log-out-outline" size={20} color="#D64545" />
+            </View>
+
             <View style={styles.dangerTextWrap}>
               <ThemedText style={styles.dangerTitle}>Logout</ThemedText>
               <ThemedText style={styles.dangerSubtitle}>
-                {" "}
-                Sign out of your account on this device.{" "}
-              </ThemedText>{" "}
+                Sign out of your account on this device.
+              </ThemedText>
             </View>
-          </View>{" "}
+          </View>
+
           <TouchableOpacity
             style={styles.logoutButton}
             onPress={handleLogout}
             activeOpacity={0.88}
           >
-            <ThemedText style={styles.logoutText}>Logout</ThemedText>{" "}
-          </TouchableOpacity>{" "}
-        </View>{" "}
-      </ScrollView>{" "}
+            <ThemedText style={styles.logoutText}>Logout</ThemedText>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
     </ThemedView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F3F6FB" },
-
-  scrollContainer: { flex: 1 },
-
-  scrollContent: { paddingHorizontal: 14, paddingTop: 14, paddingBottom: 28 },
-
-  headerSection: { marginBottom: 16 },
-
-  pageTitle: {
-    fontSize: 28,
-    fontWeight: "800",
-    color: "#294880",
-    marginBottom: 6,
+  container: {
+    flex: 1,
+    backgroundColor: "#F3F6FB",
   },
 
-  pageSubtitle: { fontSize: 13, lineHeight: 20, color: "#68758A" },
+  scrollContainer: {
+    flex: 1,
+  },
+
+  scrollContent: {
+    paddingHorizontal: 14,
+    paddingTop: 14,
+    paddingBottom: 28,
+  },
 
   profileCard: {
     backgroundColor: "#FFFFFF",
@@ -212,21 +202,23 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginRight: 12,
   },
-  profileInfo: { flex: 1 },
+
+  profileInfo: {
+    flex: 1,
+  },
+
   profileName: {
     fontSize: 16,
     fontWeight: "800",
     color: "#1F2A37",
     marginBottom: 4,
   },
-  profileEmail: { fontSize: 12, color: "#6B7280" },
-  editButton: {
-    backgroundColor: "#294880",
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 999,
+
+  profileEmail: {
+    fontSize: 12,
+    color: "#6B7280",
   },
-  editButtonText: { color: "#FFFFFF", fontSize: 12, fontWeight: "800" },
+
   sectionCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 22,
@@ -237,12 +229,14 @@ const styles = StyleSheet.create({
     borderColor: "#E7ECF3",
     marginBottom: 14,
   },
+
   sectionTitle: {
     fontSize: 18,
     fontWeight: "800",
     color: "#1F2A37",
     marginBottom: 8,
   },
+
   settingItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -250,7 +244,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#EEF2F7",
   },
-  noBorder: { borderBottomWidth: 0 },
+
+  noBorder: {
+    borderBottomWidth: 0,
+  },
+
   iconWrap: {
     width: 38,
     height: 38,
@@ -259,14 +257,25 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginRight: 12,
   },
-  settingTextWrap: { flex: 1, marginRight: 10 },
+
+  settingTextWrap: {
+    flex: 1,
+    marginRight: 10,
+  },
+
   settingTitle: {
     fontSize: 14,
     fontWeight: "700",
     color: "#1F2A37",
     marginBottom: 3,
   },
-  settingSubtitle: { fontSize: 12, lineHeight: 18, color: "#6B7280" },
+
+  settingSubtitle: {
+    fontSize: 12,
+    lineHeight: 18,
+    color: "#6B7280",
+  },
+
   dangerCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 22,
@@ -274,7 +283,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#F6D8D8",
   },
-  dangerTop: { flexDirection: "row", marginBottom: 14 },
+
+  dangerTop: {
+    flexDirection: "row",
+    marginBottom: 14,
+  },
+
   dangerIconWrap: {
     width: 42,
     height: 42,
@@ -284,14 +298,24 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginRight: 12,
   },
-  dangerTextWrap: { flex: 1 },
+
+  dangerTextWrap: {
+    flex: 1,
+  },
+
   dangerTitle: {
     fontSize: 17,
     fontWeight: "800",
     color: "#C0392B",
     marginBottom: 4,
   },
-  dangerSubtitle: { fontSize: 13, lineHeight: 19, color: "#5F6B7A" },
+
+  dangerSubtitle: {
+    fontSize: 13,
+    lineHeight: 19,
+    color: "#5F6B7A",
+  },
+
   logoutButton: {
     backgroundColor: "#D64545",
     borderRadius: 999,
@@ -299,6 +323,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  logoutText: { fontSize: 13, color: "#FFFFFF", fontWeight: "800" },
+
+  logoutText: {
+    fontSize: 13,
+    color: "#FFFFFF",
+    fontWeight: "800",
+  },
 });
+
 export default UserSettings;

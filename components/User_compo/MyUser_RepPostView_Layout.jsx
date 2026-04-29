@@ -1,789 +1,582 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  TextInput,
   Image,
-  SafeAreaView,
-  useWindowDimensions,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
-const MyUser_RepPostView_Layout = ({
-  post,
-  onBack = () => {},
-  onEdit = () => {},
-  onDelete = () => {},
-}) => {
-  const { width } = useWindowDimensions();
-  const isSmallScreen = width < 360;
+const ARGUS_BLUE = "#294880";
 
-  const safePost = post || {
-    id: "report_001",
-    userName: "Current User",
-    userAvatar: null,
-    location: "Mabini Street, Argao",
-    incidentCategory: "Community and Environmental Concerns",
-    incidentType: "Flood",
-    details:
-      "Heavy flooding was reported near the road. The area may be unsafe for vehicles and pedestrians.",
-    verified: false,
-    likes: 12,
-    comments: 2,
-    images: [],
-    commentList: [
-      {
-        id: "comment_001",
-        user: "Maria Lopez",
-        text: "Thank you for reporting this. The area looks dangerous.",
-      },
-      {
-        id: "comment_002",
-        user: "Juan Reyes",
-        text: "This happened near our street too.",
-      },
-    ],
-  };
+const MyUser_RepPostView_Layout = ({ report, onEdit, onDelete }) => {
+  const [commentText, setCommentText] = useState("");
+  const [comments, setComments] = useState([]);
 
-  const [comments, setComments] = useState(safePost.commentList || []);
-  const [newComment, setNewComment] = useState("");
-  const [showMenu, setShowMenu] = useState(false);
+  useEffect(() => {
+    setComments(report?.commentList || []);
+  }, [report]);
 
-  const avatarSize = isSmallScreen ? 46 : 54;
-  const iconSize = isSmallScreen ? 18 : 20;
-  const mediaHeight = isSmallScreen ? 120 : 145;
+  const getStatusStyle = () => {
+    if (report?.status === "Verified" || report?.verified === true) {
+      return {
+        bg: "#DCFCE7",
+        color: "#16A34A",
+        label: "Verified",
+      };
+    }
 
-  const firstImage = safePost.images?.[0] || null;
-  const secondImage = safePost.images?.[1] || null;
+    if (report?.status === "Rejected") {
+      return {
+        bg: "#FEE2E2",
+        color: "#DC2626",
+        label: "Rejected",
+      };
+    }
 
-  const getImageSource = (img) => {
-    if (!img) return null;
-    return typeof img === "string" ? { uri: img } : img;
+    return {
+      bg: "#FEF3C7",
+      color: "#D97706",
+      label: report?.status || "Pending",
+    };
   };
 
   const handleAddComment = () => {
-    if (!newComment.trim()) return;
+    if (!commentText.trim()) return;
 
-    const commentToAdd = {
+    const newComment = {
       id: Date.now().toString(),
-      user: "Current User",
-      text: newComment.trim(),
+      user: "You",
+      text: commentText.trim(),
     };
 
-    setComments((prev) => [...prev, commentToAdd]);
-    setNewComment("");
-  };
-
-  const handleEdit = () => {
-    setShowMenu(false);
-    onEdit(safePost);
+    setComments((prev) => [...prev, newComment]);
+    setCommentText("");
   };
 
   const handleDelete = () => {
-    setShowMenu(false);
-    onDelete(safePost);
-  };
-
-  const renderMediaBox = (img) => {
-    const source = getImageSource(img);
-
-    if (!source) {
-      return (
-        <View
-          style={[styles.mediaBox, styles.emptyMediaBox, { height: mediaHeight }]}
-        >
-          <Ionicons name="image-outline" size={28} color="#8AA0C8" />
-          <Text style={styles.emptyMediaText}>No media</Text>
-        </View>
-      );
+    if (onDelete) {
+      onDelete();
+      return;
     }
 
-    return (
-      <View style={[styles.mediaBox, { height: mediaHeight }]}>
-        <Image source={source} style={styles.mediaImage} />
-      </View>
-    );
+    Alert.alert("Delete Report", "Delete function will be connected later.");
   };
 
-  return (
-    <SafeAreaView style={styles.safeArea}>
-      <TouchableOpacity
-        activeOpacity={1}
-        onPress={() => setShowMenu(false)}
-        style={styles.container}
-      >
-        <View style={styles.topBar}>
-          <TouchableOpacity
-            style={styles.backButton}
-            activeOpacity={0.85}
-            onPress={onBack}
-          >
-            <Ionicons name="arrow-back" size={20} color="#294880" />
-          </TouchableOpacity>
+  const renderImageSource = (image) => {
+    if (typeof image === "string") {
+      return { uri: image };
+    }
 
-          <View style={styles.topBarTitleWrap}>
-            <Text style={styles.topBarTitle}>My Post Details</Text>
-            <Text style={styles.topBarSubtitle}>View comments and manage post</Text>
+    return image;
+  };
+
+  if (!report) {
+    return (
+      <View style={styles.emptyContainer}>
+        <Ionicons name="alert-circle-outline" size={38} color={ARGUS_BLUE} />
+        <Text style={styles.emptyText}>No report data found.</Text>
+      </View>
+    );
+  }
+
+  const statusStyle = getStatusStyle();
+
+  return (
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+    >
+      <View style={styles.card}>
+        <View style={styles.headerRow}>
+          <View style={styles.avatarWrap}>
+            {report.userAvatar ? (
+              <Image
+                source={renderImageSource(report.userAvatar)}
+                style={styles.avatarImage}
+              />
+            ) : (
+              <Ionicons name="person" size={22} color={ARGUS_BLUE} />
+            )}
           </View>
 
-          <View style={styles.topMenuWrapper}>
-            <TouchableOpacity
-              style={styles.topMenuButton}
-              activeOpacity={0.85}
-              onPress={(event) => {
-                event.stopPropagation();
-                setShowMenu(!showMenu);
-              }}
-            >
-              <Ionicons name="ellipsis-horizontal" size={23} color="#294880" />
-            </TouchableOpacity>
+          <View style={styles.headerTextWrap}>
+            <Text style={styles.userName}>{report.userName || "You"}</Text>
 
-            {showMenu && (
-              <View style={styles.menuDropdown}>
-                <TouchableOpacity
-                  activeOpacity={0.75}
-                  style={styles.menuItem}
-                  onPress={handleEdit}
-                >
-                  <View style={styles.menuIconBox}>
-                    <Ionicons name="create-outline" size={18} color="#294880" />
-                  </View>
+            <View style={styles.locationRow}>
+              <Ionicons name="location-outline" size={14} color="#6B7280" />
+              <Text style={styles.locationText} numberOfLines={1}>
+                {report.location || "No location provided"}
+              </Text>
+            </View>
+          </View>
 
-                  <Text style={styles.menuText}>Edit</Text>
-                </TouchableOpacity>
-
-                <View style={styles.menuDivider} />
-
-                <TouchableOpacity
-                  activeOpacity={0.75}
-                  style={styles.menuItem}
-                  onPress={handleDelete}
-                >
-                  <View style={[styles.menuIconBox, styles.deleteIconBox]}>
-                    <Ionicons name="trash-outline" size={18} color="#DC2626" />
-                  </View>
-
-                  <Text style={styles.deleteMenuText}>Delete</Text>
-                </TouchableOpacity>
-              </View>
-            )}
+          <View
+            style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}
+          >
+            <Text style={[styles.statusText, { color: statusStyle.color }]}>
+              {statusStyle.label}
+            </Text>
           </View>
         </View>
 
-        <ScrollView
-          style={styles.scrollContainer}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.postWrapper}>
-            <View style={styles.content}>
-              <View style={styles.headerRow}>
-                <View style={styles.userSection}>
-                  {safePost.userAvatar ? (
-                    <Image
-                      source={getImageSource(safePost.userAvatar)}
-                      style={[
-                        styles.avatar,
-                        {
-                          width: avatarSize,
-                          height: avatarSize,
-                          borderRadius: avatarSize / 2,
-                        },
-                      ]}
-                    />
-                  ) : (
-                    <View
-                      style={[
-                        styles.avatarPlaceholder,
-                        {
-                          width: avatarSize,
-                          height: avatarSize,
-                          borderRadius: avatarSize / 2,
-                        },
-                      ]}
-                    >
-                      <Ionicons
-                        name="person"
-                        size={avatarSize * 0.5}
-                        color="#294880"
-                      />
-                    </View>
-                  )}
+        <View style={styles.ownerActions}>
+          <TouchableOpacity
+            style={styles.ownerButton}
+            activeOpacity={0.8}
+            onPress={onEdit}
+          >
+            <Ionicons name="create-outline" size={17} color={ARGUS_BLUE} />
+            <Text style={styles.ownerButtonText}>Edit</Text>
+          </TouchableOpacity>
 
-                  <View style={styles.userTextWrap}>
-                    <Text style={styles.userName} numberOfLines={1}>
-                      {safePost.userName || "Current User"}
-                    </Text>
+          <TouchableOpacity
+            style={[styles.ownerButton, styles.deleteButton]}
+            activeOpacity={0.8}
+            onPress={handleDelete}
+          >
+            <Ionicons name="trash-outline" size={17} color="#DC2626" />
+            <Text style={styles.deleteButtonText}>Delete</Text>
+          </TouchableOpacity>
+        </View>
 
-                    <Text style={styles.locationText} numberOfLines={1}>
-                      {safePost.location}
-                    </Text>
-                  </View>
-                </View>
+        <View style={styles.detailsBox}>
+          <View style={styles.detailsItem}>
+            <Text style={styles.detailsLabel}>Category</Text>
+            <Text style={styles.detailsValue}>
+              {report.incidentCategory || "No category"}
+            </Text>
+          </View>
 
-                <View
+          <View style={styles.detailsItem}>
+            <Text style={styles.detailsLabel}>Incident Type</Text>
+            <Text style={styles.detailsValue}>
+              {report.incidentType || "No incident type"}
+            </Text>
+          </View>
+
+          <View style={styles.detailsItem}>
+            <Text style={styles.detailsLabel}>Location</Text>
+            <Text style={styles.detailsValue}>
+              {report.location || "No location provided"}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.descriptionBox}>
+          <Text style={styles.descriptionTitle}>Report Details</Text>
+          <Text style={styles.descriptionText}>
+            {report.details || "No report details provided."}
+          </Text>
+        </View>
+
+        {report.images?.length > 0 ? (
+          <View style={styles.photoSection}>
+            <Text style={styles.photoTitle}>Attached Photos</Text>
+
+            <View style={styles.photoGrid}>
+              {report.images.map((image, index) => (
+                <Image
+                  key={index}
+                  source={renderImageSource(image)}
                   style={[
-                    styles.badge,
-                    safePost.verified
-                      ? styles.verifiedBadge
-                      : styles.unverifiedBadge,
+                    styles.postImage,
+                    report.images.length === 1 && styles.singlePostImage,
                   ]}
-                >
-                  <Ionicons
-                    name={
-                      safePost.verified ? "shield-checkmark" : "alert-circle"
-                    }
-                    size={14}
-                    color={safePost.verified ? "#237A4B" : "#9A6A00"}
-                  />
-
-                  <Text
-                    style={[
-                      styles.badgeText,
-                      {
-                        color: safePost.verified ? "#237A4B" : "#9A6A00",
-                      },
-                    ]}
-                  >
-                    {safePost.verified ? "VERIFIED" : "UNVERIFIED"}
-                  </Text>
-                </View>
-              </View>
-
-              <View style={styles.bodyCard}>
-                <View style={styles.incidentInfoWrap}>
-                  <View style={styles.incidentInfoItem}>
-                    <Text style={styles.incidentInfoLabel}>Incident Category</Text>
-                    <Text style={styles.incidentInfoValue}>
-                      {safePost.incidentCategory}
-                    </Text>
-                  </View>
-
-                  <View style={styles.incidentInfoItem}>
-                    <Text style={styles.incidentInfoLabel}>Incident Type</Text>
-                    <Text style={styles.incidentInfoValue}>
-                      {safePost.incidentType}
-                    </Text>
-                  </View>
-                </View>
-
-                <Text style={styles.detailsText}>{safePost.details}</Text>
-
-                <View style={styles.mediaRow}>
-                  <View style={styles.mediaItem}>{renderMediaBox(firstImage)}</View>
-                  <View style={styles.mediaItem}>{renderMediaBox(secondImage)}</View>
-                </View>
-              </View>
-            </View>
-
-            <View style={styles.actionBar}>
-              <View style={styles.actionButton}>
-                <Ionicons
-                  name="thumbs-up-outline"
-                  size={iconSize}
-                  color="#294880"
+                  resizeMode="cover"
                 />
-                <Text style={styles.actionText}>Like</Text>
-                <Text style={styles.actionCount}>{safePost.likes}</Text>
-              </View>
-
-              <View style={styles.actionButton}>
-                <Ionicons
-                  name="chatbubble-ellipses-outline"
-                  size={iconSize}
-                  color="#294880"
-                />
-                <Text style={styles.actionText}>Comment</Text>
-                <Text style={styles.actionCount}>{comments.length}</Text>
-              </View>
+              ))}
             </View>
           </View>
-
-          <View style={styles.commentSection}>
-            <Text style={styles.commentSectionTitle}>Comments</Text>
-
-            {comments.length > 0 ? (
-              comments.map((comment) => (
-                <View key={comment.id} style={styles.commentCard}>
-                  <View style={styles.commentHeader}>
-                    <View style={styles.commentAvatar}>
-                      <Ionicons name="person" size={16} color="#294880" />
-                    </View>
-
-                    <Text style={styles.commentUser}>{comment.user}</Text>
-                  </View>
-
-                  <Text style={styles.commentText}>{comment.text}</Text>
-                </View>
-              ))
-            ) : (
-              <View style={styles.emptyStateCard}>
-                <Ionicons
-                  name="chatbubble-ellipses-outline"
-                  size={30}
-                  color="#8AA0C8"
-                />
-                <Text style={styles.emptyStateText}>
-                  No comments yet. Be the first to comment.
-                </Text>
-              </View>
-            )}
+        ) : (
+          <View style={styles.blankPhotoBox}>
+            <Ionicons name="image-outline" size={30} color="#94A3B8" />
+            <Text style={styles.blankPhotoText}>No image attached</Text>
           </View>
-        </ScrollView>
+        )}
 
-        <View style={styles.inputContainer}>
+        <View style={styles.summaryRow}>
+          <View style={styles.summaryItem}>
+            <Ionicons name="heart-outline" size={18} color={ARGUS_BLUE} />
+            <Text style={styles.summaryText}>{report.likes || 0} Likes</Text>
+          </View>
+
+          <View style={styles.summaryItem}>
+            <Ionicons name="chatbubble-outline" size={18} color={ARGUS_BLUE} />
+            <Text style={styles.summaryText}>{comments.length} Comments</Text>
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.commentsCard}>
+        <Text style={styles.commentsTitle}>Comments</Text>
+
+        {comments.length === 0 ? (
+          <Text style={styles.noCommentsText}>No comments yet.</Text>
+        ) : (
+          comments.map((comment) => (
+            <View key={comment.id} style={styles.commentItem}>
+              <View style={styles.commentAvatar}>
+                <Ionicons name="person" size={14} color={ARGUS_BLUE} />
+              </View>
+
+              <View style={styles.commentBubble}>
+                <Text style={styles.commentUser}>{comment.user}</Text>
+                <Text style={styles.commentText}>{comment.text}</Text>
+              </View>
+            </View>
+          ))
+        )}
+
+        <View style={styles.commentInputRow}>
           <TextInput
-            style={styles.input}
+            style={styles.commentInput}
+            value={commentText}
+            onChangeText={setCommentText}
             placeholder="Write a comment..."
-            placeholderTextColor="#8A94A6"
-            value={newComment}
-            onChangeText={setNewComment}
+            placeholderTextColor="#9CA3AF"
             multiline
           />
 
           <TouchableOpacity
             style={styles.sendButton}
-            activeOpacity={0.85}
+            activeOpacity={0.8}
             onPress={handleAddComment}
           >
             <Ionicons name="send" size={18} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
-      </TouchableOpacity>
-    </SafeAreaView>
+      </View>
+    </ScrollView>
   );
 };
 
-export default MyUser_RepPostView_Layout;
-
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#F3F6FB",
-  },
-
   container: {
     flex: 1,
     backgroundColor: "#F3F6FB",
   },
 
-  topBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 14,
+  content: {
+    paddingHorizontal: 14,
+    paddingTop: 14,
+    paddingBottom: 32,
+  },
+
+  emptyContainer: {
+    flex: 1,
     backgroundColor: "#F3F6FB",
-    zIndex: 50,
-  },
-
-  backButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "#E2E8F2",
+    padding: 20,
   },
 
-  topBarTitleWrap: {
-    flex: 1,
-    alignItems: "center",
-    paddingHorizontal: 10,
-  },
-
-  topBarTitle: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: "#294880",
-  },
-
-  topBarSubtitle: {
-    marginTop: 2,
-    fontSize: 11,
-    fontWeight: "600",
-    color: "#7D8CA6",
-  },
-
-  topMenuWrapper: {
-    width: 42,
-    height: 42,
-    position: "relative",
-    zIndex: 100,
-  },
-
-  topMenuButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    backgroundColor: "#FFFFFF",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "#E2E8F2",
-  },
-
-  menuDropdown: {
-    position: "absolute",
-    top: 48,
-    right: 0,
-    width: 150,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#E2E8F2",
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.14,
-    shadowRadius: 12,
-    elevation: 8,
-    paddingVertical: 6,
-    zIndex: 200,
-  },
-
-  menuItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-  },
-
-  menuIconBox: {
-    width: 30,
-    height: 30,
-    borderRadius: 10,
-    backgroundColor: "#EAF0FA",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 9,
-  },
-
-  deleteIconBox: {
-    backgroundColor: "#FDECEC",
-  },
-
-  menuText: {
+  emptyText: {
+    marginTop: 10,
     fontSize: 14,
-    fontWeight: "700",
-    color: "#294880",
+    color: "#6B7280",
   },
 
-  deleteMenuText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#DC2626",
-  },
-
-  menuDivider: {
-    height: 1,
-    backgroundColor: "#EEF3FA",
-    marginHorizontal: 10,
-  },
-
-  scrollContainer: {
-    flex: 1,
-  },
-
-  scrollContent: {
-    paddingHorizontal: 12,
-    paddingBottom: 20,
-  },
-
-  postWrapper: {
+  card: {
     backgroundColor: "#FFFFFF",
     borderRadius: 22,
-    overflow: "hidden",
-    marginVertical: 8,
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
-    elevation: 5,
+    padding: 14,
     borderWidth: 1,
-    borderColor: "#E6ECF5",
-  },
-
-  content: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 14,
-    backgroundColor: "#FAFCFF",
+    borderColor: "#E7ECF3",
+    marginBottom: 14,
   },
 
   headerRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 14,
-  },
-
-  userSection: {
-    flex: 1,
-    flexDirection: "row",
     alignItems: "center",
-    paddingRight: 10,
+    marginBottom: 12,
   },
 
-  avatar: {
-    borderWidth: 1.5,
-    borderColor: "#D7E0F0",
-  },
-
-  avatarPlaceholder: {
-    backgroundColor: "#EAF0FA",
+  avatarWrap: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: "#E8EEF9",
+    alignItems: "center",
     justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1.5,
-    borderColor: "#D7E0F0",
+    marginRight: 10,
   },
 
-  userTextWrap: {
+  avatarImage: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+  },
+
+  headerTextWrap: {
     flex: 1,
-    marginLeft: 12,
   },
 
   userName: {
-    fontSize: 18,
+    fontSize: 15,
     fontWeight: "800",
-    color: "#294880",
+    color: "#1F2A37",
+    marginBottom: 3,
+  },
+
+  locationRow: {
+    flexDirection: "row",
+    alignItems: "center",
   },
 
   locationText: {
-    marginTop: 3,
-    fontSize: 13,
-    color: "#6C7A96",
-    fontWeight: "500",
+    flex: 1,
+    fontSize: 12,
+    color: "#6B7280",
+    marginLeft: 3,
   },
 
-  badge: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 12,
+  statusBadge: {
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 999,
   },
 
-  verifiedBadge: {
-    backgroundColor: "#E8F7EE",
-  },
-
-  unverifiedBadge: {
-    backgroundColor: "#FFF4D6",
-  },
-
-  badgeText: {
-    marginLeft: 5,
-    fontSize: 11,
+  statusText: {
+    fontSize: 10,
     fontWeight: "800",
   },
 
-  bodyCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: "#E2E8F2",
-    padding: 14,
-  },
-
-  incidentInfoWrap: {
+  ownerActions: {
+    flexDirection: "row",
     marginBottom: 12,
   },
 
-  incidentInfoItem: {
+  ownerButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#E8EEF9",
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginRight: 8,
+  },
+
+  ownerButtonText: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: ARGUS_BLUE,
+    marginLeft: 5,
+  },
+
+  deleteButton: {
+    backgroundColor: "#FEE2E2",
+  },
+
+  deleteButtonText: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: "#DC2626",
+    marginLeft: 5,
+  },
+
+  detailsBox: {
+    backgroundColor: "#F8FAFC",
+    borderRadius: 18,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#EEF2F7",
+    marginBottom: 12,
+  },
+
+  detailsItem: {
     marginBottom: 10,
   },
 
-  incidentInfoLabel: {
-    fontSize: 12,
+  detailsLabel: {
+    fontSize: 11,
+    color: "#6B7280",
+    marginBottom: 3,
+  },
+
+  detailsValue: {
+    fontSize: 14,
     fontWeight: "700",
-    color: "#294880",
-    marginBottom: 4,
+    color: "#1F2A37",
   },
 
-  incidentInfoValue: {
-    fontSize: 14,
-    color: "#3E4B61",
-    fontWeight: "500",
+  descriptionBox: {
+    marginBottom: 12,
   },
 
-  detailsText: {
-    fontSize: 14,
-    lineHeight: 22,
-    color: "#3E4B61",
-    marginBottom: 14,
+  descriptionTitle: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: "#1F2A37",
+    marginBottom: 6,
   },
 
-  mediaRow: {
+  descriptionText: {
+    fontSize: 13,
+    lineHeight: 21,
+    color: "#374151",
+  },
+
+  photoSection: {
+    marginBottom: 12,
+  },
+
+  photoTitle: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: "#1F2A37",
+    marginBottom: 8,
+  },
+
+  photoGrid: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    flexWrap: "wrap",
+    gap: 8,
   },
 
-  mediaItem: {
+  postImage: {
     width: "48%",
+    height: 150,
+    borderRadius: 16,
+    backgroundColor: "#E8EEF9",
   },
 
-  mediaBox: {
-    backgroundColor: "#F1F5FA",
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#D7E0F0",
-    overflow: "hidden",
-  },
-
-  mediaImage: {
+  singlePostImage: {
     width: "100%",
-    height: "100%",
-    resizeMode: "cover",
+    height: 220,
   },
 
-  emptyMediaBox: {
-    justifyContent: "center",
+  blankPhotoBox: {
+    width: "100%",
+    height: 170,
+    borderRadius: 18,
+    backgroundColor: "#F8FAFC",
+    borderWidth: 1,
+    borderColor: "#DDE7F5",
     alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
   },
 
-  emptyMediaText: {
-    marginTop: 6,
+  blankPhotoText: {
+    marginTop: 8,
     fontSize: 12,
-    fontWeight: "700",
-    color: "#6C7A96",
+    color: "#94A3B8",
   },
 
-  actionBar: {
+  summaryRow: {
     flexDirection: "row",
     borderTopWidth: 1,
-    borderTopColor: "#E2E8F2",
-    backgroundColor: "#FFFFFF",
+    borderTopColor: "#EEF2F7",
+    paddingTop: 12,
   },
 
-  actionButton: {
-    flex: 1,
+  summaryItem: {
     flexDirection: "row",
-    justifyContent: "center",
     alignItems: "center",
-    paddingVertical: 14,
+    marginRight: 18,
   },
 
-  actionText: {
+  summaryText: {
     marginLeft: 6,
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "700",
-    color: "#294880",
+    color: ARGUS_BLUE,
   },
 
-  actionCount: {
-    marginLeft: 6,
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#6C7A96",
-  },
-
-  commentSection: {
-    marginTop: 10,
-    marginBottom: 10,
-  },
-
-  commentSectionTitle: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: "#294880",
-    marginBottom: 12,
-    paddingHorizontal: 4,
-  },
-
-  commentCard: {
+  commentsCard: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 18,
+    borderRadius: 22,
     padding: 14,
     borderWidth: 1,
-    borderColor: "#E2E8F2",
-    marginBottom: 10,
+    borderColor: "#E7ECF3",
   },
 
-  commentHeader: {
+  commentsTitle: {
+    fontSize: 17,
+    fontWeight: "800",
+    color: "#1F2A37",
+    marginBottom: 12,
+  },
+
+  noCommentsText: {
+    fontSize: 13,
+    color: "#6B7280",
+    marginBottom: 12,
+  },
+
+  commentItem: {
     flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
+    marginBottom: 12,
   },
 
   commentAvatar: {
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: "#EAF0FA",
-    justifyContent: "center",
+    backgroundColor: "#E8EEF9",
     alignItems: "center",
+    justifyContent: "center",
     marginRight: 8,
-    borderWidth: 1,
-    borderColor: "#D7E0F0",
+  },
+
+  commentBubble: {
+    flex: 1,
+    backgroundColor: "#F8FAFC",
+    borderRadius: 16,
+    padding: 10,
   },
 
   commentUser: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "800",
-    color: "#294880",
+    color: "#1F2A37",
+    marginBottom: 3,
   },
 
   commentText: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: "#3E4B61",
-  },
-
-  emptyStateCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    padding: 22,
-    borderWidth: 1,
-    borderColor: "#E2E8F2",
-    alignItems: "center",
-  },
-
-  emptyStateText: {
-    marginTop: 10,
     fontSize: 13,
-    color: "#7D8CA6",
-    textAlign: "center",
-    lineHeight: 20,
+    lineHeight: 19,
+    color: "#374151",
   },
 
-  inputContainer: {
+  commentInputRow: {
     flexDirection: "row",
     alignItems: "flex-end",
-    paddingHorizontal: 14,
-    paddingTop: 10,
-    paddingBottom: 14,
-    backgroundColor: "#FFFFFF",
     borderTopWidth: 1,
-    borderTopColor: "#E2E8F2",
+    borderTopColor: "#EEF2F7",
+    paddingTop: 12,
   },
 
-  input: {
+  commentInput: {
     flex: 1,
-    minHeight: 48,
-    maxHeight: 100,
-    backgroundColor: "#F7FAFF",
+    minHeight: 44,
+    maxHeight: 90,
+    borderRadius: 18,
+    backgroundColor: "#F8FAFC",
     borderWidth: 1,
-    borderColor: "#D8E2F0",
-    borderRadius: 16,
+    borderColor: "#E1E8F2",
     paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 14,
-    color: "#1F2A37",
-    marginRight: 10,
+    paddingVertical: 10,
+    fontSize: 13,
+    color: "#111827",
   },
 
   sendButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    backgroundColor: "#294880",
-    justifyContent: "center",
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: ARGUS_BLUE,
     alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 8,
   },
 });
+
+export default MyUser_RepPostView_Layout;

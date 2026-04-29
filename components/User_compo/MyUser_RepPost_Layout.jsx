@@ -2,541 +2,398 @@ import React, { useState } from "react";
 import {
   View,
   Text,
-  StyleSheet,
   Image,
   TouchableOpacity,
-  useWindowDimensions,
+  StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
-const MyUserPost_Layout = ({
-  userName = "Unknown User",
+const ARGUS_BLUE = "#294880";
+
+const MyUser_RepPost_Layout = ({
+  userName = "You",
   userAvatar = null,
-  location = "Not specified",
-  incidentCategory = "Not specified",
-  incidentType = "Not specified",
+  location = "Unknown location",
+  incidentCategory = "Incident Category",
+  incidentType = "Incident Type",
   details = "No details provided.",
-  images = [],
-  verified = false,
+  status = "Pending",
   likes = 0,
   comments = 0,
-  onLike = () => {},
-  onComment = () => {},
-  onAddMedia = () => {},
-  onEdit = () => {},
-  onDelete = () => {},
+  images = [],
+  onLike,
+  onComment,
+  onEdit,
+  onDelete,
   style,
 }) => {
-  const { width } = useWindowDimensions();
-  const [showMenu, setShowMenu] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
-  const isSmallScreen = width < 360;
-
-  const cardWidth = Math.min(width - 24, 430);
-  const avatarSize = isSmallScreen ? 46 : 54;
-  const iconSize = isSmallScreen ? 18 : 20;
-  const mediaHeight = isSmallScreen ? 110 : 130;
-
-  const firstImage = images?.[0] || null;
-  const secondImage = images?.[1] || null;
-
-  const getImageSource = (img) => {
-    if (!img) return null;
-    return typeof img === "string" ? { uri: img } : img;
-  };
-
-  const handleEdit = () => {
-    setShowMenu(false);
-    onEdit();
-  };
-
-  const handleDelete = () => {
-    setShowMenu(false);
-    onDelete();
-  };
-
-  const renderMediaBox = (img, isAddBox = false) => {
-    const source = getImageSource(img);
-
-    if (source) {
-      return (
-        <View style={[styles.mediaBox, { height: mediaHeight }]}>
-          <Image source={source} style={styles.mediaImage} />
-        </View>
-      );
+  const getStatusStyle = () => {
+    if (status === "Verified") {
+      return {
+        bg: "#DCFCE7",
+        color: "#16A34A",
+      };
     }
 
-    if (isAddBox) {
-      return (
-        <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={onAddMedia}
-          style={[styles.mediaBox, styles.addMediaBox, { height: mediaHeight }]}
-        >
-          <Ionicons name="add" size={28} color="#294880" />
-          <Text style={styles.addMediaText}>Add media</Text>
-        </TouchableOpacity>
-      );
+    if (status === "Rejected") {
+      return {
+        bg: "#FEE2E2",
+        color: "#DC2626",
+      };
     }
 
-    return <View style={[styles.mediaBox, { height: mediaHeight }]} />;
+    return {
+      bg: "#FEF3C7",
+      color: "#D97706",
+    };
   };
+
+  const statusStyle = getStatusStyle();
 
   return (
-    <TouchableOpacity
-      activeOpacity={1}
-      onPress={() => setShowMenu(false)}
-      style={[styles.wrapper, { width: cardWidth }, style]}
-    >
-      <View style={styles.content}>
-        <View style={styles.headerRow}>
-          <View style={styles.userSection}>
-            {userAvatar ? (
-              <Image
-                source={getImageSource(userAvatar)}
-                style={[
-                  styles.avatar,
-                  {
-                    width: avatarSize,
-                    height: avatarSize,
-                    borderRadius: avatarSize / 2,
-                  },
-                ]}
-              />
-            ) : (
-              <View
-                style={[
-                  styles.avatarPlaceholder,
-                  {
-                    width: avatarSize,
-                    height: avatarSize,
-                    borderRadius: avatarSize / 2,
-                  },
-                ]}
-              >
-                <Ionicons
-                  name="person"
-                  size={avatarSize * 0.5}
-                  color="#294880"
-                />
-              </View>
-            )}
+    <View style={[styles.card, style]}>
+      <View style={styles.headerRow}>
+        <View style={styles.avatarWrap}>
+          {userAvatar ? (
+            <Image
+              source={typeof userAvatar === "string" ? { uri: userAvatar } : userAvatar}
+              style={styles.avatarImage}
+            />
+          ) : (
+            <Ionicons name="person" size={20} color={ARGUS_BLUE} />
+          )}
+        </View>
 
-            <View style={styles.userTextWrap}>
-              <Text style={styles.userName} numberOfLines={1}>
-                {userName}
-              </Text>
+        <View style={styles.headerTextWrap}>
+          <Text style={styles.userName}>{userName}</Text>
 
-              <Text style={styles.locationText} numberOfLines={1}>
-                {location}
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.headerRight}>
-            <View
-              style={[
-                styles.badge,
-                verified ? styles.verifiedBadge : styles.unverifiedBadge,
-              ]}
-            >
-              <Ionicons
-                name={verified ? "shield-checkmark" : "alert-circle"}
-                size={14}
-                color={verified ? "#237A4B" : "#9A6A00"}
-              />
-
-              <Text
-                style={[
-                  styles.badgeText,
-                  { color: verified ? "#237A4B" : "#9A6A00" },
-                ]}
-              >
-                {verified ? "VERIFIED" : "UNVERIFIED"}
-              </Text>
-            </View>
-
-            <View style={styles.menuWrapper}>
-              <TouchableOpacity
-                activeOpacity={0.75}
-                style={styles.menuButton}
-                onPress={(event) => {
-                  event.stopPropagation();
-                  setShowMenu(!showMenu);
-                }}
-              >
-                <Ionicons name="ellipsis-horizontal" size={22} color="#294880" />
-              </TouchableOpacity>
-
-              {showMenu && (
-                <View style={styles.menuDropdown}>
-                  <TouchableOpacity
-                    activeOpacity={0.75}
-                    style={styles.menuItem}
-                    onPress={handleEdit}
-                  >
-                    <View style={styles.menuIconBox}>
-                      <Ionicons name="create-outline" size={18} color="#294880" />
-                    </View>
-
-                    <Text style={styles.menuText}>Edit</Text>
-                  </TouchableOpacity>
-
-                  <View style={styles.menuDivider} />
-
-                  <TouchableOpacity
-                    activeOpacity={0.75}
-                    style={styles.menuItem}
-                    onPress={handleDelete}
-                  >
-                    <View style={[styles.menuIconBox, styles.deleteIconBox]}>
-                      <Ionicons name="trash-outline" size={18} color="#DC2626" />
-                    </View>
-
-                    <Text style={styles.deleteMenuText}>Delete</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-            </View>
+          <View style={styles.locationRow}>
+            <Ionicons name="location-outline" size={13} color="#6B7280" />
+            <Text style={styles.locationText} numberOfLines={1}>
+              {location}
+            </Text>
           </View>
         </View>
 
-        <View style={styles.bodyCard}>
-          <View style={styles.incidentInfoWrap}>
-            <View style={styles.incidentInfoItem}>
-              <Text style={styles.incidentInfoLabel}>Incident Category</Text>
-              <Text style={styles.incidentInfoValue}>{incidentCategory}</Text>
-            </View>
+        <TouchableOpacity
+          style={styles.menuButton}
+          activeOpacity={0.75}
+          onPress={() => setMenuOpen((prev) => !prev)}
+        >
+          <Ionicons name="ellipsis-horizontal" size={20} color="#64748B" />
+        </TouchableOpacity>
 
-            <View style={styles.incidentInfoItem}>
-              <Text style={styles.incidentInfoLabel}>Incident Type</Text>
-              <Text style={styles.incidentInfoValue}>{incidentType}</Text>
-            </View>
+        {menuOpen && (
+          <View style={styles.menuBox}>
+            <TouchableOpacity
+              style={styles.menuItem}
+              activeOpacity={0.75}
+              onPress={() => {
+                setMenuOpen(false);
+                onEdit?.();
+              }}
+            >
+              <Ionicons name="create-outline" size={16} color={ARGUS_BLUE} />
+              <Text style={styles.menuText}>Edit</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.menuItem}
+              activeOpacity={0.75}
+              onPress={() => {
+                setMenuOpen(false);
+                onDelete?.();
+              }}
+            >
+              <Ionicons name="trash-outline" size={16} color="#DC2626" />
+              <Text style={[styles.menuText, styles.deleteText]}>Delete</Text>
+            </TouchableOpacity>
           </View>
+        )}
+      </View>
 
-          <Text style={styles.detailsText}>{details}</Text>
-
-          <View style={styles.mediaRow}>
-            <View style={styles.mediaItem}>{renderMediaBox(firstImage)}</View>
-
-            <View style={styles.mediaItem}>
-              {secondImage
-                ? renderMediaBox(secondImage)
-                : renderMediaBox(null, true)}
-            </View>
-          </View>
+      <View style={styles.statusRow}>
+        <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
+          <Text style={[styles.statusText, { color: statusStyle.color }]}>
+            {status}
+          </Text>
         </View>
       </View>
 
-      <View style={styles.actionBar}>
+      <View style={styles.infoBox}>
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Category</Text>
+          <Text style={styles.infoValue}>{incidentCategory}</Text>
+        </View>
+
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Incident Type</Text>
+          <Text style={styles.infoValue}>{incidentType}</Text>
+        </View>
+      </View>
+
+      <Text style={styles.detailsText} numberOfLines={3}>
+        {details}
+      </Text>
+
+      <View style={styles.blankImageBox}>
+        {images?.length > 0 ? (
+          <>
+            <Ionicons name="image-outline" size={24} color={ARGUS_BLUE} />
+            <Text style={styles.imageText}>{images.length} attached media</Text>
+          </>
+        ) : (
+          <>
+            <Ionicons name="image-outline" size={24} color="#94A3B8" />
+            <Text style={styles.blankImageText}>No image attached</Text>
+          </>
+        )}
+      </View>
+
+      <View style={styles.actionRow}>
         <TouchableOpacity
           style={styles.actionButton}
-          activeOpacity={0.8}
+          activeOpacity={0.75}
           onPress={onLike}
         >
-          <Ionicons name="thumbs-up-outline" size={iconSize} color="#294880" />
-          <Text style={styles.actionText}>Like</Text>
-          <Text style={styles.actionCount}>{likes}</Text>
+          <Ionicons name="heart-outline" size={19} color={ARGUS_BLUE} />
+          <Text style={styles.actionText}>{likes}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.actionButton}
-          activeOpacity={0.8}
+          activeOpacity={0.75}
           onPress={onComment}
         >
-          <Ionicons
-            name="chatbubble-ellipses-outline"
-            size={iconSize}
-            color="#294880"
-          />
-          <Text style={styles.actionText}>Comment</Text>
-          <Text style={styles.actionCount}>{comments}</Text>
+          <Ionicons name="chatbubble-outline" size={19} color={ARGUS_BLUE} />
+          <Text style={styles.actionText}>{comments} Comments</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.viewButton}
+          activeOpacity={0.75}
+          onPress={onComment}
+        >
+          <Text style={styles.viewButtonText}>View</Text>
         </TouchableOpacity>
       </View>
-    </TouchableOpacity>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  wrapper: {
-    alignSelf: "center",
+  card: {
     backgroundColor: "#FFFFFF",
     borderRadius: 22,
-    overflow: "visible",
-    marginVertical: 10,
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
-    elevation: 5,
+    padding: 14,
     borderWidth: 1,
-    borderColor: "#E6ECF5",
+    borderColor: "#E7ECF3",
+    shadowColor: "#8AA9E6",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
     position: "relative",
-    zIndex: 1,
-  },
-
-  content: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 14,
-    backgroundColor: "#FAFCFF",
-    borderTopLeftRadius: 22,
-    borderTopRightRadius: 22,
   },
 
   headerRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 14,
-    zIndex: 20,
-  },
-
-  userSection: {
-    flex: 1,
-    flexDirection: "row",
     alignItems: "center",
-    paddingRight: 10,
+    marginBottom: 10,
   },
 
-  avatar: {
-    borderWidth: 1.5,
-    borderColor: "#D7E0F0",
-  },
-
-  avatarPlaceholder: {
-    backgroundColor: "#EAF0FA",
+  avatarWrap: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: "#E8EEF9",
+    alignItems: "center",
     justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1.5,
-    borderColor: "#D7E0F0",
+    marginRight: 10,
   },
 
-  userTextWrap: {
+  avatarImage: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+  },
+
+  headerTextWrap: {
     flex: 1,
-    marginLeft: 12,
   },
 
   userName: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: "800",
-    color: "#294880",
+    color: "#1F2A37",
+    marginBottom: 3,
+  },
+
+  locationRow: {
+    flexDirection: "row",
+    alignItems: "center",
   },
 
   locationText: {
-    marginTop: 3,
-    fontSize: 13,
-    color: "#6C7A96",
-    fontWeight: "500",
-  },
-
-  headerRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    position: "relative",
-    zIndex: 30,
-  },
-
-  badge: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 12,
-  },
-
-  verifiedBadge: {
-    backgroundColor: "#E8F7EE",
-  },
-
-  unverifiedBadge: {
-    backgroundColor: "#FFF4D6",
-  },
-
-  badgeText: {
-    marginLeft: 5,
-    fontSize: 11,
-    fontWeight: "800",
-  },
-
-  menuWrapper: {
-    position: "relative",
-    zIndex: 50,
+    flex: 1,
+    fontSize: 12,
+    color: "#6B7280",
+    marginLeft: 3,
   },
 
   menuButton: {
     width: 34,
     height: 34,
-    borderRadius: 12,
-    backgroundColor: "#EAF0FA",
+    borderRadius: 17,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "#D7E0F0",
+    backgroundColor: "#F8FAFC",
   },
 
-  menuDropdown: {
+  menuBox: {
     position: "absolute",
-    top: 40,
+    top: 38,
     right: 0,
-    width: 150,
+    width: 130,
     backgroundColor: "#FFFFFF",
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#E2E8F2",
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.14,
-    shadowRadius: 12,
-    elevation: 8,
+    borderColor: "#E7ECF3",
     paddingVertical: 6,
-    zIndex: 100,
+    zIndex: 50,
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
   },
 
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-  },
-
-  menuIconBox: {
-    width: 30,
-    height: 30,
-    borderRadius: 10,
-    backgroundColor: "#EAF0FA",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 9,
-  },
-
-  deleteIconBox: {
-    backgroundColor: "#FDECEC",
+    paddingHorizontal: 12,
+    paddingVertical: 9,
   },
 
   menuText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "700",
-    color: "#294880",
+    color: "#1F2A37",
+    marginLeft: 8,
   },
 
-  deleteMenuText: {
-    fontSize: 14,
-    fontWeight: "700",
+  deleteText: {
     color: "#DC2626",
   },
 
-  menuDivider: {
-    height: 1,
-    backgroundColor: "#EEF3FA",
-    marginHorizontal: 10,
-  },
-
-  bodyCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: "#E2E8F2",
-    padding: 14,
-    zIndex: 1,
-  },
-
-  incidentInfoWrap: {
-    marginBottom: 12,
-  },
-
-  incidentInfoItem: {
+  statusRow: {
+    flexDirection: "row",
     marginBottom: 10,
   },
 
-  incidentInfoLabel: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#294880",
-    marginBottom: 4,
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
   },
 
-  incidentInfoValue: {
-    fontSize: 14,
-    color: "#3E4B61",
-    fontWeight: "500",
+  statusText: {
+    fontSize: 10,
+    fontWeight: "800",
+  },
+
+  infoBox: {
+    backgroundColor: "#F8FAFC",
+    borderRadius: 16,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#EEF2F7",
+    marginBottom: 10,
+  },
+
+  infoRow: {
+    marginBottom: 8,
+  },
+
+  infoLabel: {
+    fontSize: 11,
+    color: "#6B7280",
+    marginBottom: 2,
+  },
+
+  infoValue: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#1F2A37",
   },
 
   detailsText: {
-    fontSize: 14,
-    lineHeight: 22,
-    color: "#3E4B61",
-    marginBottom: 14,
+    fontSize: 13,
+    lineHeight: 20,
+    color: "#374151",
+    marginBottom: 12,
   },
 
-  mediaRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-
-  mediaItem: {
-    width: "48%",
-  },
-
-  mediaBox: {
-    backgroundColor: "#F1F5FA",
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#D7E0F0",
-    overflow: "hidden",
-  },
-
-  mediaImage: {
+  blankImageBox: {
     width: "100%",
-    height: "100%",
-    resizeMode: "cover",
-  },
-
-  addMediaBox: {
-    borderStyle: "dashed",
-    justifyContent: "center",
+    height: 150,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#DDE7F5",
+    backgroundColor: "#F8FAFC",
     alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
   },
 
-  addMediaText: {
+  imageText: {
     marginTop: 6,
     fontSize: 12,
-    fontWeight: "700",
-    color: "#294880",
+    color: "#6B7280",
   },
 
-  actionBar: {
+  blankImageText: {
+    marginTop: 6,
+    fontSize: 12,
+    color: "#94A3B8",
+  },
+
+  actionRow: {
     flexDirection: "row",
+    alignItems: "center",
     borderTopWidth: 1,
-    borderTopColor: "#E2E8F2",
-    backgroundColor: "#FFFFFF",
-    borderBottomLeftRadius: 22,
-    borderBottomRightRadius: 22,
-    overflow: "hidden",
+    borderTopColor: "#EEF2F7",
+    paddingTop: 10,
   },
 
   actionButton: {
-    flex: 1,
     flexDirection: "row",
-    justifyContent: "center",
     alignItems: "center",
-    paddingVertical: 14,
+    marginRight: 16,
   },
 
   actionText: {
-    marginLeft: 6,
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "700",
-    color: "#294880",
+    color: ARGUS_BLUE,
+    marginLeft: 5,
   },
 
-  actionCount: {
-    marginLeft: 6,
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#6C7A96",
+  viewButton: {
+    marginLeft: "auto",
+    backgroundColor: "#E8EEF9",
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+  },
+
+  viewButtonText: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: ARGUS_BLUE,
   },
 });
 
-export default MyUserPost_Layout;
+export default MyUser_RepPost_Layout;

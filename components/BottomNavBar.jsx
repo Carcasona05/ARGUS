@@ -34,6 +34,11 @@ const BottomNavBar = () => {
   const plusSize = isTinyScreen ? 48 : isSmallScreen ? 52 : 56;
   const plusIconSize = isTinyScreen ? 27 : isSmallScreen ? 29 : 32;
 
+  const showPlusButton =
+    pathname === "/User_Home" ||
+    pathname === "/(tabs)/User_Home" ||
+    pathname.includes("User_Home");
+
   const bottomSpace =
     Platform.OS === "ios"
       ? Math.max(insets.bottom, 10) + 6
@@ -150,30 +155,25 @@ const BottomNavBar = () => {
       >
         {tabs.map(renderTab)}
 
-        <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={() => router.push("/User_PostReport")}
-          style={[
-            styles.plusButton,
-            {
-              width: plusSize,
-              height: plusSize,
-              borderRadius: plusSize / 2,
-              right: isTinyScreen 
-                ? navWidth * 0.075
-                : isSmallScreen
-                ? navWidth * 0.085
-                : isMediumScreen
-                ? navWidth * 0.095
-                : navWidth * 0.105,
-              top: -(plusSize * 1.1),
-              right: isTinyScreen ? 10 : isSmallScreen ? 12 : 14,
-              borderWidth: isTinyScreen ? 4 : 5,
-            },
-          ]}
-        >
-          <Ionicons name="add" size={plusIconSize} color="#FFFFFF" />
-        </TouchableOpacity>
+        {showPlusButton && (
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => router.push("/User_PostReport")}
+            style={[
+              styles.plusButton,
+              {
+                width: plusSize,
+                height: plusSize,
+                borderRadius: plusSize / 2,
+                top: -(plusSize * 1.1),
+                right: isTinyScreen ? 10 : isSmallScreen ? 12 : 14,
+                borderWidth: isTinyScreen ? 4 : 5,
+              },
+            ]}
+          >
+            <Ionicons name="add" size={plusIconSize} color="#FFFFFF" />
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );

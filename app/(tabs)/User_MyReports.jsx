@@ -1,203 +1,421 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   View,
-  Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
+  Alert,
 } from "react-native";
-import ReportPost_Layout from "../../components/ReportPost_Layout";
+import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import ThemedView from "../../components/ThemedView";
+import ThemedText from "../../components/ThemedText";
+import MyUser_RepPost_Layout from "../../components/User_compo/MyUser_RepPost_Layout";
 
-const User_Profile = () => {
-  const currentUser = {
-    id: "user_001",
-    username: "Anonymous User",
-    avatar: "https://cdn-icons-png.flaticon.com/512/149/149071.png",
+const initialMyReports = [
+  {
+    id: "my_report_001",
+    userName: "You",
+    userAvatar: null,
+    location: "Poblacion, Argao, Cebu",
+    incidentCategory: "Community and Environmental Concerns",
+    incidentType: "Flood",
+    details:
+      "Flooding was seen near the roadside after heavy rain. The water level is rising and may affect nearby houses.",
+    status: "Pending",
+    verified: false,
+    likes: 0,
+    comments: 0,
+    images: [],
+    commentList: [],
+  },
+  {
+    id: "my_report_002",
+    userName: "You",
+    userAvatar: null,
+    location: "Langtad, Argao, Cebu",
+    incidentCategory: "Infrastructure Issues",
+    incidentType: "Broken Street Light",
+    details:
+      "The street light near the corner is not working. The area becomes dark at night and may be unsafe for pedestrians.",
+    status: "Verified",
+    verified: true,
+    likes: 6,
+    comments: 1,
+    images: [],
+    commentList: [
+      {
+        id: "c1",
+        user: "Anonymous User",
+        text: "This area really needs better lighting.",
+      },
+    ],
+  },
+  {
+    id: "my_report_003",
+    userName: "You",
+    userAvatar: null,
+    location: "Talaga, Argao, Cebu",
+    incidentCategory: "Traffic and Road Concerns",
+    incidentType: "Road Obstruction",
+    details:
+      "A large branch is blocking part of the road and may cause accidents for motorcycles passing at night.",
+    status: "Rejected",
+    verified: false,
+    likes: 3,
+    comments: 0,
+    images: [],
+    commentList: [],
+  },
+];
+
+const User_MyReports = () => {
+  const router = useRouter();
+
+  const [selectedFilter, setSelectedFilter] = useState("All");
+  const [myReports, setMyReports] = useState(initialMyReports);
+
+  const filteredReports = useMemo(() => {
+    if (selectedFilter === "Pending") {
+      return myReports.filter((report) => report.status === "Pending");
+    }
+
+    if (selectedFilter === "Verified") {
+      return myReports.filter((report) => report.status === "Verified");
+    }
+
+    if (selectedFilter === "Rejected") {
+      return myReports.filter((report) => report.status === "Rejected");
+    }
+
+    return myReports;
+  }, [selectedFilter, myReports]);
+
+  const totalReports = myReports.length;
+  const totalPending = myReports.filter(
+    (report) => report.status === "Pending"
+  ).length;
+  const totalVerified = myReports.filter(
+    (report) => report.status === "Verified"
+  ).length;
+
+  const handleLike = (reportId) => {
+    setMyReports((prevReports) =>
+      prevReports.map((report) =>
+        report.id === reportId
+          ? {
+              ...report,
+              likes: report.likes + 1,
+            }
+          : report
+      )
+    );
   };
 
-  const reports = [
-    {
-      id: "rep_001",
-      userId: "user_001",
-      location: "Barangay San Jose",
-      incidentType: "Suspicious Activity",
-      incidentNumber: "ARG-2026-0001",
-      details:
-        "A suspicious person was seen walking near the subdivision gate around 10:30 PM.",
-      images: ["https://placehold.co/600x400/png"],
-      verified: false,
-      likes: 12,
-      comments: 3,
-    },
-    {
-      id: "rep_002",
-      userId: "user_001",
-      location: "Poblacion Area",
-      incidentType: "Street Light Issue",
-      incidentNumber: "ARG-2026-0002",
-      details:
-        "The street light near the waiting shed is not working, making the area too dark at night.",
-      images: ["https://placehold.co/600x400/png"],
-      verified: true,
-      likes: 8,
-      comments: 2,
-    },
-    {
-      id: "rep_003",
-      userId: "user_001",
-      location: "Market Road",
-      incidentType: "Noise Complaint",
-      incidentNumber: "ARG-2026-0003",
-      details: "Loud videoke music was reported past midnight.",
-      images: ["https://placehold.co/600x400/png"],
-      verified: false,
-      likes: 5,
-      comments: 1,
-    },
-  ];
+  const handleOpenReport = (reportData) => {
+    router.push({
+      pathname: "/MyUser_RepPostView",
+      params: {
+        report: JSON.stringify(reportData),
+      },
+    });
+  };
 
-  const [filter, setFilter] = useState("All");
+  const handleEditReport = (report) => {
+    Alert.alert(
+      "Edit Report",
+      `Edit function for "${report.incidentType}" will be connected later.`
+    );
+  };
 
-  const currentUserReports = reports.filter((report) => {
-    const isCurrentUser = report.userId === currentUser.id;
-
-    if (filter === "Verified") {
-      return isCurrentUser && report.verified;
-    }
-
-    if (filter === "Unverified") {
-      return isCurrentUser && !report.verified;
-    }
-
-    return isCurrentUser;
-  });
+  const handleDeleteReport = (reportId) => {
+    Alert.alert("Delete Report", "Are you sure you want to delete this report?", [
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => {
+          setMyReports((prevReports) =>
+            prevReports.filter((report) => report.id !== reportId)
+          );
+        },
+      },
+    ]);
+  };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <ThemedView style={styles.container}>
       <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.contentContainer}
+        style={styles.scrollContainer}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.filterContainer}>
-          <TouchableOpacity
-            style={[
-              styles.filterButton,
-              filter === "All" && styles.activeFilterButton,
-            ]}
-            onPress={() => setFilter("All")}
-          >
-            <Text
-              style={[
-                styles.filterText,
-                filter === "All" && styles.activeFilterText,
-              ]}
-            >
-              All
-            </Text>
-          </TouchableOpacity>
+        <View style={styles.heroSection}>
+          <View style={styles.statsRow}>
+            <View style={styles.statCard}>
+              <ThemedText style={styles.statNumber}>{totalReports}</ThemedText>
+              <ThemedText style={styles.statLabel}>Total Reports</ThemedText>
+            </View>
 
-          <TouchableOpacity
-            style={[
-              styles.filterButton,
-              filter === "Verified" && styles.activeFilterButton,
-            ]}
-            onPress={() => setFilter("Verified")}
-          >
-            <Text
-              style={[
-                styles.filterText,
-                filter === "Verified" && styles.activeFilterText,
-              ]}
-            >
-              Verified
-            </Text>
-          </TouchableOpacity>
+            <View style={styles.statCard}>
+              <ThemedText style={styles.statNumber}>{totalPending}</ThemedText>
+              <ThemedText style={styles.statLabel}>Pending</ThemedText>
+            </View>
 
-          <TouchableOpacity
-            style={[
-              styles.filterButton,
-              filter === "Unverified" && styles.activeFilterButton,
-            ]}
-            onPress={() => setFilter("Unverified")}
-          >
-            <Text
-              style={[
-                styles.filterText,
-                filter === "Unverified" && styles.activeFilterText,
-              ]}
-            >
-              Unverified
-            </Text>
-          </TouchableOpacity>
+            <View style={styles.statCard}>
+              <ThemedText style={styles.statNumber}>{totalVerified}</ThemedText>
+              <ThemedText style={styles.statLabel}>Verified</ThemedText>
+            </View>
+          </View>
         </View>
 
-        {currentUserReports.map((report) => (
-          <ReportPost_Layout
-            key={report.id}
-            userName={currentUser.username}
-            userAvatar={currentUser.avatar}
-            location={report.location}
-            incidentType={report.incidentType}
-            incidentNumber={report.incidentNumber}
-            details={report.details}
-            images={report.images}
-            verified={report.verified}
-            likes={report.likes}
-            comments={report.comments}
-            onLike={() => console.log(`Liked ${report.id}`)}
-            onComment={() => console.log(`Commented on ${report.id}`)}
-            onAddMedia={() => console.log(`Add media to ${report.id}`)}
-            style={styles.reportCardSpacing}
-          />
-        ))}
+        <View style={styles.sectionBlock}>
+          <View style={styles.sectionHeaderRow}>
+            <ThemedText style={styles.sectionTitle}>My Submitted Reports</ThemedText>
+          </View>
+
+          <View style={styles.filterRow}>
+            <TouchableOpacity
+              activeOpacity={0.85}
+              style={[
+                styles.filterChip,
+                selectedFilter === "All" && styles.activeFilterChip,
+              ]}
+              onPress={() => setSelectedFilter("All")}
+            >
+              <ThemedText
+                style={[
+                  styles.filterChipText,
+                  selectedFilter === "All" && styles.activeFilterChipText,
+                ]}
+              >
+                All
+              </ThemedText>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.85}
+              style={[
+                styles.filterChip,
+                selectedFilter === "Pending" && styles.activeFilterChip,
+              ]}
+              onPress={() => setSelectedFilter("Pending")}
+            >
+              <ThemedText
+                style={[
+                  styles.filterChipText,
+                  selectedFilter === "Pending" && styles.activeFilterChipText,
+                ]}
+              >
+                Pending
+              </ThemedText>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.85}
+              style={[
+                styles.filterChip,
+                selectedFilter === "Verified" && styles.activeFilterChip,
+              ]}
+              onPress={() => setSelectedFilter("Verified")}
+            >
+              <ThemedText
+                style={[
+                  styles.filterChipText,
+                  selectedFilter === "Verified" && styles.activeFilterChipText,
+                ]}
+              >
+                Verified
+              </ThemedText>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.85}
+              style={[
+                styles.filterChip,
+                selectedFilter === "Rejected" && styles.activeFilterChip,
+              ]}
+              onPress={() => setSelectedFilter("Rejected")}
+            >
+              <ThemedText
+                style={[
+                  styles.filterChipText,
+                  selectedFilter === "Rejected" && styles.activeFilterChipText,
+                ]}
+              >
+                Rejected
+              </ThemedText>
+            </TouchableOpacity>
+          </View>
+
+          {filteredReports.length === 0 ? (
+            <View style={styles.emptyCard}>
+              <Ionicons name="folder-open-outline" size={38} color="#94A3B8" />
+              <ThemedText style={styles.emptyTitle}>No reports found</ThemedText>
+              <ThemedText style={styles.emptySubtitle}>
+                There are no reports under this filter.
+              </ThemedText>
+            </View>
+          ) : (
+            filteredReports.map((report, index) => (
+              <MyUser_RepPost_Layout
+                key={report.id}
+                userName={report.userName}
+                userAvatar={report.userAvatar}
+                location={report.location}
+                incidentCategory={report.incidentCategory}
+                incidentType={report.incidentType}
+                details={report.details}
+                status={report.status}
+                likes={report.likes}
+                comments={report.comments}
+                images={report.images}
+                onLike={() => handleLike(report.id)}
+                onComment={() => handleOpenReport(report)}
+                onEdit={() => handleEditReport(report)}
+                onDelete={() => handleDeleteReport(report.id)}
+                style={
+                  index !== filteredReports.length - 1
+                    ? styles.reportCardSpacing
+                    : null
+                }
+              />
+            ))
+          )}
+        </View>
       </ScrollView>
-    </SafeAreaView>
+    </ThemedView>
   );
 };
 
-export default User_Profile;
-
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#EEF4FF",
-  },
   container: {
     flex: 1,
-    backgroundColor: "#EEF4FF",
+    backgroundColor: "#F3F6FB",
   },
-  contentContainer: {
-    paddingTop: 16,
-    paddingBottom: 120,
+
+  scrollContainer: {
+    flex: 1,
   },
-  filterContainer: {
+
+  scrollContent: {
+    paddingHorizontal: 14,
+    paddingTop: 14,
+    paddingBottom: 110,
+  },
+
+  heroSection: {
+    marginBottom: 14,
+  },
+
+  statsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+
+  statCard: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    paddingVertical: 14,
+    paddingHorizontal: 10,
+    marginHorizontal: 4,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#E7ECF3",
+  },
+
+  statNumber: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: "#294880",
+    marginBottom: 4,
+  },
+
+  statLabel: {
+    fontSize: 11,
+    textAlign: "center",
+    color: "#6B7280",
+    lineHeight: 15,
+  },
+
+  sectionBlock: {
+    marginBottom: 14,
+  },
+
+  sectionHeaderRow: {
     flexDirection: "row",
     justifyContent: "flex-start",
     alignItems: "center",
-    marginHorizontal: 16,
-    marginBottom: 14,
-    gap: 8,
+    marginBottom: 12,
   },
-  filterButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    backgroundColor: "#DCE6F8",
+
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#1F2A37",
   },
-  activeFilterButton: {
+
+  filterRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginBottom: 12,
+  },
+
+  filterChip: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    backgroundColor: "#E4EBF7",
+    marginRight: 8,
+    marginBottom: 8,
+  },
+
+  activeFilterChip: {
     backgroundColor: "#294880",
   },
-  filterText: {
-    fontSize: 14,
-    fontWeight: "500",
+
+  filterChipText: {
+    fontSize: 12,
+    fontWeight: "700",
     color: "#294880",
   },
-  activeFilterText: {
+
+  activeFilterChipText: {
     color: "#FFFFFF",
   },
+
   reportCardSpacing: {
-    marginBottom: 16,
+    marginBottom: 12,
+  },
+
+  emptyCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 22,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: "#E7ECF3",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#1F2A37",
+    marginTop: 10,
+    marginBottom: 4,
+  },
+
+  emptySubtitle: {
+    fontSize: 12,
+    color: "#6B7280",
+    textAlign: "center",
+    lineHeight: 18,
   },
 });
+
+export default User_MyReports;

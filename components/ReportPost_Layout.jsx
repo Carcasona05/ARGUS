@@ -59,8 +59,7 @@ const ReportPost_Layout = ({
           onPress={onAddMedia}
           style={[styles.mediaBox, styles.addMediaBox, { height: mediaHeight }]}
         >
-          <Ionicons name="add" size={28} color="#294880" />
-          <Text style={styles.addMediaText}>Add media</Text>
+          
         </TouchableOpacity>
       );
     }

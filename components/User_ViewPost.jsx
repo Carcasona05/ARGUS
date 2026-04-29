@@ -11,8 +11,10 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 
 const User_ViewPost = ({ post, onBack }) => {
+  const router = useRouter();
   const { width } = useWindowDimensions();
   const isSmallScreen = width < 360;
 
@@ -37,11 +39,23 @@ const User_ViewPost = ({ post, onBack }) => {
 
   const avatarSize = isSmallScreen ? 46 : 54;
   const iconSize = isSmallScreen ? 18 : 20;
-  const mediaHeight = isSmallScreen ? 120 : 145;
 
   const getImageSource = (img) => {
     if (!img) return null;
     return typeof img === "string" ? { uri: img } : img;
+  };
+
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+      return;
+    }
+
+    router.push("/User_Home");
+  };
+
+  const handleNotification = () => {
+    router.push("/User_Notification");
   };
 
   const handleAddComment = () => {
@@ -57,45 +71,27 @@ const User_ViewPost = ({ post, onBack }) => {
     setNewComment("");
   };
 
-  const renderMediaBox = (img) => {
-    const source = getImageSource(img);
-
-    if (!source) {
-      return (
-        <View
-          style={[styles.mediaBox, styles.emptyMediaBox, { height: mediaHeight }]}
-        >
-          <Ionicons name="image-outline" size={28} color="#8AA0C8" />
-          <Text style={styles.emptyMediaText}>No media</Text>
-        </View>
-      );
-    }
-
-    return (
-      <View style={[styles.mediaBox, { height: mediaHeight }]}>
-        <Image source={source} style={styles.mediaImage} />
-      </View>
-    );
-  };
-
-  const firstImage = safePost.images?.[0] || null;
-  const secondImage = safePost.images?.[1] || null;
-
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         <View style={styles.topBar}>
           <TouchableOpacity
-            style={styles.backButton}
-            activeOpacity={0.85}
-            onPress={onBack}
+            activeOpacity={0.8}
+            style={styles.headerIconButton}
+            onPress={handleBack}
           >
-            <Ionicons name="arrow-back" size={20} color="#294880" />
+            <Ionicons name="arrow-back" size={23} color="#294880" />
           </TouchableOpacity>
 
-          <Text style={styles.topBarTitle}>Post Details</Text>
+          <Text style={styles.topBarTitle}>View Post</Text>
 
-          <View style={styles.topBarSpacer} />
+          <TouchableOpacity
+            activeOpacity={0.8}
+            style={styles.headerIconButton}
+            onPress={handleNotification}
+          >
+            <Ionicons name="notifications-outline" size={22} color="#294880" />
+          </TouchableOpacity>
         </View>
 
         <ScrollView
@@ -142,6 +138,7 @@ const User_ViewPost = ({ post, onBack }) => {
                     <Text style={styles.userName} numberOfLines={1}>
                       {safePost.userName || "Anonymous User"}
                     </Text>
+
                     <Text style={styles.locationText} numberOfLines={1}>
                       {safePost.location}
                     </Text>
@@ -157,14 +154,19 @@ const User_ViewPost = ({ post, onBack }) => {
                   ]}
                 >
                   <Ionicons
-                    name={safePost.verified ? "shield-checkmark" : "alert-circle"}
+                    name={
+                      safePost.verified ? "shield-checkmark" : "alert-circle"
+                    }
                     size={14}
                     color={safePost.verified ? "#237A4B" : "#9A6A00"}
                   />
+
                   <Text
                     style={[
                       styles.badgeText,
-                      { color: safePost.verified ? "#237A4B" : "#9A6A00" },
+                      {
+                        color: safePost.verified ? "#237A4B" : "#9A6A00",
+                      },
                     ]}
                   >
                     {safePost.verified ? "VERIFIED" : "UNVERIFIED"}
@@ -175,7 +177,9 @@ const User_ViewPost = ({ post, onBack }) => {
               <View style={styles.bodyCard}>
                 <View style={styles.incidentInfoWrap}>
                   <View style={styles.incidentInfoItem}>
-                    <Text style={styles.incidentInfoLabel}>Incident Category</Text>
+                    <Text style={styles.incidentInfoLabel}>
+                      Incident Category
+                    </Text>
                     <Text style={styles.incidentInfoValue}>
                       {safePost.incidentCategory}
                     </Text>
@@ -190,11 +194,6 @@ const User_ViewPost = ({ post, onBack }) => {
                 </View>
 
                 <Text style={styles.detailsText}>{safePost.details}</Text>
-
-                <View style={styles.mediaRow}>
-                  <View style={styles.mediaItem}>{renderMediaBox(firstImage)}</View>
-                  <View style={styles.mediaItem}>{renderMediaBox(secondImage)}</View>
-                </View>
               </View>
             </View>
 
@@ -231,6 +230,7 @@ const User_ViewPost = ({ post, onBack }) => {
                     <View style={styles.commentAvatar}>
                       <Ionicons name="person" size={16} color="#294880" />
                     </View>
+
                     <Text style={styles.commentUser}>{comment.user}</Text>
                   </View>
 
@@ -244,6 +244,7 @@ const User_ViewPost = ({ post, onBack }) => {
                   size={30}
                   color="#8AA0C8"
                 />
+
                 <Text style={styles.emptyStateText}>
                   No comments yet. Be the first to comment.
                 </Text>
@@ -278,18 +279,28 @@ const User_ViewPost = ({ post, onBack }) => {
 export default User_ViewPost;
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#F3F6FB" },
-  container: { flex: 1, backgroundColor: "#F3F6FB" },
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#F3F6FB",
+  },
+
+  container: {
+    flex: 1,
+    backgroundColor: "#F3F6FB",
+  },
+
   topBar: {
+    height: 58,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 14,
     backgroundColor: "#F3F6FB",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E2E8F2",
   },
-  backButton: {
+
+  headerIconButton: {
     width: 42,
     height: 42,
     borderRadius: 14,
@@ -299,14 +310,27 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E2E8F2",
   },
+
   topBarTitle: {
+    position: "absolute",
+    left: 70,
+    right: 70,
+    textAlign: "center",
     fontSize: 18,
     fontWeight: "800",
     color: "#294880",
   },
-  topBarSpacer: { width: 42 },
-  scrollContainer: { flex: 1 },
-  scrollContent: { paddingHorizontal: 12, paddingBottom: 20 },
+
+  scrollContainer: {
+    flex: 1,
+  },
+
+  scrollContent: {
+    paddingHorizontal: 12,
+    paddingTop: 10,
+    paddingBottom: 20,
+  },
+
   postWrapper: {
     backgroundColor: "#FFFFFF",
     borderRadius: 22,
@@ -320,28 +344,33 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E6ECF5",
   },
+
   content: {
     paddingHorizontal: 16,
     paddingTop: 16,
     paddingBottom: 14,
     backgroundColor: "#FAFCFF",
   },
+
   headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
     marginBottom: 14,
   },
+
   userSection: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     paddingRight: 10,
   },
+
   avatar: {
     borderWidth: 1.5,
     borderColor: "#D7E0F0",
   },
+
   avatarPlaceholder: {
     backgroundColor: "#EAF0FA",
     justifyContent: "center",
@@ -349,18 +378,25 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: "#D7E0F0",
   },
-  userTextWrap: { flex: 1, marginLeft: 12 },
+
+  userTextWrap: {
+    flex: 1,
+    marginLeft: 12,
+  },
+
   userName: {
     fontSize: 18,
     fontWeight: "800",
     color: "#294880",
   },
+
   locationText: {
     marginTop: 3,
     fontSize: 13,
     color: "#6C7A96",
     fontWeight: "500",
   },
+
   badge: {
     flexDirection: "row",
     alignItems: "center",
@@ -368,13 +404,21 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 12,
   },
-  verifiedBadge: { backgroundColor: "#E8F7EE" },
-  unverifiedBadge: { backgroundColor: "#FFF4D6" },
+
+  verifiedBadge: {
+    backgroundColor: "#E8F7EE",
+  },
+
+  unverifiedBadge: {
+    backgroundColor: "#FFF4D6",
+  },
+
   badgeText: {
     marginLeft: 5,
     fontSize: 11,
     fontWeight: "800",
   },
+
   bodyCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 18,
@@ -382,58 +426,41 @@ const styles = StyleSheet.create({
     borderColor: "#E2E8F2",
     padding: 14,
   },
-  incidentInfoWrap: { marginBottom: 12 },
-  incidentInfoItem: { marginBottom: 10 },
+
+  incidentInfoWrap: {
+    marginBottom: 12,
+  },
+
+  incidentInfoItem: {
+    marginBottom: 10,
+  },
+
   incidentInfoLabel: {
     fontSize: 12,
     fontWeight: "700",
     color: "#294880",
     marginBottom: 4,
   },
+
   incidentInfoValue: {
     fontSize: 14,
     color: "#3E4B61",
     fontWeight: "500",
   },
+
   detailsText: {
     fontSize: 14,
     lineHeight: 22,
     color: "#3E4B61",
-    marginBottom: 14,
   },
-  mediaRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  mediaItem: { width: "48%" },
-  mediaBox: {
-    backgroundColor: "#F1F5FA",
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#D7E0F0",
-    overflow: "hidden",
-  },
-  mediaImage: {
-    width: "100%",
-    height: "100%",
-    resizeMode: "cover",
-  },
-  emptyMediaBox: {
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  emptyMediaText: {
-    marginTop: 6,
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#6C7A96",
-  },
+
   actionBar: {
     flexDirection: "row",
     borderTopWidth: 1,
     borderTopColor: "#E2E8F2",
     backgroundColor: "#FFFFFF",
   },
+
   actionButton: {
     flex: 1,
     flexDirection: "row",
@@ -441,22 +468,26 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 14,
   },
+
   actionText: {
     marginLeft: 6,
     fontSize: 14,
     fontWeight: "700",
     color: "#294880",
   },
+
   actionCount: {
     marginLeft: 6,
     fontSize: 14,
     fontWeight: "700",
     color: "#6C7A96",
   },
+
   commentSection: {
     marginTop: 10,
     marginBottom: 10,
   },
+
   commentSectionTitle: {
     fontSize: 18,
     fontWeight: "800",
@@ -464,6 +495,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     paddingHorizontal: 4,
   },
+
   commentCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 18,
@@ -472,11 +504,13 @@ const styles = StyleSheet.create({
     borderColor: "#E2E8F2",
     marginBottom: 10,
   },
+
   commentHeader: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 8,
   },
+
   commentAvatar: {
     width: 30,
     height: 30,
@@ -488,16 +522,19 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#D7E0F0",
   },
+
   commentUser: {
     fontSize: 13,
     fontWeight: "800",
     color: "#294880",
   },
+
   commentText: {
     fontSize: 14,
     lineHeight: 20,
     color: "#3E4B61",
   },
+
   emptyStateCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 18,
@@ -506,6 +543,7 @@ const styles = StyleSheet.create({
     borderColor: "#E2E8F2",
     alignItems: "center",
   },
+
   emptyStateText: {
     marginTop: 10,
     fontSize: 13,
@@ -513,6 +551,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 20,
   },
+
   inputContainer: {
     flexDirection: "row",
     alignItems: "flex-end",
@@ -523,6 +562,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "#E2E8F2",
   },
+
   input: {
     flex: 1,
     minHeight: 48,
@@ -537,6 +577,7 @@ const styles = StyleSheet.create({
     color: "#1F2A37",
     marginRight: 10,
   },
+
   sendButton: {
     width: 48,
     height: 48,
