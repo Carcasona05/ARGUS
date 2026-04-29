@@ -233,13 +233,7 @@ export default function SAdmin_Settings() {
         >
           <View style={styles.contentWrap}>
             <View style={styles.leftSection}>
-              <View style={styles.pageHeader}>
-                <Text style={styles.pageTitle}>SuperAdmin Settings</Text>
-                <Text style={styles.pageSubtitle}>
-                  Manage your SuperAdmin profile, account security, AI thresholds,
-                  map behavior, notifications, and system model configuration.
-                </Text>
-              </View>
+              
 
               <View style={styles.summaryRow}>
                 <SummaryCard

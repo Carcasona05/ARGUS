@@ -9,6 +9,9 @@ import {
 import { Ionicons, Feather } from "@expo/vector-icons";
 import { useRouter, usePathname } from "expo-router";
 
+const ARGUS_BLUE = "#294880";
+const DARK_BLUE = "#183865";
+
 export default function Admin_Layout({ children }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -20,32 +23,42 @@ export default function Admin_Layout({ children }) {
     {
       label: "Dashboard",
       route: "/(admin)/Admin_Dashboard",
+      path: "/Admin_Dashboard",
       icon: "grid",
       iconType: "Feather",
+      description: "Overview of incidents, hotspots, and system activity",
     },
     {
       label: "Analytics",
       route: "/(admin)/Admin_Analytics",
+      path: "/Admin_Analytics",
       icon: "bar-chart-outline",
       iconType: "Ionicons",
+      description: "View trends, metrics, and incident intelligence",
     },
     {
       label: "Validation",
       route: "/(admin)/Admin_Validation",
+      path: "/Admin_Validation",
       icon: "shield-checkmark-outline",
       iconType: "Ionicons",
+      description: "Manage reports, validate submissions, and review AI credibility",
     },
     {
       label: "Logs",
       route: "/(admin)/Admin_Logs",
+      path: "/Admin_Logs",
       icon: "list-outline",
       iconType: "Ionicons",
+      description: "Track system logs and recent admin activities",
     },
     {
       label: "Settings",
       route: "/(admin)/Admin_Settings",
+      path: "/Admin_Settings",
       icon: "settings-outline",
       iconType: "Ionicons",
+      description: "Manage admin accounts, profile, and system preferences",
     },
   ];
 
@@ -94,6 +107,57 @@ export default function Admin_Layout({ children }) {
 
   const unreadCount = notifications.filter((item) => item.unread).length;
 
+  const isRouteActive = (item) => {
+    return (
+      pathname === item.path ||
+      pathname === item.route ||
+      pathname.includes(item.path.replace("/", ""))
+    );
+  };
+
+  const getCurrentPage = () => {
+    const found = navItems.find((item) => isRouteActive(item));
+
+    if (found) {
+      return found;
+    }
+
+    if (pathname.includes("Admin_ViewReport")) {
+      return {
+        label: "View Report",
+        description: "Review complete incident report details",
+      };
+    }
+
+    if (pathname.includes("Admin_ViewValidation")) {
+      return {
+        label: "View Validation",
+        description: "Review AI validation and report credibility details",
+      };
+    }
+
+    if (pathname.includes("Admin_ViewValidationReport")) {
+      return {
+        label: "View Validation Report",
+        description: "Review submitted incident validation information",
+      };
+    }
+
+    if (pathname.includes("Admin_ViewReport")) {
+      return {
+        label: "View Report",
+        description: "Review complete incident report information",
+      };
+    }
+
+    return {
+      label: "Admin",
+      description: "Admin panel",
+    };
+  };
+
+  const currentPage = getCurrentPage();
+
   const getIcon = (item, isActive) => {
     const color = isActive ? "#FFFFFF" : "#B9C8E6";
 
@@ -106,7 +170,7 @@ export default function Admin_Layout({ children }) {
 
   const getNotificationIcon = (type) => {
     if (type === "report") {
-      return <Ionicons name="document-text-outline" size={20} color="#294880" />;
+      return <Ionicons name="document-text-outline" size={20} color={ARGUS_BLUE} />;
     }
 
     if (type === "ai") {
@@ -121,7 +185,7 @@ export default function Admin_Layout({ children }) {
       return <Ionicons name="server-outline" size={20} color="#F59E0B" />;
     }
 
-    return <Ionicons name="notifications-outline" size={20} color="#294880" />;
+    return <Ionicons name="notifications-outline" size={20} color={ARGUS_BLUE} />;
   };
 
   const getPriorityStyle = (priority) => {
@@ -141,51 +205,14 @@ export default function Admin_Layout({ children }) {
 
     return {
       backgroundColor: "#E8EEF9",
-      color: "#294880",
+      color: ARGUS_BLUE,
     };
   };
 
-  const getCurrentPageName = () => {
-    const found = navItems.find((item) => item.route === pathname);
-
-    if (found) {
-      return found.label;
-    }
-
-    if (pathname.includes("Admin_ViewReport")) {
-      return "View Report";
-    }
-
-    if (pathname.includes("Admin_ViewValidation")) {
-      return "View Validation";
-    }
-
-    return "Admin";
-  };
-
-  const getPageDescription = () => {
-    switch (pathname) {
-      case "/(admin)/Admin_Dashboard":
-        return "Overview of incidents, hotspots, and system activity";
-      case "/(admin)/Admin_Analytics":
-        return "View trends, metrics, and incident intelligence";
-      case "/(admin)/Admin_Validation":
-        return "Manage reports, validate submissions, and review AI credibility";
-      case "/(admin)/Admin_Settings":
-        return "Manage admin accounts, profile, and system preferences";
-      case "/(admin)/Admin_Logs":
-        return "Track system logs and recent admin activities";
-      default:
-        if (pathname.includes("Admin_ViewReport")) {
-          return "Review complete incident report details";
-        }
-
-        if (pathname.includes("Admin_ViewValidation")) {
-          return "Review AI validation and report credibility details";
-        }
-
-        return "Admin panel";
-    }
+  const handleNavPress = (route) => {
+    setShowNotifications(false);
+    setShowProfileDropdown(false);
+    router.push(route);
   };
 
   const handleNotificationPress = (item) => {
@@ -195,8 +222,8 @@ export default function Admin_Layout({ children }) {
   };
 
   const handleLogout = () => {
-    setShowProfileDropdown(false);
     setShowNotifications(false);
+    setShowProfileDropdown(false);
     router.replace("/(auth)/Admin_Login");
   };
 
@@ -223,24 +250,18 @@ export default function Admin_Layout({ children }) {
 
           <View style={styles.navList}>
             {navItems.map((item, index) => {
-              const isActive = pathname === item.route;
+              const isActive = isRouteActive(item);
 
               return (
                 <TouchableOpacity
                   key={index}
                   style={[styles.navItem, isActive && styles.activeNavItem]}
-                  onPress={() => {
-                    setShowNotifications(false);
-                    setShowProfileDropdown(false);
-                    router.push(item.route);
-                  }}
+                  onPress={() => handleNavPress(item.route)}
                   activeOpacity={0.75}
                 >
                   <View style={styles.navIcon}>{getIcon(item, isActive)}</View>
 
-                  <Text
-                    style={[styles.navText, isActive && styles.activeNavText]}
-                  >
+                  <Text style={[styles.navText, isActive && styles.activeNavText]}>
                     {item.label}
                   </Text>
                 </TouchableOpacity>
@@ -267,8 +288,8 @@ export default function Admin_Layout({ children }) {
             <View style={styles.headerTitleDivider} />
 
             <View>
-              <Text style={styles.pageTitle}>{getCurrentPageName()}</Text>
-              <Text style={styles.pageDesc}>{getPageDescription()}</Text>
+              <Text style={styles.pageTitle}>{currentPage.label}</Text>
+              <Text style={styles.pageDesc}>{currentPage.description}</Text>
             </View>
           </View>
 
@@ -288,7 +309,7 @@ export default function Admin_Layout({ children }) {
                 <Ionicons
                   name="notifications-outline"
                   size={23}
-                  color="#294880"
+                  color={ARGUS_BLUE}
                 />
 
                 {unreadCount > 0 && (
@@ -394,7 +415,7 @@ export default function Admin_Layout({ children }) {
                     <Ionicons
                       name="arrow-forward-outline"
                       size={16}
-                      color="#294880"
+                      color={ARGUS_BLUE}
                     />
                   </TouchableOpacity>
                 </View>
@@ -435,10 +456,6 @@ export default function Admin_Layout({ children }) {
 
               {showProfileDropdown && (
                 <View style={styles.profileDropdown}>
-                  
-
-                  <View style={styles.profileDropdownLine} />
-
                   <TouchableOpacity
                     style={styles.profileDropdownItem}
                     onPress={handleLogout}
@@ -463,6 +480,7 @@ export default function Admin_Layout({ children }) {
                       >
                         Logout
                       </Text>
+
                       <Text style={styles.profileDropdownSubtitle}>
                         Back to admin login
                       </Text>
@@ -496,7 +514,7 @@ const styles = {
   sidebar: {
     width: 260,
     minHeight: "100vh",
-    backgroundColor: "#183865",
+    backgroundColor: DARK_BLUE,
     paddingTop: 22,
     paddingBottom: 22,
     paddingHorizontal: 14,
@@ -555,7 +573,7 @@ const styles = {
   },
 
   activeNavItem: {
-    backgroundColor: "rgba(255,255,255,0.14)",
+    backgroundColor: "rgba(255,255,255,0.18)",
   },
 
   navIcon: {
@@ -572,7 +590,7 @@ const styles = {
 
   activeNavText: {
     color: "#FFFFFF",
-    fontWeight: "700",
+    fontWeight: "800",
   },
 
   sidebarFooter: {
@@ -594,7 +612,7 @@ const styles = {
   },
 
   footerAvatarText: {
-    color: "#294880",
+    color: ARGUS_BLUE,
     fontSize: 13,
     fontWeight: "800",
   },
@@ -629,7 +647,7 @@ const styles = {
     zIndex: 20,
     borderBottomWidth: 1,
     borderBottomColor: "#DCE5F2",
-    shadowColor: "#294880",
+    shadowColor: ARGUS_BLUE,
     shadowOpacity: 0.06,
     shadowRadius: 10,
     shadowOffset: {
@@ -650,7 +668,7 @@ const styles = {
     width: 5,
     height: 54,
     borderRadius: 999,
-    backgroundColor: "#294880",
+    backgroundColor: ARGUS_BLUE,
     marginRight: 16,
   },
 
@@ -727,7 +745,7 @@ const styles = {
     borderRadius: 20,
     borderWidth: 1,
     borderColor: "#E1E8F4",
-    shadowColor: "#294880",
+    shadowColor: ARGUS_BLUE,
     shadowOpacity: 0.14,
     shadowRadius: 24,
     shadowOffset: {
@@ -867,7 +885,7 @@ const styles = {
   viewAllText: {
     fontSize: 14,
     fontWeight: "800",
-    color: "#294880",
+    color: ARGUS_BLUE,
   },
 
   profileWrapper: {
@@ -891,7 +909,7 @@ const styles = {
     width: 34,
     height: 34,
     borderRadius: 12,
-    backgroundColor: "#294880",
+    backgroundColor: ARGUS_BLUE,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -927,7 +945,7 @@ const styles = {
     borderRadius: 18,
     borderWidth: 1,
     borderColor: "#E1E8F4",
-    shadowColor: "#294880",
+    shadowColor: ARGUS_BLUE,
     shadowOpacity: 0.14,
     shadowRadius: 24,
     shadowOffset: {
@@ -976,12 +994,6 @@ const styles = {
     fontSize: 12,
     color: "#6B7A99",
     marginTop: 2,
-  },
-
-  profileDropdownLine: {
-    height: 1,
-    backgroundColor: "#EEF3FA",
-    marginHorizontal: 14,
   },
 
   logoutText: {

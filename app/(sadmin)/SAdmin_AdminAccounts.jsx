@@ -280,13 +280,7 @@ export default function SAdmin_AdminAccounts() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.pageHeader}>
-            <View>
-              <Text style={styles.pageTitle}>Admin Accounts</Text>
-              <Text style={styles.pageSubtitle}>
-                Manage SuperAdmin and normal admin accounts, roles, departments,
-                and account access.
-              </Text>
-            </View>
+            
 
             <TouchableOpacity
               style={styles.addButton}

@@ -230,34 +230,7 @@ export default function SAdmin_Dashboard() {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.heroCard}>
-          <View style={styles.heroLeft}>
-            <View style={styles.heroIconBox}>
-              <Ionicons
-                name="shield-checkmark-outline"
-                size={30}
-                color="#FFFFFF"
-              />
-            </View>
-
-            <View style={styles.heroTextBox}>
-              <Text style={styles.heroTitle}>SuperAdmin Control Center</Text>
-              <Text style={styles.heroSubtitle}>
-                Monitor reports, admin actions, audit logs, AI settings, and
-                system-wide activity.
-              </Text>
-            </View>
-          </View>
-
-          <TouchableOpacity
-            style={styles.heroButton}
-            onPress={() => router.push("/(sadmin)/SAdmin_Settings")}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="settings-outline" size={18} color="#FFFFFF" />
-            <Text style={styles.heroButtonText}>Open Settings</Text>
-          </TouchableOpacity>
-        </View>
+        
 
         <View style={styles.overviewGrid}>
           {overviewCards.map((item, index) => (
@@ -480,48 +453,7 @@ export default function SAdmin_Dashboard() {
               </View>
             </View>
 
-            <View style={styles.panel}>
-              <View style={styles.panelHeaderCompact}>
-                <View>
-                  <Text style={styles.panelTitle}>Quick Actions</Text>
-                  <Text style={styles.panelSubtitle}>
-                    Common SuperAdmin shortcuts
-                  </Text>
-                </View>
-              </View>
-
-              <View style={styles.quickActionList}>
-                {quickActions.map((item, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={styles.quickActionItem}
-                    onPress={() => router.push(item.route)}
-                    activeOpacity={0.8}
-                  >
-                    <View style={styles.quickActionIcon}>
-                      <Ionicons
-                        name={item.icon}
-                        size={20}
-                        color="#294880"
-                      />
-                    </View>
-
-                    <View style={styles.quickActionTextBox}>
-                      <Text style={styles.quickActionLabel}>{item.label}</Text>
-                      <Text style={styles.quickActionDesc}>
-                        {item.description}
-                      </Text>
-                    </View>
-
-                    <Ionicons
-                      name="chevron-forward-outline"
-                      size={18}
-                      color="#8A98B3"
-                    />
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
+            
           </View>
         </View>
       </ScrollView>

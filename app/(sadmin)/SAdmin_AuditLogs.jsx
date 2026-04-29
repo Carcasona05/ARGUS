@@ -276,15 +276,7 @@ export default function SAdmin_AuditLogs() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.pageHeader}>
-            <View>
-              <Text style={styles.pageTitle}>Audit Logs</Text>
-              <Text style={styles.pageSubtitle}>
-                Monitor report verification, deleted reports, admin account actions,
-                AI analysis, and system configuration updates.
-              </Text>
-            </View>
-          </View>
+          
 
           <View style={styles.summaryGrid}>
             <View style={styles.summaryCard}>
