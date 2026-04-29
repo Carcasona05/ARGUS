@@ -12,44 +12,25 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
-import Admin_Layout from "../../components/Admin_Layout";
-import Admin_AddAdmin from "../../components/modals/Admin_AddAdmin";
-import Admin_EditAdminReq from "../../components/modals/SuperAdmin_EditReq";
+import SAdmin_Layout from "../../components/SAdmin_Compo/SAdmin_Layout";
 
-const COLORS = {
-  primary: "#294880",
-  primarySoft: "#EAF2FF",
-  primaryBorder: "#D9E2F0",
-  text: "#2F4267",
-  textMuted: "#5D6F92",
-  white: "#FFFFFF",
-  background: "#F5F8FC",
-  surfaceSoft: "#F7F9FD",
-  success: "#22A06B",
-  successSoft: "#EAF8F1",
-  danger: "#E45757",
-  dangerSoft: "#FFF5F5",
-  warning: "#C98A2E",
-  warningSoft: "#FFF4E5",
-};
-
-function StatusBadge({ label, tone = "success" }) {
+function StatusBadge({ label, tone = "primary" }) {
   const toneMap = {
     primary: {
-      backgroundColor: COLORS.primarySoft,
-      color: COLORS.primary,
+      backgroundColor: "#EAF2FF",
+      color: "#294880",
     },
     success: {
-      backgroundColor: COLORS.successSoft,
-      color: COLORS.success,
+      backgroundColor: "#EAF8F1",
+      color: "#22A06B",
     },
     warning: {
-      backgroundColor: COLORS.warningSoft,
-      color: COLORS.warning,
+      backgroundColor: "#FFF4E5",
+      color: "#C98A2E",
     },
     danger: {
-      backgroundColor: COLORS.dangerSoft,
-      color: COLORS.danger,
+      backgroundColor: "#FFF5F5",
+      color: "#E45757",
     },
   };
 
@@ -57,7 +38,9 @@ function StatusBadge({ label, tone = "success" }) {
 
   return (
     <View style={[styles.statusBadge, { backgroundColor: style.backgroundColor }]}>
-      <Text style={[styles.statusBadgeText, { color: style.color }]}>{label}</Text>
+      <Text style={[styles.statusBadgeText, { color: style.color }]}>
+        {label}
+      </Text>
     </View>
   );
 }
@@ -65,17 +48,21 @@ function StatusBadge({ label, tone = "success" }) {
 function SummaryCard({ icon, title, value, subtext, tone = "primary" }) {
   const iconBg =
     tone === "success"
-      ? COLORS.successSoft
+      ? "#EAF8F1"
       : tone === "warning"
-      ? COLORS.warningSoft
-      : COLORS.primarySoft;
+      ? "#FFF4E5"
+      : tone === "danger"
+      ? "#FFF5F5"
+      : "#EAF2FF";
 
   const iconColor =
     tone === "success"
-      ? COLORS.success
+      ? "#22A06B"
       : tone === "warning"
-      ? COLORS.warning
-      : COLORS.primary;
+      ? "#C98A2E"
+      : tone === "danger"
+      ? "#E45757"
+      : "#294880";
 
   return (
     <View style={styles.summaryCard}>
@@ -88,7 +75,9 @@ function SummaryCard({ icon, title, value, subtext, tone = "primary" }) {
 
         <View style={styles.summaryValueRow}>
           <Text style={styles.summaryValue}>{value}</Text>
-          <Text style={[styles.summarySubtext, { color: iconColor }]}>{subtext}</Text>
+          <Text style={[styles.summarySubtext, { color: iconColor }]}>
+            {subtext}
+          </Text>
         </View>
       </View>
     </View>
@@ -100,7 +89,7 @@ function SettingRow({ icon, title, description, rightContent, isLast = false }) 
     <View style={[styles.settingRow, !isLast && styles.settingRowBorder]}>
       <View style={styles.settingLeft}>
         <View style={styles.settingIconWrap}>
-          <Ionicons name={icon} size={18} color={COLORS.primary} />
+          <Ionicons name={icon} size={18} color="#294880" />
         </View>
 
         <View style={styles.settingTextWrap}>
@@ -114,53 +103,18 @@ function SettingRow({ icon, title, description, rightContent, isLast = false }) 
   );
 }
 
-function AdminRow({ admin, isLast, onEdit, onDelete }) {
-  return (
-    <View style={[styles.adminRow, !isLast && styles.adminRowBorder]}>
-      <View style={styles.adminLeft}>
-        <View style={styles.adminIconWrap}>
-          <Ionicons name="person-circle-outline" size={24} color={COLORS.primary} />
-        </View>
+export default function SAdmin_Settings() {
+  const [fullName, setFullName] = useState("ARGUS SuperAdmin");
+  const [emailAddress, setEmailAddress] = useState("superadmin@argus.com");
+  const [phoneNumber, setPhoneNumber] = useState("0912 345 6789");
 
-        <View style={styles.adminInfo}>
-          <Text style={styles.adminName}>{admin.name}</Text>
-          <Text style={styles.adminDetails}>
-            {admin.role} • {admin.email}
-          </Text>
-          <Text style={styles.adminSubDetails}>{admin.department}</Text>
-        </View>
-      </View>
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
 
-      <View style={styles.adminRight}>
-        <StatusBadge label={admin.status} tone="success" />
-
-        <View style={styles.rowActions}>
-          <TouchableOpacity
-            style={styles.editButton}
-            onPress={() => onEdit(admin)}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="create-outline" size={16} color={COLORS.primary} />
-            <Text style={styles.editButtonText}>Edit Request</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.deleteButton}
-            onPress={() => onDelete(admin.id)}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="trash-outline" size={17} color={COLORS.danger} />
-          </TouchableOpacity>
-        </View>
-      </View>
-    </View>
-  );
-}
-
-export default function Admin_SuperSettings() {
-  const [isAddAdminVisible, setIsAddAdminVisible] = useState(false);
-  const [isEditRequestVisible, setIsEditRequestVisible] = useState(false);
-  const [selectedAdmin, setSelectedAdmin] = useState(null);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
 
   const [autoMapVerified, setAutoMapVerified] = useState(true);
   const [aiCredibilityEnabled, setAiCredibilityEnabled] = useState(true);
@@ -172,39 +126,9 @@ export default function Admin_SuperSettings() {
   const [highThreshold, setHighThreshold] = useState("85");
   const [mediumThreshold, setMediumThreshold] = useState("60");
   const [defaultMapZoom, setDefaultMapZoom] = useState("13");
-  const [mapCenter, setMapCenter] = useState("Cebu City");
+  const [mapCenter, setMapCenter] = useState("Argao, Cebu");
   const [modelVersion, setModelVersion] = useState("ARGUS-AI v4.3.01");
   const [apiEndpoint, setApiEndpoint] = useState("https://api.argus.local/v1");
-
-  const [adminAccounts, setAdminAccounts] = useState([
-    {
-      id: 1,
-      name: "Maria Santos",
-      email: "maria.santos@argus.com",
-      role: "Super Admin",
-      department: "System Management",
-      phone: "0912 345 6789",
-      status: "Active",
-    },
-    {
-      id: 2,
-      name: "John Reyes",
-      email: "john.reyes@argus.com",
-      role: "Operations Admin",
-      department: "Incident Operations",
-      phone: "0923 456 7890",
-      status: "Active",
-    },
-    {
-      id: 3,
-      name: "Carla Lim",
-      email: "carla.lim@argus.com",
-      role: "Validation Admin",
-      department: "Report Validation",
-      phone: "0934 567 8901",
-      status: "Active",
-    },
-  ]);
 
   const incidentCategories = [
     "Public Safety Incidents",
@@ -225,89 +149,57 @@ export default function Admin_SuperSettings() {
     Alert.alert(title, message);
   };
 
-  const handleOpenAddAdmin = () => {
-    setIsAddAdminVisible(true);
-  };
-
-  const handleCloseAddAdmin = () => {
-    setIsAddAdminVisible(false);
-  };
-
-  const handleAddAdmin = (newAdmin) => {
-    const adminToAdd = {
-      id: Date.now(),
-      name: newAdmin?.name || newAdmin?.fullName || "New Admin",
-      email: newAdmin?.email || "new.admin@argus.com",
-      role: newAdmin?.role || "Admin",
-      department: newAdmin?.department || "Admin Department",
-      phone: newAdmin?.phone || "Not provided",
-      status: "Active",
-    };
-
-    setAdminAccounts((prev) => [adminToAdd, ...prev]);
-    setIsAddAdminVisible(false);
-
-    showMessage("Admin Added", "New admin account has been added successfully.");
-  };
-
-  const handleOpenEditRequest = (admin) => {
-    setSelectedAdmin(admin);
-    setIsEditRequestVisible(true);
-  };
-
-  const handleCloseEditRequest = () => {
-    setSelectedAdmin(null);
-    setIsEditRequestVisible(false);
-  };
-
-  const handleSaveEditRequest = (updatedAdmin) => {
-    setAdminAccounts((prev) =>
-      prev.map((admin) =>
-        admin.id === updatedAdmin.id
-          ? {
-              ...admin,
-              ...updatedAdmin,
-            }
-          : admin
-      )
-    );
-
-    setSelectedAdmin(null);
-    setIsEditRequestVisible(false);
-
-    showMessage(
-      "Edit Request Saved",
-      "The admin details edit request has been saved successfully."
-    );
-  };
-
-  const handleDeleteAdmin = (adminId) => {
-    const deleteAction = () => {
-      setAdminAccounts((prev) => prev.filter((admin) => admin.id !== adminId));
-      showMessage("Admin Deleted", "The admin account has been removed.");
-    };
-
-    if (Platform.OS === "web") {
-      const confirmed = window.confirm("Are you sure you want to delete this admin?");
-
-      if (confirmed) {
-        deleteAction();
-      }
-
+  const handleSaveProfile = () => {
+    if (!fullName.trim() || !emailAddress.trim() || !phoneNumber.trim()) {
+      showMessage("Missing Information", "Please fill in all profile fields.");
       return;
     }
 
-    Alert.alert("Delete Admin", "Are you sure you want to delete this admin?", [
-      {
-        text: "Cancel",
-        style: "cancel",
-      },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: deleteAction,
-      },
-    ]);
+    if (!emailAddress.includes("@")) {
+      showMessage("Invalid Email", "Please enter a valid email address.");
+      return;
+    }
+
+    globalThis.adminAccount = {
+      ...(globalThis.adminAccount || {}),
+      fullName: fullName.trim(),
+      email: emailAddress.trim().toLowerCase(),
+      phone: phoneNumber.trim(),
+      role: "SuperAdmin",
+    };
+
+    showMessage(
+      "Profile Updated",
+      "Your SuperAdmin profile information has been updated."
+    );
+  };
+
+  const handleChangePassword = () => {
+    if (!currentPassword || !newPassword || !confirmNewPassword) {
+      showMessage("Missing Password", "Please fill in all password fields.");
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      showMessage("Weak Password", "New password must be at least 6 characters.");
+      return;
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      showMessage("Password Mismatch", "New password and confirm password do not match.");
+      return;
+    }
+
+    globalThis.adminAccount = {
+      ...(globalThis.adminAccount || {}),
+      password: newPassword,
+    };
+
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmNewPassword("");
+
+    showMessage("Password Updated", "Your SuperAdmin password has been changed.");
   };
 
   const handleSaveSettings = () => {
@@ -324,15 +216,15 @@ export default function Admin_SuperSettings() {
     setHighThreshold("85");
     setMediumThreshold("60");
     setDefaultMapZoom("13");
-    setMapCenter("Cebu City");
+    setMapCenter("Argao, Cebu");
     setModelVersion("ARGUS-AI v4.3.01");
     setApiEndpoint("https://api.argus.local/v1");
 
-    showMessage("Settings Reset", "Settings have been restored to default values.");
+    showMessage("Settings Reset", "System settings have been restored to default values.");
   };
 
   return (
-    <Admin_Layout>
+    <SAdmin_Layout>
       <View style={styles.mainWrapper}>
         <ScrollView
           style={styles.container}
@@ -342,41 +234,41 @@ export default function Admin_SuperSettings() {
           <View style={styles.contentWrap}>
             <View style={styles.leftSection}>
               <View style={styles.pageHeader}>
-                <Text style={styles.pageTitle}>Super Admin Settings</Text>
+                <Text style={styles.pageTitle}>SuperAdmin Settings</Text>
                 <Text style={styles.pageSubtitle}>
-                  Manage admin accounts, AI rules, incident categories, map settings,
-                  notifications, and API model configuration.
+                  Manage your SuperAdmin profile, account security, AI thresholds,
+                  map behavior, notifications, and system model configuration.
                 </Text>
               </View>
 
               <View style={styles.summaryRow}>
                 <SummaryCard
-                  icon="people-outline"
-                  title="Admin Accounts"
-                  value={adminAccounts.length}
-                  subtext="Active users"
+                  icon="person-circle-outline"
+                  title="Profile"
+                  value="Active"
+                  subtext="SuperAdmin"
                 />
 
                 <SummaryCard
                   icon="hardware-chip-outline"
                   title="AI Rules"
                   value={aiCredibilityEnabled ? "Enabled" : "Off"}
-                  subtext="Validation active"
+                  subtext="Validation"
                   tone="success"
                 />
 
                 <SummaryCard
-                  icon="layers-outline"
-                  title="Categories"
-                  value={incidentCategories.length}
-                  subtext="Configured groups"
+                  icon="map-outline"
+                  title="Map Scope"
+                  value="Argao"
+                  subtext="Cebu"
                 />
 
                 <SummaryCard
                   icon="notifications-outline"
-                  title="Notifications"
+                  title="Alerts"
                   value={emailNotifications || pushNotifications ? "Live" : "Off"}
-                  subtext="System alerts"
+                  subtext="System"
                   tone="warning"
                 />
               </View>
@@ -384,41 +276,175 @@ export default function Admin_SuperSettings() {
               <View style={styles.sectionCard}>
                 <View style={styles.sectionHeader}>
                   <View style={styles.sectionHeaderText}>
-                    <Text style={styles.sectionTitle}>Admin Account Management</Text>
+                    <Text style={styles.sectionTitle}>SuperAdmin Profile Settings</Text>
                     <Text style={styles.sectionDescription}>
-                      Add admins, open edit request details, or delete admin accounts.
+                      Update your own SuperAdmin name, email address, and phone number.
                     </Text>
                   </View>
 
-                  <TouchableOpacity
-                    style={styles.primaryActionButton}
-                    onPress={handleOpenAddAdmin}
-                    activeOpacity={0.85}
-                  >
-                    <Ionicons name="add" size={16} color={COLORS.white} />
-                    <Text style={styles.primaryActionButtonText}>Add Admin</Text>
-                  </TouchableOpacity>
+                  <StatusBadge label="Account Owner" tone="primary" />
                 </View>
 
-                {adminAccounts.length === 0 ? (
-                  <View style={styles.emptyState}>
-                    <Ionicons name="people-outline" size={34} color={COLORS.textMuted} />
-                    <Text style={styles.emptyTitle}>No admins available</Text>
-                    <Text style={styles.emptyDescription}>
-                      Click Add Admin to create a new admin account.
+                <View style={styles.profileGrid}>
+                  <View style={styles.inputCard}>
+                    <Text style={styles.inputLabel}>Full Name</Text>
+                    <TextInput
+                      value={fullName}
+                      onChangeText={setFullName}
+                      style={styles.textInput}
+                      placeholder="Full Name"
+                      placeholderTextColor="#5D6F92"
+                    />
+                  </View>
+
+                  <View style={styles.inputCard}>
+                    <Text style={styles.inputLabel}>Email Address</Text>
+                    <TextInput
+                      value={emailAddress}
+                      onChangeText={setEmailAddress}
+                      style={styles.textInput}
+                      placeholder="Email Address"
+                      placeholderTextColor="#5D6F92"
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                    />
+                  </View>
+
+                  <View style={styles.inputCard}>
+                    <Text style={styles.inputLabel}>Phone Number</Text>
+                    <TextInput
+                      value={phoneNumber}
+                      onChangeText={setPhoneNumber}
+                      style={styles.textInput}
+                      placeholder="Phone Number"
+                      placeholderTextColor="#5D6F92"
+                      keyboardType="phone-pad"
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.profileActionRow}>
+                  <TouchableOpacity
+                    style={styles.primaryActionButton}
+                    onPress={handleSaveProfile}
+                    activeOpacity={0.85}
+                  >
+                    <Ionicons name="save-outline" size={17} color="#FFFFFF" />
+                    <Text style={styles.primaryActionButtonText}>Save Profile</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <View style={styles.sectionCard}>
+                <View style={styles.sectionHeader}>
+                  <View style={styles.sectionHeaderText}>
+                    <Text style={styles.sectionTitle}>Change Password</Text>
+                    <Text style={styles.sectionDescription}>
+                      Update your SuperAdmin password for account security.
                     </Text>
                   </View>
-                ) : (
-                  adminAccounts.map((admin, index) => (
-                    <AdminRow
-                      key={admin.id}
-                      admin={admin}
-                      isLast={index === adminAccounts.length - 1}
-                      onEdit={handleOpenEditRequest}
-                      onDelete={handleDeleteAdmin}
-                    />
-                  ))
-                )}
+
+                  <StatusBadge label="Secure" tone="success" />
+                </View>
+
+                <View style={styles.profileGrid}>
+                  <View style={styles.inputCard}>
+                    <Text style={styles.inputLabel}>Current Password</Text>
+
+                    <View style={styles.passwordInputWrap}>
+                      <TextInput
+                        value={currentPassword}
+                        onChangeText={setCurrentPassword}
+                        style={styles.passwordInput}
+                        placeholder="Current Password"
+                        placeholderTextColor="#5D6F92"
+                        secureTextEntry={!showCurrentPassword}
+                      />
+
+                      <TouchableOpacity
+                        onPress={() => setShowCurrentPassword(!showCurrentPassword)}
+                        activeOpacity={0.7}
+                      >
+                        <Ionicons
+                          name={showCurrentPassword ? "eye-off-outline" : "eye-outline"}
+                          size={20}
+                          color="#5D6F92"
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  <View style={styles.inputCard}>
+                    <Text style={styles.inputLabel}>New Password</Text>
+
+                    <View style={styles.passwordInputWrap}>
+                      <TextInput
+                        value={newPassword}
+                        onChangeText={setNewPassword}
+                        style={styles.passwordInput}
+                        placeholder="New Password"
+                        placeholderTextColor="#5D6F92"
+                        secureTextEntry={!showNewPassword}
+                      />
+
+                      <TouchableOpacity
+                        onPress={() => setShowNewPassword(!showNewPassword)}
+                        activeOpacity={0.7}
+                      >
+                        <Ionicons
+                          name={showNewPassword ? "eye-off-outline" : "eye-outline"}
+                          size={20}
+                          color="#5D6F92"
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  <View style={styles.inputCard}>
+                    <Text style={styles.inputLabel}>Confirm New Password</Text>
+
+                    <View style={styles.passwordInputWrap}>
+                      <TextInput
+                        value={confirmNewPassword}
+                        onChangeText={setConfirmNewPassword}
+                        style={styles.passwordInput}
+                        placeholder="Confirm New Password"
+                        placeholderTextColor="#5D6F92"
+                        secureTextEntry={!showConfirmNewPassword}
+                      />
+
+                      <TouchableOpacity
+                        onPress={() =>
+                          setShowConfirmNewPassword(!showConfirmNewPassword)
+                        }
+                        activeOpacity={0.7}
+                      >
+                        <Ionicons
+                          name={
+                            showConfirmNewPassword
+                              ? "eye-off-outline"
+                              : "eye-outline"
+                          }
+                          size={20}
+                          color="#5D6F92"
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+
+                <View style={styles.profileActionRow}>
+                  <TouchableOpacity
+                    style={styles.primaryActionButton}
+                    onPress={handleChangePassword}
+                    activeOpacity={0.85}
+                  >
+                    <Ionicons name="lock-closed-outline" size={17} color="#FFFFFF" />
+                    <Text style={styles.primaryActionButtonText}>
+                      Update Password
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
 
               <View style={styles.sectionCard}>
@@ -426,7 +452,7 @@ export default function Admin_SuperSettings() {
                   <View style={styles.sectionHeaderText}>
                     <Text style={styles.sectionTitle}>AI Threshold Configuration</Text>
                     <Text style={styles.sectionDescription}>
-                      Configure AI credibility scoring for report validation.
+                      Configure AI credibility scoring used during report validation.
                     </Text>
                   </View>
 
@@ -445,7 +471,7 @@ export default function Admin_SuperSettings() {
                       value={aiCredibilityEnabled}
                       onValueChange={setAiCredibilityEnabled}
                       trackColor={{ false: "#D9E2F0", true: "#BFD4FF" }}
-                      thumbColor={aiCredibilityEnabled ? COLORS.primary : COLORS.white}
+                      thumbColor={aiCredibilityEnabled ? "#294880" : "#FFFFFF"}
                     />
                   }
                 />
@@ -459,7 +485,7 @@ export default function Admin_SuperSettings() {
                       style={styles.textInput}
                       keyboardType="numeric"
                       placeholder="85"
-                      placeholderTextColor={COLORS.textMuted}
+                      placeholderTextColor="#5D6F92"
                     />
                   </View>
 
@@ -471,7 +497,7 @@ export default function Admin_SuperSettings() {
                       style={styles.textInput}
                       keyboardType="numeric"
                       placeholder="60"
-                      placeholderTextColor={COLORS.textMuted}
+                      placeholderTextColor="#5D6F92"
                     />
                   </View>
                 </View>
@@ -482,13 +508,11 @@ export default function Admin_SuperSettings() {
                   <View style={styles.sectionHeaderText}>
                     <Text style={styles.sectionTitle}>Incident Category Management</Text>
                     <Text style={styles.sectionDescription}>
-                      Manage the categories used for submitted incident reports.
+                      Review the category groups used for submitted incident reports.
                     </Text>
                   </View>
 
-                  <TouchableOpacity style={styles.secondaryButton} activeOpacity={0.85}>
-                    <Text style={styles.secondaryButtonText}>Edit Categories</Text>
-                  </TouchableOpacity>
+                  <StatusBadge label={`${incidentCategories.length} Categories`} />
                 </View>
 
                 <View style={styles.categoryList}>
@@ -505,23 +529,23 @@ export default function Admin_SuperSettings() {
                   <View style={styles.sectionHeaderText}>
                     <Text style={styles.sectionTitle}>Map Settings</Text>
                     <Text style={styles.sectionDescription}>
-                      Control how verified reports appear on the admin incident map.
+                      Control how verified reports appear on the Argao incident map.
                     </Text>
                   </View>
 
-                  <StatusBadge label="Live Map" tone="primary" />
+                  <StatusBadge label="Argao Map" tone="primary" />
                 </View>
 
                 <SettingRow
                   icon="map-outline"
                   title="Auto-map verified reports"
-                  description="Automatically place verified reports on the admin incident map."
+                  description="Automatically display verified reports on the incident map."
                   rightContent={
                     <Switch
                       value={autoMapVerified}
                       onValueChange={setAutoMapVerified}
                       trackColor={{ false: "#D9E2F0", true: "#BFD4FF" }}
-                      thumbColor={autoMapVerified ? COLORS.primary : COLORS.white}
+                      thumbColor={autoMapVerified ? "#294880" : "#FFFFFF"}
                     />
                   }
                 />
@@ -535,7 +559,7 @@ export default function Admin_SuperSettings() {
                       value={clusterOverlay}
                       onValueChange={setClusterOverlay}
                       trackColor={{ false: "#D9E2F0", true: "#BFD4FF" }}
-                      thumbColor={clusterOverlay ? COLORS.primary : COLORS.white}
+                      thumbColor={clusterOverlay ? "#294880" : "#FFFFFF"}
                     />
                   }
                 />
@@ -550,7 +574,7 @@ export default function Admin_SuperSettings() {
                       value={heatmapOverlay}
                       onValueChange={setHeatmapOverlay}
                       trackColor={{ false: "#D9E2F0", true: "#BFD4FF" }}
-                      thumbColor={heatmapOverlay ? COLORS.primary : COLORS.white}
+                      thumbColor={heatmapOverlay ? "#294880" : "#FFFFFF"}
                     />
                   }
                 />
@@ -564,7 +588,7 @@ export default function Admin_SuperSettings() {
                       style={styles.textInput}
                       keyboardType="numeric"
                       placeholder="13"
-                      placeholderTextColor={COLORS.textMuted}
+                      placeholderTextColor="#5D6F92"
                     />
                   </View>
 
@@ -574,8 +598,8 @@ export default function Admin_SuperSettings() {
                       value={mapCenter}
                       onChangeText={setMapCenter}
                       style={styles.textInput}
-                      placeholder="Cebu City"
-                      placeholderTextColor={COLORS.textMuted}
+                      placeholder="Argao, Cebu"
+                      placeholderTextColor="#5D6F92"
                     />
                   </View>
                 </View>
@@ -586,7 +610,7 @@ export default function Admin_SuperSettings() {
                   <View style={styles.sectionHeaderText}>
                     <Text style={styles.sectionTitle}>Notification Preferences</Text>
                     <Text style={styles.sectionDescription}>
-                      Configure system alerts and admin notification channels.
+                      Configure SuperAdmin system alerts and notification channels.
                     </Text>
                   </View>
 
@@ -602,7 +626,7 @@ export default function Admin_SuperSettings() {
                       value={emailNotifications}
                       onValueChange={setEmailNotifications}
                       trackColor={{ false: "#D9E2F0", true: "#BFD4FF" }}
-                      thumbColor={emailNotifications ? COLORS.primary : COLORS.white}
+                      thumbColor={emailNotifications ? "#294880" : "#FFFFFF"}
                     />
                   }
                 />
@@ -617,7 +641,7 @@ export default function Admin_SuperSettings() {
                       value={pushNotifications}
                       onValueChange={setPushNotifications}
                       trackColor={{ false: "#D9E2F0", true: "#BFD4FF" }}
-                      thumbColor={pushNotifications ? COLORS.primary : COLORS.white}
+                      thumbColor={pushNotifications ? "#294880" : "#FFFFFF"}
                     />
                   }
                 />
@@ -651,7 +675,7 @@ export default function Admin_SuperSettings() {
                       onChangeText={setModelVersion}
                       style={styles.textInput}
                       placeholder="ARGUS-AI v4.3.01"
-                      placeholderTextColor={COLORS.textMuted}
+                      placeholderTextColor="#5D6F92"
                     />
                   </View>
 
@@ -662,7 +686,7 @@ export default function Admin_SuperSettings() {
                       onChangeText={setApiEndpoint}
                       style={styles.textInput}
                       placeholder="https://api.argus.local/v1"
-                      placeholderTextColor={COLORS.textMuted}
+                      placeholderTextColor="#5D6F92"
                     />
                   </View>
                 </View>
@@ -674,7 +698,7 @@ export default function Admin_SuperSettings() {
                   onPress={handleResetSettings}
                   activeOpacity={0.85}
                 >
-                  <Text style={styles.resetButtonText}>Reset</Text>
+                  <Text style={styles.resetButtonText}>Reset System Settings</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -682,8 +706,8 @@ export default function Admin_SuperSettings() {
                   onPress={handleSaveSettings}
                   activeOpacity={0.85}
                 >
-                  <Ionicons name="save-outline" size={18} color={COLORS.white} />
-                  <Text style={styles.saveButtonText}>Save Settings</Text>
+                  <Ionicons name="save-outline" size={18} color="#FFFFFF" />
+                  <Text style={styles.saveButtonText}>Save System Settings</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -693,8 +717,13 @@ export default function Admin_SuperSettings() {
                 <Text style={styles.sideCardTitle}>Settings Overview</Text>
 
                 <View style={styles.breakdownRow}>
-                  <Text style={styles.breakdownText}>Admin Accounts</Text>
-                  <Text style={styles.breakdownCount}>{adminAccounts.length}</Text>
+                  <Text style={styles.breakdownText}>Profile Settings</Text>
+                  <Text style={styles.breakdownCount}>3</Text>
+                </View>
+
+                <View style={styles.breakdownRow}>
+                  <Text style={styles.breakdownText}>Password Fields</Text>
+                  <Text style={styles.breakdownCount}>3</Text>
                 </View>
 
                 <View style={styles.breakdownRow}>
@@ -704,7 +733,9 @@ export default function Admin_SuperSettings() {
 
                 <View style={styles.breakdownRow}>
                   <Text style={styles.breakdownText}>Incident Categories</Text>
-                  <Text style={styles.breakdownCount}>{incidentCategories.length}</Text>
+                  <Text style={styles.breakdownCount}>
+                    {incidentCategories.length}
+                  </Text>
                 </View>
 
                 <View style={styles.breakdownRow}>
@@ -716,77 +747,61 @@ export default function Admin_SuperSettings() {
                   <Text style={styles.breakdownText}>Notifications</Text>
                   <Text style={styles.breakdownCount}>2</Text>
                 </View>
-
-                <View style={styles.breakdownRow}>
-                  <Text style={styles.breakdownText}>API / Model Fields</Text>
-                  <Text style={styles.breakdownCount}>2</Text>
-                </View>
               </View>
 
               <View style={styles.sideCard}>
                 <Text style={styles.sideCardTitle}>Configuration Notes</Text>
 
                 <View style={styles.notesContent}>
-                  <Text style={styles.notesHeading}>Functions</Text>
+                  <Text style={styles.notesHeading}>This page is for</Text>
                   <Text style={styles.notesText}>
-                    • Manage admin accounts{"\n"}
+                    • SuperAdmin own profile{"\n"}
+                    • Change own password{"\n"}
                     • Configure AI thresholds{"\n"}
-                    • Manage incident categories{"\n"}
+                    • Review incident categories{"\n"}
                     • Change map settings{"\n"}
                     • Notification preferences{"\n"}
                     • API or model settings
                   </Text>
 
                   <Text style={[styles.notesHeading, styles.notesHeadingSpacing]}>
-                    Reminder
+                    Not included here
                   </Text>
                   <Text style={styles.notesText}>
-                    Settings control the behavior of the admin system, so changes should
-                    only be saved by authorized administrators.
+                    Admin account listing, adding, editing, and deleting should be
+                    handled in the Admin Accounts page to avoid duplicate sections.
                   </Text>
                 </View>
               </View>
 
               <View style={styles.sideCard}>
-                <Text style={styles.sideCardTitle}>Admin Edit Request</Text>
+                <Text style={styles.sideCardTitle}>Security Reminder</Text>
 
                 <View style={styles.notesContent}>
                   <Text style={styles.notesText}>
-                    Click Edit Request in the admin list to open the selected admin details.
-                    You can update name, email, role, department, and phone number.
+                    Password changes should be verified before saving. In the final
+                    backend version, the current password should be checked against
+                    the database before allowing updates.
                   </Text>
                 </View>
               </View>
             </View>
           </View>
         </ScrollView>
-
-        <Admin_AddAdmin
-          visible={isAddAdminVisible}
-          onClose={handleCloseAddAdmin}
-          onSubmit={handleAddAdmin}
-        />
-
-        <Admin_EditAdminReq
-          visible={isEditRequestVisible}
-          admin={selectedAdmin}
-          onClose={handleCloseEditRequest}
-          onSave={handleSaveEditRequest}
-        />
       </View>
-    </Admin_Layout>
+    </SAdmin_Layout>
   );
 }
 
 const styles = StyleSheet.create({
   mainWrapper: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: "#F5F8FC",
   },
 
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: "#F5F8FC",
   },
 
   scrollContent: {
@@ -810,9 +825,9 @@ const styles = StyleSheet.create({
   },
 
   pageHeader: {
-    backgroundColor: COLORS.white,
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: COLORS.primaryBorder,
+    borderColor: "#D9E2F0",
     borderRadius: 18,
     padding: 22,
     marginBottom: 16,
@@ -820,14 +835,14 @@ const styles = StyleSheet.create({
 
   pageTitle: {
     fontSize: 24,
-    color: COLORS.primary,
+    color: "#294880",
     fontWeight: "800",
     marginBottom: 6,
   },
 
   pageSubtitle: {
     fontSize: 14,
-    color: COLORS.textMuted,
+    color: "#5D6F92",
     lineHeight: 21,
   },
 
@@ -841,9 +856,9 @@ const styles = StyleSheet.create({
   summaryCard: {
     flex: 1,
     minWidth: 210,
-    backgroundColor: COLORS.white,
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: COLORS.primaryBorder,
+    borderColor: "#D9E2F0",
     borderRadius: 16,
     paddingVertical: 18,
     paddingHorizontal: 16,
@@ -866,7 +881,7 @@ const styles = StyleSheet.create({
 
   summaryTitle: {
     fontSize: 14,
-    color: COLORS.textMuted,
+    color: "#5D6F92",
     marginBottom: 6,
     fontWeight: "500",
   },
@@ -881,7 +896,7 @@ const styles = StyleSheet.create({
   summaryValue: {
     fontSize: 21,
     fontWeight: "800",
-    color: COLORS.text,
+    color: "#2F4267",
   },
 
   summarySubtext: {
@@ -890,9 +905,9 @@ const styles = StyleSheet.create({
   },
 
   sectionCard: {
-    backgroundColor: COLORS.white,
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: COLORS.primaryBorder,
+    borderColor: "#D9E2F0",
     borderRadius: 16,
     overflow: "hidden",
     marginBottom: 16,
@@ -901,10 +916,10 @@ const styles = StyleSheet.create({
   sectionHeader: {
     minHeight: 72,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.primaryBorder,
+    borderBottomColor: "#D9E2F0",
     paddingHorizontal: 20,
     paddingVertical: 14,
-    backgroundColor: COLORS.surfaceSoft,
+    backgroundColor: "#F7F9FD",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -918,29 +933,44 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: "800",
-    color: COLORS.primary,
+    color: "#294880",
     marginBottom: 4,
   },
 
   sectionDescription: {
     fontSize: 13,
-    color: COLORS.textMuted,
+    color: "#5D6F92",
     lineHeight: 19,
   },
 
+  profileGrid: {
+    flexDirection: "row",
+    gap: 14,
+    flexWrap: "wrap",
+    padding: 20,
+    paddingBottom: 10,
+  },
+
+  profileActionRow: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    flexDirection: "row",
+    justifyContent: "flex-end",
+  },
+
   primaryActionButton: {
-    height: 38,
-    paddingHorizontal: 14,
+    height: 42,
+    paddingHorizontal: 16,
     borderRadius: 10,
-    backgroundColor: COLORS.primary,
+    backgroundColor: "#294880",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 6,
+    gap: 7,
   },
 
   primaryActionButtonText: {
-    color: COLORS.white,
+    color: "#FFFFFF",
     fontSize: 13,
     fontWeight: "700",
   },
@@ -950,134 +980,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: COLORS.primaryBorder,
-    backgroundColor: COLORS.white,
+    borderColor: "#D9E2F0",
+    backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
   },
 
   secondaryButtonText: {
-    color: COLORS.primary,
+    color: "#294880",
     fontSize: 13,
     fontWeight: "700",
-  },
-
-  adminRow: {
-    minHeight: 92,
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 16,
-    backgroundColor: COLORS.white,
-  },
-
-  adminRowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: "#E4EAF3",
-  },
-
-  adminLeft: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    minWidth: 0,
-  },
-
-  adminIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: COLORS.primarySoft,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-  },
-
-  adminInfo: {
-    flex: 1,
-    minWidth: 0,
-  },
-
-  adminName: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: COLORS.text,
-    marginBottom: 4,
-  },
-
-  adminDetails: {
-    fontSize: 13,
-    color: COLORS.textMuted,
-    lineHeight: 18,
-  },
-
-  adminSubDetails: {
-    fontSize: 12,
-    color: COLORS.textMuted,
-    marginTop: 2,
-  },
-
-  adminRight: {
-    alignItems: "flex-end",
-    justifyContent: "center",
-    gap: 10,
-  },
-
-  rowActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-
-  editButton: {
-    height: 34,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: COLORS.primaryBorder,
-    backgroundColor: COLORS.white,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-
-  editButtonText: {
-    color: COLORS.primary,
-    fontSize: 12,
-    fontWeight: "700",
-  },
-
-  deleteButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    backgroundColor: COLORS.dangerSoft,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  emptyState: {
-    paddingVertical: 34,
-    paddingHorizontal: 20,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  emptyTitle: {
-    fontSize: 15,
-    fontWeight: "800",
-    color: COLORS.text,
-    marginTop: 10,
-    marginBottom: 4,
-  },
-
-  emptyDescription: {
-    fontSize: 13,
-    color: COLORS.textMuted,
-    textAlign: "center",
-    lineHeight: 19,
   },
 
   statusBadge: {
@@ -1100,7 +1012,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     gap: 16,
-    backgroundColor: COLORS.white,
+    backgroundColor: "#FFFFFF",
   },
 
   settingRowBorder: {
@@ -1118,7 +1030,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: COLORS.primarySoft,
+    backgroundColor: "#EAF2FF",
     alignItems: "center",
     justifyContent: "center",
     marginRight: 12,
@@ -1131,13 +1043,13 @@ const styles = StyleSheet.create({
   settingTitle: {
     fontSize: 14,
     fontWeight: "700",
-    color: COLORS.text,
+    color: "#2F4267",
     marginBottom: 4,
   },
 
   settingDescription: {
     fontSize: 13,
-    color: COLORS.textMuted,
+    color: "#5D6F92",
     lineHeight: 19,
   },
 
@@ -1161,18 +1073,37 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 13,
     fontWeight: "600",
-    color: COLORS.text,
+    color: "#2F4267",
     marginBottom: 8,
   },
 
   textInput: {
     height: 44,
     borderWidth: 1,
-    borderColor: COLORS.primaryBorder,
+    borderColor: "#D9E2F0",
     borderRadius: 12,
-    backgroundColor: COLORS.surfaceSoft,
+    backgroundColor: "#F7F9FD",
     paddingHorizontal: 14,
-    color: COLORS.text,
+    color: "#2F4267",
+    fontSize: 14,
+    outlineStyle: Platform.OS === "web" ? "none" : undefined,
+  },
+
+  passwordInputWrap: {
+    height: 44,
+    borderWidth: 1,
+    borderColor: "#D9E2F0",
+    borderRadius: 12,
+    backgroundColor: "#F7F9FD",
+    paddingHorizontal: 14,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  passwordInput: {
+    flex: 1,
+    height: "100%",
+    color: "#2F4267",
     fontSize: 14,
     outlineStyle: Platform.OS === "web" ? "none" : undefined,
   },
@@ -1188,13 +1119,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 999,
-    backgroundColor: COLORS.primarySoft,
+    backgroundColor: "#EAF2FF",
   },
 
   categoryTagText: {
     fontSize: 13,
     fontWeight: "700",
-    color: COLORS.primary,
+    color: "#294880",
   },
 
   footerActions: {
@@ -1210,14 +1141,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: COLORS.primaryBorder,
-    backgroundColor: COLORS.white,
+    borderColor: "#D9E2F0",
+    backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
   },
 
   resetButtonText: {
-    color: COLORS.text,
+    color: "#2F4267",
     fontSize: 14,
     fontWeight: "700",
   },
@@ -1226,7 +1157,7 @@ const styles = StyleSheet.create({
     height: 46,
     paddingHorizontal: 20,
     borderRadius: 12,
-    backgroundColor: COLORS.primary,
+    backgroundColor: "#294880",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -1234,15 +1165,15 @@ const styles = StyleSheet.create({
   },
 
   saveButtonText: {
-    color: COLORS.white,
+    color: "#FFFFFF",
     fontSize: 14,
     fontWeight: "800",
   },
 
   sideCard: {
-    backgroundColor: COLORS.white,
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: COLORS.primaryBorder,
+    borderColor: "#D9E2F0",
     borderRadius: 14,
     overflow: "hidden",
   },
@@ -1250,12 +1181,12 @@ const styles = StyleSheet.create({
   sideCardTitle: {
     fontSize: 15,
     fontWeight: "800",
-    color: COLORS.primary,
+    color: "#294880",
     paddingHorizontal: 18,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.primaryBorder,
-    backgroundColor: COLORS.surfaceSoft,
+    borderBottomColor: "#D9E2F0",
+    backgroundColor: "#F7F9FD",
   },
 
   breakdownRow: {
@@ -1269,14 +1200,14 @@ const styles = StyleSheet.create({
   },
 
   breakdownText: {
-    color: COLORS.text,
+    color: "#2F4267",
     fontSize: 13,
     flex: 1,
     marginRight: 12,
   },
 
   breakdownCount: {
-    color: COLORS.primary,
+    color: "#294880",
     fontWeight: "800",
     fontSize: 14,
   },
@@ -1286,7 +1217,7 @@ const styles = StyleSheet.create({
   },
 
   notesHeading: {
-    color: COLORS.text,
+    color: "#2F4267",
     fontWeight: "700",
     marginBottom: 8,
   },
@@ -1296,7 +1227,7 @@ const styles = StyleSheet.create({
   },
 
   notesText: {
-    color: COLORS.textMuted,
+    color: "#5D6F92",
     lineHeight: 21,
     fontSize: 13,
   },

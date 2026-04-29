@@ -1,744 +1,795 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
+  TextInput,
   StyleSheet,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import Admin_Layout from "../../components/Admin_Layout";
-import Admin_ViewValidation from "../../components/Admin_ViewValidation";
 
-const COLORS = {
-  primary: "#294880",
-  primarySoft: "#EAF2FF",
-  primaryBorder: "#D9E2F0",
-  text: "#2F4267",
-  textMuted: "#5D6F92",
-  white: "#FFFFFF",
-  background: "#F5F8FC",
-  surfaceSoft: "#F7F9FD",
-  success: "#22A06B",
-  successSoft: "#EAF8F1",
-  danger: "#E45757",
-  dangerSoft: "#FFF5F5",
-  warning: "#C98A2E",
-  warningSoft: "#FFF4E5",
-  pendingSoft: "#EEF3FB",
-};
-
-function StatusBadge({ label }) {
-  const value = (label || "").toLowerCase();
-
-  let badgeStyle = {
-    backgroundColor: COLORS.pendingSoft,
-    color: COLORS.primary,
-  };
-
-  if (value === "verified") {
-    badgeStyle = {
-      backgroundColor: COLORS.successSoft,
-      color: COLORS.success,
-    };
-  } else if (value === "rejected") {
-    badgeStyle = {
-      backgroundColor: COLORS.dangerSoft,
-      color: COLORS.danger,
-    };
-  } else if (value === "resolved") {
-    badgeStyle = {
-      backgroundColor: COLORS.primarySoft,
-      color: COLORS.primary,
-    };
-  }
-
-  return (
-    <View
-      style={[
-        styles.statusBadge,
-        { backgroundColor: badgeStyle.backgroundColor },
-      ]}
-    >
-      <Text style={[styles.statusBadgeText, { color: badgeStyle.color }]}>
-        {label}
-      </Text>
-    </View>
-  );
-}
-
-function ScoreBadge({ label }) {
-  const value = (label || "").toLowerCase();
-
-  let badgeStyle = {
-    backgroundColor: COLORS.warningSoft,
-    color: COLORS.warning,
-  };
-
-  if (value === "high") {
-    badgeStyle = {
-      backgroundColor: COLORS.successSoft,
-      color: COLORS.success,
-    };
-  } else if (value === "low") {
-    badgeStyle = {
-      backgroundColor: COLORS.dangerSoft,
-      color: COLORS.danger,
-    };
-  }
-
-  return (
-    <View
-      style={[
-        styles.scoreBadge,
-        { backgroundColor: badgeStyle.backgroundColor },
-      ]}
-    >
-      <Text style={[styles.scoreBadgeText, { color: badgeStyle.color }]}>
-        {label}
-      </Text>
-    </View>
-  );
-}
-
-const getSentimentColor = (sentiment) => {
-  const value = (sentiment || "").toLowerCase();
-
-  if (value === "fearful") return COLORS.danger;
-  if (value === "anxious" || value === "concerned") return COLORS.warning;
-  return COLORS.textMuted;
-};
+import Admin_Layout from "../../components/Admin_compo/Admin_Layout";
+import Admin_ViewValidationReport from "../../components/Admin_compo/Admin_ViewValidationReport";
 
 export default function Admin_Validation() {
+  const [selectedFilter, setSelectedFilter] = useState("All");
+  const [searchText, setSearchText] = useState("");
+  const [selectedReport, setSelectedReport] = useState(null);
+  const [isViewVisible, setIsViewVisible] = useState(false);
+
   const [reports, setReports] = useState([
     {
-      id: "ARG-VAL-1001",
-      category: "Property-Related Incidents",
-      type: "Theft",
-      location: "Colon Street, Barangay 6, Cebu City",
-      coordinates: "10.2956, 123.8981",
-      timestamp: "2026-04-18 08:31 PM",
-      status: "Pending",
-      sentiment: "Anxious",
-      credibility: "High",
-      aiReview:
-        "The report includes a complete location, clear time reference, and consistent incident details. Nearby verified theft reports in the same zone increase confidence.",
-      image:
-        "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=1200&q=80",
-      comments: [
-        {
-          author: "Juan Dela Cruz",
-          timestamp: "2026-04-18 08:40 PM",
-          text: "I saw two individuals running toward the corner after the incident.",
-        },
-        {
-          author: "Maria Santos",
-          timestamp: "2026-04-18 08:45 PM",
-          text: "The victim looked shaken and was asking nearby vendors for help.",
-        },
-      ],
-    },
-    {
-      id: "ARG-VAL-1002",
+      id: "ARG-2031",
+      title: "Road accident near Poblacion",
       category: "Traffic and Road Incidents",
-      type: "Illegal Parking",
-      location: "Osmeña Boulevard, Barangay Capitol Site, Cebu City",
-      coordinates: "10.3094, 123.8912",
-      timestamp: "2026-04-18 07:52 PM",
+      type: "Road Accident",
+      location: "Poblacion, Argao, Cebu",
+      barangay: "Poblacion",
+      submittedBy: "Juan Dela Cruz",
+      submittedRole: "User",
       status: "Pending",
-      sentiment: "Neutral",
-      credibility: "Medium",
-      aiReview:
-        "Report is structurally valid but lacks strong supporting detail. Location is usable, though the description may need clarification for enforcement priority.",
-      image:
-        "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1200&q=80",
-      comments: [
-        {
-          author: "Traffic Watch Volunteer",
-          timestamp: "2026-04-18 07:58 PM",
-          text: "The parked vehicle is blocking one lane and slowing traffic.",
-        },
-      ],
+      details:
+        "A motorcycle and tricycle collision was reported near the public market road.",
+      photo: "accident_photo.jpg",
+      aiScore: 92,
+      sentiment: "Urgent",
+      credibilityReview: "Highly credible based on location and report details.",
+      severity: "High",
+      submittedAt: "Apr 29, 2026 • 10:30 AM",
+      verifiedBy: null,
+      verifiedAt: null,
+      remarks: "",
+      mapVisible: false,
     },
     {
-      id: "ARG-VAL-1003",
+      id: "ARG-2032",
+      title: "Suspicious activity near Public Market",
       category: "Suspicious Activities",
-      type: "Suspicious Person",
-      location: "Fuente Circle, Barangay Sta. Cruz, Cebu City",
-      coordinates: "10.3102, 123.8915",
-      timestamp: "2026-04-18 07:14 PM",
-      status: "Pending",
-      sentiment: "Fearful",
-      credibility: "High",
-      aiReview:
-        "The narrative shows urgency and includes a specific place description. Similar suspicious presence reports were recently submitted nearby, suggesting a possible cluster.",
-      image:
-        "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80",
-      comments: [
-        {
-          author: "Nearby Resident",
-          timestamp: "2026-04-18 07:18 PM",
-          text: "The person stayed near the entrance for several minutes and kept watching passersby.",
-        },
-        {
-          author: "Security Guard",
-          timestamp: "2026-04-18 07:22 PM",
-          text: "We noticed similar behavior yesterday in the same area.",
-        },
-      ],
+      type: "Suspicious Activity",
+      location: "Argao Public Market Area",
+      barangay: "Poblacion",
+      submittedBy: "Admin R. Ramos",
+      submittedRole: "Admin",
+      status: "Verified",
+      details:
+        "Admin-created report after monitoring suspicious activity around the market area.",
+      photo: "market_report.jpg",
+      aiScore: 95,
+      sentiment: "Concern",
+      credibilityReview: "Admin-created report. Automatically verified.",
+      severity: "Medium",
+      submittedAt: "Apr 29, 2026 • 9:46 AM",
+      verifiedBy: "Admin R. Ramos",
+      verifiedAt: "Apr 29, 2026 • 9:46 AM",
+      remarks: "Admin-created report. Auto verified and mapped.",
+      mapVisible: true,
     },
     {
-      id: "ARG-VAL-1004",
+      id: "ARG-2033",
+      title: "Flood report near San Miguel",
       category: "Community and Environmental Concerns",
-      type: "Flooding",
-      location: "Mabolo, Barangay Kasambagan, Cebu City",
-      coordinates: "10.3217, 123.9090",
-      timestamp: "2026-04-18 06:48 PM",
+      type: "Flood",
+      location: "Brgy. San Miguel, Argao",
+      barangay: "San Miguel",
+      submittedBy: "Maria Lopez",
+      submittedRole: "User",
       status: "Pending",
-      sentiment: "Concerned",
-      credibility: "Low",
-      aiReview:
-        "The report includes a broad location but limited situational detail. No matching environmental alerts were detected in recent submissions, so manual review is recommended.",
-      image:
-        "https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?auto=format&fit=crop&w=1200&q=80",
-      comments: [
-        {
-          author: "Barangay Staff",
-          timestamp: "2026-04-18 06:55 PM",
-          text: "Water buildup was reported, but the exact drainage point still needs confirmation.",
-        },
-      ],
+      details:
+        "Heavy rain caused roadside flooding near a residential area.",
+      photo: "flood_report.jpg",
+      aiScore: 88,
+      sentiment: "Anxious",
+      credibilityReview: "Likely credible but needs admin review.",
+      severity: "Medium",
+      submittedAt: "Apr 29, 2026 • 8:20 AM",
+      verifiedBy: null,
+      verifiedAt: null,
+      remarks: "",
+      mapVisible: false,
+    },
+    {
+      id: "ARG-2034",
+      title: "False fire alarm report",
+      category: "Public Safety Incidents",
+      type: "Fire",
+      location: "Brgy. Talaga, Argao",
+      barangay: "Talaga",
+      submittedBy: "Unknown User",
+      submittedRole: "User",
+      status: "Rejected",
+      details:
+        "Report was reviewed and marked invalid due to unclear details and duplicate submission.",
+      photo: "fire_report.jpg",
+      aiScore: 41,
+      sentiment: "Unclear",
+      credibilityReview: "Low credibility. Duplicate and incomplete information.",
+      severity: "Low",
+      submittedAt: "Apr 28, 2026 • 5:15 PM",
+      verifiedBy: "Admin R. Ramos",
+      verifiedAt: "Apr 28, 2026 • 5:30 PM",
+      remarks: "Rejected because the report was duplicate and unclear.",
+      mapVisible: false,
     },
   ]);
 
-  const [selectedReport, setSelectedReport] = useState(null);
-  const [modalVisible, setModalVisible] = useState(false);
+  const filters = ["All", "Pending", "Verified", "Rejected", "Admin-Created"];
 
-  const summaryCards = [
-    {
-      title: "Pending Reviews",
-      value: reports
-        .filter((item) => item.status === "Pending")
-        .length.toString(),
-      subtext: "Needs validation",
-      icon: "time-outline",
-      iconBg: COLORS.primarySoft,
-      iconColor: COLORS.primary,
-      subColor: COLORS.primary,
-    },
-    {
-      title: "Verified Reports",
-      value: reports
-        .filter((item) => item.status === "Verified")
-        .length.toString(),
-      subtext: "Mapped incidents",
-      icon: "shield-checkmark-outline",
-      iconBg: COLORS.successSoft,
-      iconColor: COLORS.success,
-      subColor: COLORS.success,
-    },
-    {
-      title: "Rejected Reports",
-      value: reports
-        .filter((item) => item.status === "Rejected")
-        .length.toString(),
-      subtext: "Not accepted",
-      icon: "close-circle-outline",
-      iconBg: COLORS.dangerSoft,
-      iconColor: COLORS.danger,
-      subColor: COLORS.danger,
-    },
-    {
-      title: "Resolved Incidents",
-      value: reports
-        .filter((item) => item.status === "Resolved")
-        .length.toString(),
-      subtext: "Handled cases",
-      icon: "checkmark-done-outline",
-      iconBg: COLORS.primarySoft,
-      iconColor: COLORS.primary,
-      subColor: COLORS.primary,
-    },
-  ];
+  const filteredReports = useMemo(() => {
+    const query = searchText.trim().toLowerCase();
 
-  const categoryBreakdown = [
-    "Property-Related Incidents",
-    "Traffic and Road Incidents",
-    "Suspicious Activities",
-    "Community and Environmental Concerns",
-  ];
+    return reports.filter((report) => {
+      const matchesFilter =
+        selectedFilter === "All" ||
+        report.status === selectedFilter ||
+        (selectedFilter === "Admin-Created" &&
+          report.submittedRole === "Admin");
 
-  const pendingReports = reports.filter((item) => item.status === "Pending");
+      const matchesSearch =
+        !query ||
+        report.id.toLowerCase().includes(query) ||
+        report.title.toLowerCase().includes(query) ||
+        report.category.toLowerCase().includes(query) ||
+        report.type.toLowerCase().includes(query) ||
+        report.location.toLowerCase().includes(query) ||
+        report.status.toLowerCase().includes(query) ||
+        report.submittedRole.toLowerCase().includes(query);
 
-  const handleOpenReport = (report) => {
+      return matchesFilter && matchesSearch;
+    });
+  }, [reports, selectedFilter, searchText]);
+
+  const totalCount = reports.length;
+  const pendingCount = reports.filter((item) => item.status === "Pending").length;
+  const verifiedCount = reports.filter((item) => item.status === "Verified").length;
+  const rejectedCount = reports.filter((item) => item.status === "Rejected").length;
+
+  const showMessage = (message) => {
+    if (Platform.OS === "web") {
+      window.alert(message);
+      return;
+    }
+
+    alert(message);
+  };
+
+  const openViewModal = (report) => {
     setSelectedReport(report);
-    setModalVisible(true);
+    setIsViewVisible(true);
+  };
+
+  const closeViewModal = () => {
+    setSelectedReport(null);
+    setIsViewVisible(false);
+  };
+
+  const updateReportStatus = (reportId, status, remarks = "") => {
+    setReports((prev) =>
+      prev.map((report) => {
+        if (report.id !== reportId) return report;
+
+        return {
+          ...report,
+          status,
+          verifiedBy: "Admin R. Ramos",
+          verifiedAt: "Apr 29, 2026 • Current Time",
+          remarks,
+          mapVisible: status === "Verified",
+        };
+      })
+    );
+
+    closeViewModal();
   };
 
   const handleVerify = (report) => {
-    setReports((prev) =>
-      prev.map((item) =>
-        item.id === report.id ? { ...item, status: "Verified" } : item,
-      ),
+    updateReportStatus(
+      report.id,
+      "Verified",
+      "Report verified by admin after review."
     );
-    setSelectedReport((prev) =>
-      prev ? { ...prev, status: "Verified" } : prev,
-    );
-    setModalVisible(false);
   };
 
   const handleReject = (report) => {
-    setReports((prev) =>
-      prev.map((item) =>
-        item.id === report.id ? { ...item, status: "Rejected" } : item,
-      ),
+    updateReportStatus(
+      report.id,
+      "Rejected",
+      "Report rejected after admin review."
     );
-    setSelectedReport((prev) =>
-      prev ? { ...prev, status: "Rejected" } : prev,
-    );
-    setModalVisible(false);
   };
+
+  const handleMapAndVerify = (report) => {
+    updateReportStatus(
+      report.id,
+      "Verified",
+      "Report mapped and verified by admin."
+    );
+  };
+
+  const handleAddAdminReport = () => {
+    const newReport = {
+      id: `ARG-${Date.now().toString().slice(-4)}`,
+      title: "Admin-created incident report",
+      category: "Public Safety Incidents",
+      type: "Admin Report",
+      location: "Poblacion, Argao, Cebu",
+      barangay: "Poblacion",
+      submittedBy: "Admin R. Ramos",
+      submittedRole: "Admin",
+      status: "Verified",
+      details:
+        "This is an admin-created report. Since it came from an admin, it is automatically verified and visible on the map.",
+      photo: "admin_report.jpg",
+      aiScore: 100,
+      sentiment: "Official",
+      credibilityReview: "Admin-created report. Automatically verified.",
+      severity: "Medium",
+      submittedAt: "Apr 29, 2026 • Current Time",
+      verifiedBy: "Admin R. Ramos",
+      verifiedAt: "Apr 29, 2026 • Current Time",
+      remarks: "Admin-created report. Auto verified and mapped.",
+      mapVisible: true,
+    };
+
+    setReports((prev) => [newReport, ...prev]);
+    showMessage("Admin report added and automatically verified.");
+  };
+
+  const getStatusStyle = (status) => {
+    if (status === "Verified") {
+      return {
+        bg: "#EAF8F1",
+        color: "#22A06B",
+      };
+    }
+
+    if (status === "Rejected") {
+      return {
+        bg: "#FFF5F5",
+        color: "#E45757",
+      };
+    }
+
+    return {
+      bg: "#FFF4E5",
+      color: "#C98A2E",
+    };
+  };
+
+  const StatCard = ({ icon, title, value, color, bg }) => (
+    <View style={styles.statCard}>
+      <View style={[styles.statIcon, { backgroundColor: bg }]}>
+        <Ionicons name={icon} size={23} color={color} />
+      </View>
+
+      <View>
+        <Text style={styles.statValue}>{value}</Text>
+        <Text style={styles.statTitle}>{title}</Text>
+      </View>
+    </View>
+  );
 
   return (
     <Admin_Layout>
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.contentWrap}>
-          <View style={styles.leftSection}>
-            <View style={styles.summaryRow}>
-              {summaryCards.map((card) => (
-                <View key={card.title} style={styles.summaryCard}>
-                  <View
-                    style={[
-                      styles.summaryIconWrap,
-                      { backgroundColor: card.iconBg },
-                    ]}
-                  >
-                    <Ionicons
-                      name={card.icon}
-                      size={24}
-                      color={card.iconColor}
-                    />
-                  </View>
-
-                  <View style={styles.summaryTextWrap}>
-                    <Text style={styles.summaryTitle}>{card.title}</Text>
-                    <View style={styles.summaryValueRow}>
-                      <Text style={styles.summaryValue}>{card.value}</Text>
-                      <Text
-                        style={[
-                          styles.summarySubtext,
-                          { color: card.subColor },
-                        ]}
-                      >
-                        {card.subtext}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-              ))}
+      <View style={styles.wrapper}>
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.headerCard}>
+            <View>
+              <Text style={styles.pageTitle}>Validation</Text>
+              <Text style={styles.pageSubtitle}>
+                Manage submitted reports, validate user reports, and add
+                admin-created reports.
+              </Text>
             </View>
 
-            <View style={styles.tableCard}>
-              <View style={styles.tableHeaderTop}>
-                <View>
-                  <Text style={styles.tableTitle}>Validation Queue</Text>
-                  <Text style={styles.tableSubtitle}>
-                    Review pending incident submissions before they become
-                    official mapped reports.
-                  </Text>
-                </View>
-              </View>
-
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <View>
-                  <View style={styles.tableHeadRow}>
-                    <Text style={[styles.tableHeadText, styles.colId]}>
-                      Incident ID
-                    </Text>
-                    <Text style={[styles.tableHeadText, styles.colCategory]}>
-                      Category
-                    </Text>
-                    <Text style={[styles.tableHeadText, styles.colType]}>
-                      Type
-                    </Text>
-                    <Text style={[styles.tableHeadText, styles.colLocation]}>
-                      Location
-                    </Text>
-                    <Text style={[styles.tableHeadText, styles.colTime]}>
-                      Timestamp
-                    </Text>
-                    <Text style={[styles.tableHeadText, styles.colStatus]}>
-                      Status
-                    </Text>
-                    <Text style={[styles.tableHeadText, styles.colSentiment]}>
-                      Sentiment
-                    </Text>
-                    <Text style={[styles.tableHeadText, styles.colCredibility]}>
-                      Credibility
-                    </Text>
-                    <Text style={[styles.tableHeadText, styles.colAction]}>
-                      Action
-                    </Text>
-                  </View>
-
-                  {pendingReports.map((row) => (
-                    <TouchableOpacity
-                      key={row.id}
-                      onPress={() => handleOpenReport(row)}
-                      activeOpacity={0.85}
-                      style={styles.tableBodyRow}
-                    >
-                      <Text style={[styles.tableCellText, styles.colId]}>
-                        {row.id}
-                      </Text>
-
-                      <Text style={[styles.tableCellText, styles.colCategory]}>
-                        {row.category}
-                      </Text>
-
-                      <Text
-                        style={[
-                          styles.tableCellText,
-                          styles.colType,
-                          styles.typeText,
-                        ]}
-                      >
-                        {row.type}
-                      </Text>
-
-                      <Text
-                        style={[styles.tableCellText, styles.colLocation]}
-                        numberOfLines={2}
-                      >
-                        {row.location}
-                      </Text>
-
-                      <Text style={[styles.tableCellText, styles.colTime]}>
-                        {row.timestamp}
-                      </Text>
-
-                      <View style={styles.colStatus}>
-                        <StatusBadge label={row.status} />
-                      </View>
-
-                      <Text
-                        style={[
-                          styles.tableCellText,
-                          styles.colSentiment,
-                          {
-                            color: getSentimentColor(row.sentiment),
-                            fontWeight: "700",
-                          },
-                        ]}
-                      >
-                        {row.sentiment}
-                      </Text>
-
-                      <View style={styles.colCredibility}>
-                        <ScoreBadge label={row.credibility} />
-                      </View>
-
-                      <View style={styles.colAction}>
-                        <View style={styles.viewButton}>
-                          <Text style={styles.viewButtonText}>View</Text>
-                        </View>
-                      </View>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </ScrollView>
-            </View>
+            <TouchableOpacity
+              style={styles.addButton}
+              onPress={handleAddAdminReport}
+              activeOpacity={0.85}
+            >
+              <Ionicons name="add" size={18} color="#FFFFFF" />
+              <Text style={styles.addButtonText}>Add Admin Report</Text>
+            </TouchableOpacity>
           </View>
 
-          <View style={styles.rightSection}>
-            <View style={styles.sideCard}>
-              <Text style={styles.sideCardTitle}>
-                Incident Category Breakdown
-              </Text>
+          <View style={styles.statsRow}>
+            <StatCard
+              icon="document-text-outline"
+              title="Total Reports"
+              value={totalCount}
+              color="#294880"
+              bg="#EAF2FF"
+            />
 
-              {categoryBreakdown.map((category) => {
-                const count = reports.filter(
-                  (item) => item.category === category,
-                ).length;
+            <StatCard
+              icon="time-outline"
+              title="Pending"
+              value={pendingCount}
+              color="#C98A2E"
+              bg="#FFF4E5"
+            />
+
+            <StatCard
+              icon="shield-checkmark-outline"
+              title="Verified"
+              value={verifiedCount}
+              color="#22A06B"
+              bg="#EAF8F1"
+            />
+
+            <StatCard
+              icon="close-circle-outline"
+              title="Rejected"
+              value={rejectedCount}
+              color="#E45757"
+              bg="#FFF5F5"
+            />
+          </View>
+
+          <View style={styles.filterCard}>
+            <View style={styles.searchBox}>
+              <Ionicons name="search-outline" size={18} color="#5D6F92" />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search by ID, type, location, status..."
+                placeholderTextColor="#8A98B3"
+                value={searchText}
+                onChangeText={setSearchText}
+              />
+            </View>
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.filterRow}
+            >
+              {filters.map((filter) => {
+                const isActive = selectedFilter === filter;
 
                 return (
-                  <View key={category} style={styles.breakdownRow}>
-                    <Text style={styles.breakdownText}>{category}</Text>
-                    <Text style={styles.breakdownCount}>{count}</Text>
-                  </View>
+                  <TouchableOpacity
+                    key={filter}
+                    style={[
+                      styles.filterPill,
+                      isActive && styles.activeFilterPill,
+                    ]}
+                    onPress={() => setSelectedFilter(filter)}
+                    activeOpacity={0.8}
+                  >
+                    <Text
+                      style={[
+                        styles.filterPillText,
+                        isActive && styles.activeFilterPillText,
+                      ]}
+                    >
+                      {filter}
+                    </Text>
+                  </TouchableOpacity>
                 );
               })}
-            </View>
+            </ScrollView>
+          </View>
 
-            <View style={styles.sideCard}>
-              <Text style={styles.sideCardTitle}>AI Review Notes</Text>
-
-              <View style={styles.notesContent}>
-                <Text style={styles.notesHeading}>Validation Logic</Text>
-                <Text style={styles.notesText}>
-                  AI credibility and sentiment are advisory. Final validation
-                  and mapping decisions remain under the administrator.
+          <View style={styles.reportListCard}>
+            <View style={styles.listHeader}>
+              <View>
+                <Text style={styles.sectionTitle}>Report List</Text>
+                <Text style={styles.sectionSubtitle}>
+                  Validation and report management are combined here.
                 </Text>
               </View>
-            </View>
-          </View>
-        </View>
-      </ScrollView>
 
-      <Admin_ViewValidation
-        visible={modalVisible}
-        report={selectedReport}
-        onClose={() => setModalVisible(false)}
-        onVerify={handleVerify}
-        onReject={handleReject}
-      />
+              <Text style={styles.resultText}>
+                {filteredReports.length} result
+                {filteredReports.length === 1 ? "" : "s"}
+              </Text>
+            </View>
+
+            {filteredReports.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Ionicons name="document-outline" size={38} color="#5D6F92" />
+                <Text style={styles.emptyTitle}>No reports found</Text>
+                <Text style={styles.emptyText}>
+                  Try changing the search keyword or selected filter.
+                </Text>
+              </View>
+            ) : (
+              filteredReports.map((report, index) => {
+                const statusStyle = getStatusStyle(report.status);
+
+                return (
+                  <TouchableOpacity
+                    key={report.id}
+                    style={[
+                      styles.reportRow,
+                      index !== 0 && styles.reportRowBorder,
+                    ]}
+                    onPress={() => openViewModal(report)}
+                    activeOpacity={0.85}
+                  >
+                    <View style={styles.reportLeft}>
+                      <View style={styles.reportIconBox}>
+                        <Ionicons
+                          name={
+                            report.submittedRole === "Admin"
+                              ? "person-circle-outline"
+                              : "document-text-outline"
+                          }
+                          size={22}
+                          color="#294880"
+                        />
+                      </View>
+
+                      <View style={styles.reportInfo}>
+                        <View style={styles.reportTitleRow}>
+                          <Text style={styles.reportTitle}>{report.title}</Text>
+
+                          <View
+                            style={[
+                              styles.statusBadge,
+                              { backgroundColor: statusStyle.bg },
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                styles.statusText,
+                                { color: statusStyle.color },
+                              ]}
+                            >
+                              {report.status}
+                            </Text>
+                          </View>
+                        </View>
+
+                        <Text style={styles.reportMeta}>
+                          {report.id} • {report.type} • {report.location}
+                        </Text>
+
+                        <Text style={styles.reportSubMeta}>
+                          Submitted by {report.submittedBy} ({report.submittedRole})
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.reportRight}>
+                      <Text style={styles.scoreText}>{report.aiScore}%</Text>
+                      <Text style={styles.scoreLabel}>AI Score</Text>
+                      <Ionicons
+                        name="chevron-forward-outline"
+                        size={18}
+                        color="#8A98B3"
+                      />
+                    </View>
+                  </TouchableOpacity>
+                );
+              })
+            )}
+          </View>
+        </ScrollView>
+
+        <Admin_ViewValidationReport
+          visible={isViewVisible}
+          report={selectedReport}
+          onClose={closeViewModal}
+          onVerify={handleVerify}
+          onReject={handleReject}
+          onMapAndVerify={handleMapAndVerify}
+        />
+      </View>
     </Admin_Layout>
   );
 }
 
 const styles = StyleSheet.create({
+  wrapper: {
+    flex: 1,
+    backgroundColor: "#F5F8FC",
+  },
+
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: "#F5F8FC",
   },
+
   scrollContent: {
-    paddingBottom: 28,
+    paddingBottom: 30,
   },
-  contentWrap: {
+
+  headerCard: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#D9E2F0",
+    borderRadius: 18,
+    padding: 22,
+    marginBottom: 16,
     flexDirection: "row",
-    gap: 20,
-    alignItems: "flex-start",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 16,
   },
-  leftSection: {
-    flex: 1,
-    minWidth: 0,
+
+  pageTitle: {
+    fontSize: 24,
+    color: "#294880",
+    fontWeight: "800",
+    marginBottom: 6,
   },
-  rightSection: {
-    width: 300,
-    gap: 14,
+
+  pageSubtitle: {
+    fontSize: 14,
+    color: "#5D6F92",
+    lineHeight: 21,
   },
-  summaryRow: {
+
+  addButton: {
+    height: 42,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: "#294880",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+
+  addButtonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+
+  statsRow: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 14,
     marginBottom: 16,
   },
-  summaryCard: {
+
+  statCard: {
     flex: 1,
-    minWidth: 210,
-    backgroundColor: COLORS.white,
+    minWidth: 190,
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: COLORS.primaryBorder,
+    borderColor: "#D9E2F0",
     borderRadius: 16,
-    paddingVertical: 18,
-    paddingHorizontal: 16,
+    padding: 18,
     flexDirection: "row",
     alignItems: "center",
   },
-  summaryIconWrap: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+
+  statIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: "center",
     justifyContent: "center",
     marginRight: 14,
   },
-  summaryTextWrap: {
-    flex: 1,
-  },
-  summaryTitle: {
-    fontSize: 14,
-    color: COLORS.textMuted,
-    marginBottom: 6,
-    fontWeight: "500",
-  },
-  summaryValueRow: {
-    flexDirection: "row",
-    alignItems: "baseline",
-    gap: 8,
-    flexWrap: "wrap",
-  },
-  summaryValue: {
-    fontSize: 21,
+
+  statValue: {
+    fontSize: 22,
     fontWeight: "800",
-    color: COLORS.text,
+    color: "#2F4267",
   },
-  summarySubtext: {
+
+  statTitle: {
     fontSize: 13,
-    fontWeight: "600",
+    color: "#5D6F92",
+    marginTop: 4,
   },
-  tableCard: {
-    backgroundColor: COLORS.white,
+
+  filterCard: {
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: COLORS.primaryBorder,
+    borderColor: "#D9E2F0",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+  },
+
+  searchBox: {
+    height: 44,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#D9E2F0",
+    backgroundColor: "#F7F9FD",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    marginBottom: 14,
+  },
+
+  searchInput: {
+    flex: 1,
+    height: "100%",
+    marginLeft: 8,
+    color: "#294880",
+    fontSize: 14,
+    outlineStyle: Platform.OS === "web" ? "none" : undefined,
+  },
+
+  filterRow: {
+    gap: 10,
+  },
+
+  filterPill: {
+    height: 36,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#D9E2F0",
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  activeFilterPill: {
+    backgroundColor: "#294880",
+    borderColor: "#294880",
+  },
+
+  filterPillText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#294880",
+  },
+
+  activeFilterPillText: {
+    color: "#FFFFFF",
+  },
+
+  reportListCard: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#D9E2F0",
     borderRadius: 16,
     overflow: "hidden",
   },
-  tableHeaderTop: {
-    minHeight: 56,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.primaryBorder,
+
+  listHeader: {
+    minHeight: 76,
     paddingHorizontal: 20,
-    paddingVertical: 14,
-    justifyContent: "center",
-    backgroundColor: COLORS.surfaceSoft,
-  },
-  tableTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: COLORS.primary,
-  },
-  tableSubtitle: {
-    fontSize: 12,
-    color: COLORS.textMuted,
-    marginTop: 4,
-  },
-  tableHeadRow: {
-    height: 46,
-    backgroundColor: COLORS.surfaceSoft,
+    paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.primaryBorder,
+    borderBottomColor: "#D9E2F0",
+    backgroundColor: "#F7F9FD",
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 20,
+    justifyContent: "space-between",
+    gap: 16,
   },
-  tableHeadText: {
-    fontSize: 13,
-    color: COLORS.textMuted,
-    fontWeight: "600",
-  },
-  tableBodyRow: {
-    minHeight: 66,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E4EAF3",
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    backgroundColor: COLORS.white,
-  },
-  tableCellText: {
-    fontSize: 13,
-    color: COLORS.text,
-  },
-  typeText: {
-    fontWeight: "600",
-  },
-  colId: {
-    width: 120,
-  },
-  colCategory: {
-    width: 220,
-  },
-  colType: {
-    width: 140,
-  },
-  colLocation: {
-    width: 220,
-  },
-  colTime: {
-    width: 180,
-  },
-  colStatus: {
-    width: 120,
-    justifyContent: "center",
-  },
-  colSentiment: {
-    width: 140,
-  },
-  colCredibility: {
-    width: 130,
-    justifyContent: "center",
-  },
-  colAction: {
-    width: 120,
-  },
-  statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 999,
-    alignSelf: "flex-start",
-  },
-  statusBadgeText: {
-    fontWeight: "700",
-    fontSize: 12,
-  },
-  scoreBadge: {
-    minWidth: 84,
-    paddingVertical: 7,
-    paddingHorizontal: 14,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-    alignSelf: "flex-start",
-  },
-  scoreBadgeText: {
-    fontSize: 13,
-    fontWeight: "700",
-  },
-  viewButton: {
-    alignSelf: "flex-start",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: COLORS.primarySoft,
-    borderRadius: 10,
-  },
-  viewButtonText: {
-    color: COLORS.primary,
-    fontWeight: "700",
-    fontSize: 12,
-  },
-  sideCard: {
-    backgroundColor: COLORS.white,
-    borderWidth: 1,
-    borderColor: COLORS.primaryBorder,
-    borderRadius: 14,
-    overflow: "hidden",
-  },
-  sideCardTitle: {
-    fontSize: 15,
+
+  sectionTitle: {
+    fontSize: 17,
     fontWeight: "800",
-    color: COLORS.primary,
-    paddingHorizontal: 18,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.primaryBorder,
-    backgroundColor: COLORS.surfaceSoft,
+    color: "#294880",
+    marginBottom: 4,
   },
-  breakdownRow: {
-    paddingHorizontal: 18,
-    paddingVertical: 13,
-    borderTopWidth: 1,
-    borderTopColor: "#E4EAF3",
+
+  sectionSubtitle: {
+    fontSize: 13,
+    color: "#5D6F92",
+  },
+
+  resultText: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: "#294880",
+  },
+
+  reportRow: {
+    minHeight: 92,
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    backgroundColor: "#FFFFFF",
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    gap: 16,
   },
-  breakdownText: {
-    color: COLORS.text,
-    fontSize: 13,
+
+  reportRowBorder: {
+    borderTopWidth: 1,
+    borderTopColor: "#E4EAF3",
+  },
+
+  reportLeft: {
     flex: 1,
-    marginRight: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    minWidth: 0,
   },
-  breakdownCount: {
-    color: COLORS.primary,
+
+  reportIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 15,
+    backgroundColor: "#EAF2FF",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 14,
+  },
+
+  reportInfo: {
+    flex: 1,
+    minWidth: 0,
+  },
+
+  reportTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 6,
+    flexWrap: "wrap",
+  },
+
+  reportTitle: {
+    fontSize: 15,
     fontWeight: "800",
-    fontSize: 14,
+    color: "#111827",
   },
-  notesContent: {
-    padding: 18,
-  },
-  notesHeading: {
-    color: COLORS.text,
-    fontWeight: "700",
-    marginBottom: 8,
-  },
-  notesText: {
-    color: COLORS.textMuted,
-    lineHeight: 21,
+
+  reportMeta: {
     fontSize: 13,
+    color: "#5D6F92",
+    marginBottom: 4,
+  },
+
+  reportSubMeta: {
+    fontSize: 12,
+    color: "#7A8BA8",
+  },
+
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+  },
+
+  statusText: {
+    fontSize: 11,
+    fontWeight: "800",
+  },
+
+  reportRight: {
+    minWidth: 88,
+    alignItems: "flex-end",
+    justifyContent: "center",
+  },
+
+  scoreText: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#294880",
+  },
+
+  scoreLabel: {
+    fontSize: 11,
+    color: "#7A8BA8",
+    marginBottom: 4,
+  },
+
+  emptyState: {
+    paddingVertical: 42,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#2F4267",
+    marginTop: 10,
+    marginBottom: 4,
+  },
+
+  emptyText: {
+    fontSize: 13,
+    color: "#5D6F92",
   },
 });

@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import Admin_Layout from "../../components/Admin_Layout";
+import Admin_Layout from "../../components/Admin_compo/Admin_Layout";
 
 export default function Admin_Analytics() {
   const summaryCards = [

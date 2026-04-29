@@ -4,1070 +4,757 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
+  TextInput,
   StyleSheet,
-  Alert,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import Admin_Layout from "../../components/Admin_Layout";
 
-const COLORS = {
-  primary: "#294880",
-  primarySoft: "#EAF2FF",
-  primaryBorder: "#D9E2F0",
-  text: "#2F4267",
-  textMuted: "#5D6F92",
-  white: "#FFFFFF",
-  background: "#F5F8FC",
-  surfaceSoft: "#F7F9FD",
-  success: "#22A06B",
-  successSoft: "#EAF8F1",
-  danger: "#E45757",
-  dangerSoft: "#FFF5F5",
-  warning: "#C98A2E",
-  warningSoft: "#FFF4E5",
-  pendingSoft: "#EEF3FB",
-};
-
-const INITIAL_LOG_DATA = [
-  {
-    id: "LOG-0001",
-    type: "Approval",
-    actor: "Admin Maria Santos",
-    action: "Verified and mapped incident report ARG-VAL-1001.",
-    target: "ARG-VAL-1001",
-    timestamp: "2026-04-18 08:52 PM",
-    status: "Success",
-    icon: "checkmark-circle-outline",
-  },
-  {
-    id: "LOG-0002",
-    type: "Rejection",
-    actor: "Admin John Reyes",
-    action:
-      "Rejected incident report ARG-VAL-1004 due to insufficient details.",
-    target: "ARG-VAL-1004",
-    timestamp: "2026-04-18 08:41 PM",
-    status: "Warning",
-    icon: "close-circle-outline",
-  },
-  {
-    id: "LOG-0003",
-    type: "Submission",
-    actor: "Citizen Report System",
-    action:
-      "New incident report submitted for suspicious person at Fuente Circle.",
-    target: "ARG-VAL-1003",
-    timestamp: "2026-04-18 07:14 PM",
-    status: "Info",
-    icon: "document-text-outline",
-  },
-  {
-    id: "LOG-0004",
-    type: "AI Processing",
-    actor: "AI Validation Engine",
-    action: "Generated sentiment and credibility assessment for ARG-VAL-1002.",
-    target: "ARG-VAL-1002",
-    timestamp: "2026-04-18 07:53 PM",
-    status: "Success",
-    icon: "hardware-chip-outline",
-  },
-  {
-    id: "LOG-0005",
-    type: "Notification",
-    actor: "Notification Service",
-    action:
-      "Validation update sent to reporting user for incident ARG-VAL-1001.",
-    target: "ARG-VAL-1001",
-    timestamp: "2026-04-18 08:55 PM",
-    status: "Info",
-    icon: "notifications-outline",
-  },
-  {
-    id: "LOG-0006",
-    type: "System Event",
-    actor: "System Monitor",
-    action:
-      "Temporary delay detected in AI scoring queue. Auto-recovery completed.",
-    target: "AI Queue",
-    timestamp: "2026-04-18 06:32 PM",
-    status: "Error",
-    icon: "alert-circle-outline",
-  },
-  {
-    id: "LOG-0007",
-    type: "Admin Action",
-    actor: "Admin Carla Lim",
-    action: "Opened full validation record for ARG-VAL-1002.",
-    target: "ARG-VAL-1002",
-    timestamp: "2026-04-18 08:02 PM",
-    status: "Info",
-    icon: "eye-outline",
-  },
-  {
-    id: "LOG-0008",
-    type: "Submission",
-    actor: "Citizen Report System",
-    action: "New flooding report submitted for Mabolo, Barangay Kasambagan.",
-    target: "ARG-VAL-1004",
-    timestamp: "2026-04-18 06:48 PM",
-    status: "Info",
-    icon: "document-text-outline",
-  },
-];
-
-function StatusBadge({ label }) {
-  const value = (label || "").toLowerCase();
-
-  let badgeStyle = {
-    backgroundColor: COLORS.pendingSoft,
-    color: COLORS.primary,
-  };
-
-  if (value === "success") {
-    badgeStyle = {
-      backgroundColor: COLORS.successSoft,
-      color: COLORS.success,
-    };
-  } else if (value === "error") {
-    badgeStyle = {
-      backgroundColor: COLORS.dangerSoft,
-      color: COLORS.danger,
-    };
-  } else if (value === "warning") {
-    badgeStyle = {
-      backgroundColor: COLORS.warningSoft,
-      color: COLORS.warning,
-    };
-  }
-
-  return (
-    <View
-      style={[
-        styles.statusBadge,
-        { backgroundColor: badgeStyle.backgroundColor },
-      ]}
-    >
-      <Text style={[styles.statusBadgeText, { color: badgeStyle.color }]}>
-        {label}
-      </Text>
-    </View>
-  );
-}
-
-function TypeBadge({ label }) {
-  return (
-    <View style={styles.typeBadge}>
-      <Text style={styles.typeBadgeText}>{label}</Text>
-    </View>
-  );
-}
+import Admin_Layout from "../../components/Admin_compo/Admin_Layout";
 
 export default function Admin_Logs() {
-  const [activeFilter, setActiveFilter] = useState("All");
-  const [logs, setLogs] = useState(INITIAL_LOG_DATA);
-  const [openActionId, setOpenActionId] = useState(null);
-  const [selectedReport, setSelectedReport] = useState(null);
+  const [searchText, setSearchText] = useState("");
+  const [selectedFilter, setSelectedFilter] = useState("All");
+
+  const logs = [
+    {
+      id: "LOG-001",
+      actionType: "Report Verified",
+      title: "Report verified",
+      actor: "Admin R. Ramos",
+      reportId: "ARG-2031",
+      details: "Road accident near Poblacion was reviewed and verified.",
+      oldStatus: "Pending",
+      newStatus: "Verified",
+      dateTime: "Apr 29, 2026 • 10:35 AM",
+    },
+    {
+      id: "LOG-002",
+      actionType: "Map & Verify",
+      title: "Report mapped and verified",
+      actor: "Admin R. Ramos",
+      reportId: "ARG-2033",
+      details: "Flood report near San Miguel was verified and shown on the map.",
+      oldStatus: "Pending",
+      newStatus: "Verified + Map Visible",
+      dateTime: "Apr 29, 2026 • 9:48 AM",
+    },
+    {
+      id: "LOG-003",
+      actionType: "AI Analysis",
+      title: "AI analysis completed",
+      actor: "ARGUS AI",
+      reportId: "ARG-2031",
+      details: "AI generated a 92% credibility score with urgent sentiment.",
+      oldStatus: "Not Analyzed",
+      newStatus: "AI Score 92%",
+      dateTime: "Apr 29, 2026 • 9:41 AM",
+    },
+    {
+      id: "LOG-004",
+      actionType: "Admin Report Created",
+      title: "Admin-created report added",
+      actor: "Admin R. Ramos",
+      reportId: "ARG-2032",
+      details:
+        "Admin created a suspicious activity report. It was automatically verified.",
+      oldStatus: "None",
+      newStatus: "Verified",
+      dateTime: "Apr 29, 2026 • 9:20 AM",
+    },
+    {
+      id: "LOG-005",
+      actionType: "Report Rejected",
+      title: "Report rejected",
+      actor: "Admin R. Ramos",
+      reportId: "ARG-2034",
+      details: "False fire alarm report was rejected due to unclear details.",
+      oldStatus: "Pending",
+      newStatus: "Rejected",
+      dateTime: "Apr 28, 2026 • 5:30 PM",
+    },
+    {
+      id: "LOG-006",
+      actionType: "Notification Sent",
+      title: "Notification sent",
+      actor: "System",
+      reportId: "ARG-2031",
+      details: "A report verification notification was sent to the user.",
+      oldStatus: "Pending Notification",
+      newStatus: "Sent",
+      dateTime: "Apr 28, 2026 • 4:55 PM",
+    },
+  ];
 
   const filters = [
     "All",
-    "Approval",
-    "Submission",
-    "AI Processing",
-    "Notification",
-    "System Event",
+    "Report Verified",
+    "Report Rejected",
+    "Map & Verify",
+    "Admin Report Created",
+    "AI Analysis",
+    "Notification Sent",
   ];
 
   const filteredLogs = useMemo(() => {
-    if (activeFilter === "All") return logs;
-    return logs.filter((item) => item.type === activeFilter);
-  }, [activeFilter, logs]);
+    const query = searchText.trim().toLowerCase();
 
-  const summaryCards = [
-    {
-      title: "Total Logs",
-      value: logs.length.toString(),
-      subtext: "Activity records",
-      icon: "receipt-outline",
-      iconBg: COLORS.primarySoft,
-      iconColor: COLORS.primary,
-      subColor: COLORS.primary,
-    },
-    {
-      title: "Admin Actions",
-      value: logs
-        .filter(
-          (item) =>
-            item.type === "Approval" ||
-            item.type === "Rejection" ||
-            item.type === "Admin Action",
-        )
-        .length.toString(),
-      subtext: "Manual operations",
-      icon: "person-circle-outline",
-      iconBg: COLORS.primarySoft,
-      iconColor: COLORS.primary,
-      subColor: COLORS.primary,
-    },
-    {
-      title: "AI Processing",
-      value: logs
-        .filter((item) => item.type === "AI Processing")
-        .length.toString(),
-      subtext: "Automated checks",
-      icon: "hardware-chip-outline",
-      iconBg: COLORS.successSoft,
-      iconColor: COLORS.success,
-      subColor: COLORS.success,
-    },
-    {
-      title: "System Events",
-      value: logs
-        .filter((item) => item.type === "System Event")
-        .length.toString(),
-      subtext: "Alerts and errors",
-      icon: "alert-circle-outline",
-      iconBg: COLORS.dangerSoft,
-      iconColor: COLORS.danger,
-      subColor: COLORS.danger,
-    },
-  ];
+    return logs.filter((log) => {
+      const matchesFilter =
+        selectedFilter === "All" || log.actionType === selectedFilter;
 
-  const activityBreakdown = [
-    "Approval",
-    "Rejection",
-    "Submission",
-    "AI Processing",
-    "Notification",
-    "Admin Action",
-    "System Event",
-  ];
+      const matchesSearch =
+        !query ||
+        log.id.toLowerCase().includes(query) ||
+        log.title.toLowerCase().includes(query) ||
+        log.actor.toLowerCase().includes(query) ||
+        log.reportId.toLowerCase().includes(query) ||
+        log.actionType.toLowerCase().includes(query) ||
+        log.details.toLowerCase().includes(query);
 
-  const handleViewReport = (row) => {
-    setSelectedReport(row);
-    setOpenActionId(null);
+      return matchesFilter && matchesSearch;
+    });
+  }, [searchText, selectedFilter]);
+
+  const totalLogs = logs.length;
+  const verifiedLogs = logs.filter(
+    (item) =>
+      item.actionType === "Report Verified" ||
+      item.actionType === "Map & Verify"
+  ).length;
+  const rejectedLogs = logs.filter(
+    (item) => item.actionType === "Report Rejected"
+  ).length;
+  const aiLogs = logs.filter((item) => item.actionType === "AI Analysis").length;
+
+  const getLogStyle = (type) => {
+    if (type === "Report Verified" || type === "Map & Verify") {
+      return {
+        icon:
+          type === "Map & Verify"
+            ? "map-outline"
+            : "shield-checkmark-outline",
+        color: "#22A06B",
+        bg: "#EAF8F1",
+      };
+    }
+
+    if (type === "Report Rejected") {
+      return {
+        icon: "close-circle-outline",
+        color: "#E45757",
+        bg: "#FFF5F5",
+      };
+    }
+
+    if (type === "AI Analysis") {
+      return {
+        icon: "sparkles-outline",
+        color: "#7C3AED",
+        bg: "#F3E8FF",
+      };
+    }
+
+    if (type === "Admin Report Created") {
+      return {
+        icon: "add-circle-outline",
+        color: "#294880",
+        bg: "#EAF2FF",
+      };
+    }
+
+    if (type === "Notification Sent") {
+      return {
+        icon: "notifications-outline",
+        color: "#C98A2E",
+        bg: "#FFF4E5",
+      };
+    }
+
+    return {
+      icon: "document-text-outline",
+      color: "#294880",
+      bg: "#EAF2FF",
+    };
   };
 
-  const handleDeleteReport = (row) => {
-    setOpenActionId(null);
+  const getBadgeStyle = (type) => {
+    if (type === "Report Verified" || type === "Map & Verify") {
+      return {
+        bg: "#EAF8F1",
+        color: "#22A06B",
+      };
+    }
 
-    Alert.alert(
-      "Delete Report",
-      `Are you sure you want to delete ${row.target}?`,
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => {
-            setLogs((prevLogs) =>
-              prevLogs.filter((item) => item.id !== row.id),
-            );
+    if (type === "Report Rejected") {
+      return {
+        bg: "#FFF5F5",
+        color: "#E45757",
+      };
+    }
 
-            if (selectedReport?.id === row.id) {
-              setSelectedReport(null);
-            }
-          },
-        },
-      ],
-    );
+    if (type === "AI Analysis") {
+      return {
+        bg: "#F3E8FF",
+        color: "#7C3AED",
+      };
+    }
+
+    if (type === "Notification Sent") {
+      return {
+        bg: "#FFF4E5",
+        color: "#C98A2E",
+      };
+    }
+
+    return {
+      bg: "#EAF2FF",
+      color: "#294880",
+    };
   };
+
+  const StatCard = ({ icon, title, value, color, bg }) => (
+    <View style={styles.statCard}>
+      <View style={[styles.statIcon, { backgroundColor: bg }]}>
+        <Ionicons name={icon} size={25} color={color} />
+      </View>
+
+      <View style={styles.statTextBox}>
+        <Text style={styles.statValue}>{value}</Text>
+        <Text style={styles.statTitle}>{title}</Text>
+      </View>
+    </View>
+  );
 
   return (
     <Admin_Layout>
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.contentWrap}>
-          <View style={styles.leftSection}>
-            <View style={styles.summaryRow}>
-              {summaryCards.map((card) => (
-                <View key={card.title} style={styles.summaryCard}>
-                  <View
-                    style={[
-                      styles.summaryIconWrap,
-                      { backgroundColor: card.iconBg },
-                    ]}
-                  >
-                    <Ionicons
-                      name={card.icon}
-                      size={24}
-                      color={card.iconColor}
-                    />
-                  </View>
+      <View style={styles.wrapper}>
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.headerCard}>
+            <View style={styles.headerTextBox}>
+              <Text style={styles.pageTitle}>Logs</Text>
+              <Text style={styles.pageSubtitle}>
+                Track recent report validation actions, AI processing,
+                admin-created reports, and notification events.
+              </Text>
+            </View>
+          </View>
 
-                  <View style={styles.summaryTextWrap}>
-                    <Text style={styles.summaryTitle}>{card.title}</Text>
+          <View style={styles.statsRow}>
+            <StatCard
+              icon="list-outline"
+              title="Total Logs"
+              value={totalLogs}
+              color="#294880"
+              bg="#EAF2FF"
+            />
 
-                    <View style={styles.summaryValueRow}>
-                      <Text style={styles.summaryValue}>{card.value}</Text>
-                      <Text
-                        style={[
-                          styles.summarySubtext,
-                          { color: card.subColor },
-                        ]}
-                      >
-                        {card.subtext}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-              ))}
+            <StatCard
+              icon="shield-checkmark-outline"
+              title="Verified Actions"
+              value={verifiedLogs}
+              color="#22A06B"
+              bg="#EAF8F1"
+            />
+
+            <StatCard
+              icon="close-circle-outline"
+              title="Rejected Reports"
+              value={rejectedLogs}
+              color="#E45757"
+              bg="#FFF5F5"
+            />
+
+            <StatCard
+              icon="sparkles-outline"
+              title="AI Logs"
+              value={aiLogs}
+              color="#7C3AED"
+              bg="#F3E8FF"
+            />
+          </View>
+
+          <View style={styles.filterCard}>
+            <View style={styles.searchBox}>
+              <Ionicons name="search-outline" size={21} color="#5D6F92" />
+
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search by report ID, action, actor, or details..."
+                placeholderTextColor="#8A98B3"
+                value={searchText}
+                onChangeText={setSearchText}
+              />
             </View>
 
-            {selectedReport && (
-              <View style={styles.viewReportCard}>
-                <View style={styles.viewReportHeader}>
-                  <View>
-                    <Text style={styles.viewReportTitle}>Viewing Report</Text>
-                    <Text style={styles.viewReportSubtitle}>
-                      {selectedReport.target}
-                    </Text>
-                  </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.filterRow}
+            >
+              {filters.map((filter) => {
+                const isActive = selectedFilter === filter;
 
+                return (
                   <TouchableOpacity
-                    style={styles.closeViewButton}
-                    onPress={() => setSelectedReport(null)}
+                    key={filter}
+                    style={[
+                      styles.filterPill,
+                      isActive && styles.activeFilterPill,
+                    ]}
+                    onPress={() => setSelectedFilter(filter)}
+                    activeOpacity={0.8}
                   >
-                    <Ionicons
-                      name="close-outline"
-                      size={22}
-                      color={COLORS.text}
-                    />
-                  </TouchableOpacity>
-                </View>
-
-                <View style={styles.viewReportGrid}>
-                  <View style={styles.viewInfoBox}>
-                    <Text style={styles.viewInfoLabel}>Log ID</Text>
-                    <Text style={styles.viewInfoValue}>
-                      {selectedReport.id}
-                    </Text>
-                  </View>
-
-                  <View style={styles.viewInfoBox}>
-                    <Text style={styles.viewInfoLabel}>Type</Text>
-                    <Text style={styles.viewInfoValue}>
-                      {selectedReport.type}
-                    </Text>
-                  </View>
-
-                  <View style={styles.viewInfoBox}>
-                    <Text style={styles.viewInfoLabel}>Actor</Text>
-                    <Text style={styles.viewInfoValue}>
-                      {selectedReport.actor}
-                    </Text>
-                  </View>
-
-                  <View style={styles.viewInfoBox}>
-                    <Text style={styles.viewInfoLabel}>Status</Text>
-                    <Text style={styles.viewInfoValue}>
-                      {selectedReport.status}
-                    </Text>
-                  </View>
-                </View>
-
-                <View style={styles.viewDescriptionBox}>
-                  <Text style={styles.viewInfoLabel}>Action Details</Text>
-                  <Text style={styles.viewDescriptionText}>
-                    {selectedReport.action}
-                  </Text>
-                  <Text style={styles.viewTimeText}>
-                    {selectedReport.timestamp}
-                  </Text>
-                </View>
-              </View>
-            )}
-
-            <View style={styles.tableCard}>
-              <View style={styles.tableHeaderTop}>
-                <View style={styles.tableHeaderTextWrap}>
-                  <Text style={styles.tableTitle}>System Activity Logs</Text>
-                  <Text style={styles.tableSubtitle}>
-                    Track validations, submissions, AI actions, notifications,
-                    and system events for audit trail and transparency.
-                  </Text>
-                </View>
-
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.filtersRow}
-                >
-                  {filters.map((filter) => {
-                    const isActive = filter === activeFilter;
-
-                    return (
-                      <TouchableOpacity
-                        key={filter}
-                        style={[
-                          styles.filterButton,
-                          isActive && styles.filterButtonActive,
-                        ]}
-                        onPress={() => {
-                          setActiveFilter(filter);
-                          setOpenActionId(null);
-                        }}
-                      >
-                        <Text
-                          style={[
-                            styles.filterButtonText,
-                            isActive && styles.filterButtonTextActive,
-                          ]}
-                        >
-                          {filter}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </ScrollView>
-              </View>
-
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <View>
-                  <View style={styles.tableHeadRow}>
-                    <Text style={[styles.tableHeadText, styles.colLogId]}>
-                      Log ID
-                    </Text>
-                    <Text style={[styles.tableHeadText, styles.colType]}>
-                      Type
-                    </Text>
-                    <Text style={[styles.tableHeadText, styles.colActor]}>
-                      Actor
-                    </Text>
-                    <Text style={[styles.tableHeadText, styles.colAction]}>
-                      Action
-                    </Text>
-                    <Text style={[styles.tableHeadText, styles.colTarget]}>
-                      Target
-                    </Text>
-                    <Text style={[styles.tableHeadText, styles.colTime]}>
-                      Timestamp
-                    </Text>
-                    <Text style={[styles.tableHeadText, styles.colStatus]}>
-                      Status
-                    </Text>
-                    <Text style={[styles.tableHeadText, styles.colTableAction]}>
-                      Action
-                    </Text>
-                  </View>
-
-                  {filteredLogs.map((row) => (
-                    <View
-                      key={row.id}
+                    <Text
                       style={[
-                        styles.tableBodyRow,
-                        openActionId === row.id && styles.activeTableBodyRow,
+                        styles.filterPillText,
+                        isActive && styles.activeFilterPillText,
                       ]}
                     >
-                      <Text style={[styles.tableCellText, styles.colLogId]}>
-                        {row.id}
-                      </Text>
+                      {filter}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
 
-                      <View style={styles.colType}>
-                        <TypeBadge label={row.type} />
+          <View style={styles.logsCard}>
+            <View style={styles.listHeader}>
+              <View>
+                <Text style={styles.sectionTitle}>Recent Admin Activity</Text>
+                <Text style={styles.sectionSubtitle}>
+                  These logs show report-related actions for normal admin
+                  workflow.
+                </Text>
+              </View>
+
+              <Text style={styles.resultText}>
+                {filteredLogs.length} result
+                {filteredLogs.length === 1 ? "" : "s"}
+              </Text>
+            </View>
+
+            {filteredLogs.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Ionicons name="document-outline" size={42} color="#5D6F92" />
+                <Text style={styles.emptyTitle}>No logs found</Text>
+                <Text style={styles.emptyText}>
+                  Try changing your search keyword or selected filter.
+                </Text>
+              </View>
+            ) : (
+              filteredLogs.map((log, index) => {
+                const logStyle = getLogStyle(log.actionType);
+                const badgeStyle = getBadgeStyle(log.actionType);
+
+                return (
+                  <View
+                    key={log.id}
+                    style={[styles.logRow, index !== 0 && styles.logRowBorder]}
+                  >
+                    <View
+                      style={[
+                        styles.logIconBox,
+                        { backgroundColor: logStyle.bg },
+                      ]}
+                    >
+                      <Ionicons
+                        name={logStyle.icon}
+                        size={25}
+                        color={logStyle.color}
+                      />
+                    </View>
+
+                    <View style={styles.logContent}>
+                      <View style={styles.logTopRow}>
+                        <View style={styles.logTitleBox}>
+                          <Text style={styles.logTitle}>{log.title}</Text>
+                          <Text style={styles.logMeta}>
+                            {log.actor} • {log.dateTime}
+                          </Text>
+                        </View>
+
+                        <View
+                          style={[
+                            styles.actionBadge,
+                            { backgroundColor: badgeStyle.bg },
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.actionBadgeText,
+                              { color: badgeStyle.color },
+                            ]}
+                          >
+                            {log.actionType}
+                          </Text>
+                        </View>
                       </View>
 
-                      <View style={[styles.colActor, styles.actorCell]}>
-                        <View style={styles.actorIconWrap}>
+                      <Text style={styles.logDetails}>{log.details}</Text>
+
+                      <View style={styles.statusChangeBox}>
+                        <View style={styles.statusItem}>
+                          <Text style={styles.statusLabel}>Report ID</Text>
+                          <Text style={styles.statusValue}>{log.reportId}</Text>
+                        </View>
+
+                        <View style={styles.statusItem}>
+                          <Text style={styles.statusLabel}>Old Status</Text>
+                          <Text style={styles.statusValue}>
+                            {log.oldStatus}
+                          </Text>
+                        </View>
+
+                        <View style={styles.statusArrowBox}>
                           <Ionicons
-                            name={row.icon}
-                            size={16}
-                            color={COLORS.primary}
+                            name="arrow-forward-outline"
+                            size={18}
+                            color="#8A98B3"
                           />
                         </View>
 
-                        <Text style={styles.actorText}>{row.actor}</Text>
-                      </View>
-
-                      <Text
-                        style={[styles.tableCellText, styles.colAction]}
-                        numberOfLines={2}
-                      >
-                        {row.action}
-                      </Text>
-
-                      <Text style={[styles.tableCellText, styles.colTarget]}>
-                        {row.target}
-                      </Text>
-
-                      <Text style={[styles.tableCellText, styles.colTime]}>
-                        {row.timestamp}
-                      </Text>
-
-                      <View style={styles.colStatus}>
-                        <StatusBadge label={row.status} />
-                      </View>
-
-                      <View style={styles.colTableAction}>
-                        <TouchableOpacity
-                          style={styles.dotsButton}
-                          onPress={() =>
-                            setOpenActionId(
-                              openActionId === row.id ? null : row.id,
-                            )
-                          }
-                        >
-                          <Ionicons
-                            name="ellipsis-vertical"
-                            size={18}
-                            color={COLORS.primary}
-                          />
-                        </TouchableOpacity>
-
-                        {openActionId === row.id && (
-                          <View style={styles.actionMenu}>
-                            <TouchableOpacity
-                              style={styles.actionMenuItem}
-                              onPress={() => handleViewReport(row)}
-                            >
-                              <Ionicons
-                                name="eye-outline"
-                                size={16}
-                                color={COLORS.primary}
-                              />
-                              <Text style={styles.actionMenuText}>View</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                              style={styles.actionMenuItem}
-                              onPress={() => handleDeleteReport(row)}
-                            >
-                              <Ionicons
-                                name="trash-outline"
-                                size={16}
-                                color={COLORS.danger}
-                              />
-                              <Text
-                                style={[
-                                  styles.actionMenuText,
-                                  { color: COLORS.danger },
-                                ]}
-                              >
-                                Delete Report
-                              </Text>
-                            </TouchableOpacity>
-                          </View>
-                        )}
+                        <View style={styles.statusItem}>
+                          <Text style={styles.statusLabel}>New Status</Text>
+                          <Text style={styles.statusValue}>
+                            {log.newStatus}
+                          </Text>
+                        </View>
                       </View>
                     </View>
-                  ))}
-                </View>
-              </ScrollView>
-            </View>
-          </View>
-
-          <View style={styles.rightSection}>
-            <View style={styles.sideCard}>
-              <Text style={styles.sideCardTitle}>Activity Breakdown</Text>
-
-              {activityBreakdown.map((type) => {
-                const count = logs.filter((item) => item.type === type).length;
-
-                return (
-                  <View key={type} style={styles.breakdownRow}>
-                    <Text style={styles.breakdownText}>{type}</Text>
-                    <Text style={styles.breakdownCount}>{count}</Text>
                   </View>
                 );
-              })}
-            </View>
-
-            <View style={styles.sideCard}>
-              <Text style={styles.sideCardTitle}>Audit Trail Notes</Text>
-
-              <View style={styles.notesContent}>
-                <Text style={styles.notesHeading}>Purpose</Text>
-                <Text style={styles.notesText}>
-                  Logs provide transparency for report validation, AI scoring,
-                  notifications, admin actions, and system-level events.
-                </Text>
-
-                <Text style={[styles.notesHeading, styles.notesHeadingSpacing]}>
-                  Included Tracking
-                </Text>
-                <Text style={styles.notesText}>
-                  • Who approved or rejected a report{"\n"}• When a report was
-                  submitted{"\n"}• AI processing activity{"\n"}• Notification
-                  dispatch logs{"\n"}• Admin actions{"\n"}• Errors or system
-                  events
-                </Text>
-              </View>
-            </View>
+              })
+            )}
           </View>
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </View>
     </Admin_Layout>
   );
 }
 
 const styles = StyleSheet.create({
+  wrapper: {
+    flex: 1,
+    backgroundColor: "#F5F8FC",
+  },
+
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: "#F5F8FC",
   },
 
   scrollContent: {
-    paddingBottom: 28,
+    paddingBottom: 34,
   },
 
-  contentWrap: {
-    flexDirection: "row",
-    gap: 20,
-    alignItems: "flex-start",
+  headerCard: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#D9E2F0",
+    borderRadius: 18,
+    padding: 24,
+    marginBottom: 18,
   },
 
-  leftSection: {
+  headerTextBox: {
     flex: 1,
-    minWidth: 0,
   },
 
-  rightSection: {
-    width: 300,
-    gap: 14,
+  pageTitle: {
+    fontSize: 30,
+    color: "#294880",
+    fontWeight: "700",
+    marginBottom: 8,
   },
 
-  summaryRow: {
+  pageSubtitle: {
+    fontSize: 16,
+    color: "#5D6F92",
+    lineHeight: 24,
+    maxWidth: 900,
+    fontWeight: "400",
+  },
+
+  statsRow: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 14,
-    marginBottom: 16,
+    marginBottom: 18,
   },
 
-  summaryCard: {
+  statCard: {
     flex: 1,
     minWidth: 210,
-    backgroundColor: COLORS.white,
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: COLORS.primaryBorder,
+    borderColor: "#D9E2F0",
     borderRadius: 16,
-    paddingVertical: 18,
-    paddingHorizontal: 16,
+    padding: 18,
     flexDirection: "row",
     alignItems: "center",
   },
 
-  summaryIconWrap: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+  statIcon: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
     alignItems: "center",
     justifyContent: "center",
     marginRight: 14,
   },
 
-  summaryTextWrap: {
+  statTextBox: {
     flex: 1,
   },
 
-  summaryTitle: {
-    fontSize: 14,
-    color: COLORS.textMuted,
-    marginBottom: 6,
+  statValue: {
+    fontSize: 26,
+    fontWeight: "700",
+    color: "#2F4267",
+  },
+
+  statTitle: {
+    fontSize: 15,
+    color: "#5D6F92",
+    marginTop: 4,
     fontWeight: "500",
   },
 
-  summaryValueRow: {
-    flexDirection: "row",
-    alignItems: "baseline",
-    gap: 8,
-    flexWrap: "wrap",
-  },
-
-  summaryValue: {
-    fontSize: 21,
-    fontWeight: "800",
-    color: COLORS.text,
-  },
-
-  summarySubtext: {
-    fontSize: 13,
-    fontWeight: "600",
-  },
-
-  viewReportCard: {
-    backgroundColor: COLORS.white,
+  filterCard: {
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: COLORS.primaryBorder,
+    borderColor: "#D9E2F0",
     borderRadius: 16,
     padding: 18,
+    marginBottom: 18,
+  },
+
+  searchBox: {
+    height: 50,
+    borderRadius: 13,
+    borderWidth: 1,
+    borderColor: "#D9E2F0",
+    backgroundColor: "#F7F9FD",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 14,
     marginBottom: 16,
   },
 
-  viewReportHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 14,
-  },
-
-  viewReportTitle: {
+  searchInput: {
+    flex: 1,
+    height: "100%",
+    marginLeft: 10,
+    color: "#294880",
     fontSize: 16,
-    fontWeight: "800",
-    color: COLORS.primary,
+    outlineStyle: Platform.OS === "web" ? "none" : undefined,
   },
 
-  viewReportSubtitle: {
-    fontSize: 13,
-    color: COLORS.textMuted,
-    marginTop: 3,
+  filterRow: {
+    gap: 10,
   },
 
-  closeViewButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: COLORS.surfaceSoft,
+  filterPill: {
+    height: 40,
+    paddingHorizontal: 16,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#D9E2F0",
+    backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
   },
 
-  viewReportGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
+  activeFilterPill: {
+    backgroundColor: "#294880",
+    borderColor: "#294880",
   },
 
-  viewInfoBox: {
-    flex: 1,
-    minWidth: 180,
-    backgroundColor: COLORS.surfaceSoft,
-    borderWidth: 1,
-    borderColor: COLORS.primaryBorder,
-    borderRadius: 12,
-    padding: 12,
-  },
-
-  viewInfoLabel: {
-    fontSize: 12,
-    color: COLORS.textMuted,
+  filterPillText: {
+    fontSize: 14,
     fontWeight: "600",
+    color: "#294880",
+  },
+
+  activeFilterPillText: {
+    color: "#FFFFFF",
+    fontWeight: "600",
+  },
+
+  logsCard: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#D9E2F0",
+    borderRadius: 16,
+    overflow: "hidden",
+  },
+
+  listHeader: {
+    minHeight: 82,
+    paddingHorizontal: 22,
+    paddingVertical: 18,
+    borderBottomWidth: 1,
+    borderBottomColor: "#D9E2F0",
+    backgroundColor: "#F7F9FD",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 16,
+  },
+
+  sectionTitle: {
+    fontSize: 21,
+    fontWeight: "700",
+    color: "#294880",
     marginBottom: 5,
   },
 
-  viewInfoValue: {
-    fontSize: 14,
-    color: COLORS.text,
-    fontWeight: "800",
+  sectionSubtitle: {
+    fontSize: 15,
+    color: "#5D6F92",
+    fontWeight: "400",
   },
 
-  viewDescriptionBox: {
-    marginTop: 12,
-    backgroundColor: COLORS.surfaceSoft,
-    borderWidth: 1,
-    borderColor: COLORS.primaryBorder,
-    borderRadius: 12,
-    padding: 12,
-  },
-
-  viewDescriptionText: {
-    fontSize: 14,
-    color: COLORS.text,
-    lineHeight: 20,
-  },
-
-  viewTimeText: {
-    fontSize: 12,
-    color: COLORS.textMuted,
-    marginTop: 8,
+  resultText: {
+    fontSize: 15,
     fontWeight: "600",
+    color: "#294880",
   },
 
-  tableCard: {
-    backgroundColor: COLORS.white,
-    borderWidth: 1,
-    borderColor: COLORS.primaryBorder,
-    borderRadius: 16,
-    overflow: "visible",
-  },
-
-  tableHeaderTop: {
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.primaryBorder,
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    backgroundColor: COLORS.surfaceSoft,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-  },
-
-  tableHeaderTextWrap: {
-    marginBottom: 12,
-  },
-
-  tableTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: COLORS.primary,
-  },
-
-  tableSubtitle: {
-    fontSize: 12,
-    color: COLORS.textMuted,
-    marginTop: 4,
-    lineHeight: 18,
-  },
-
-  filtersRow: {
-    gap: 10,
-    paddingRight: 8,
-  },
-
-  filterButton: {
-    height: 34,
-    paddingHorizontal: 14,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: COLORS.primaryBorder,
-    backgroundColor: COLORS.white,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  filterButtonActive: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
-  },
-
-  filterButtonText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: COLORS.primary,
-  },
-
-  filterButtonTextActive: {
-    color: COLORS.white,
-  },
-
-  tableHeadRow: {
-    height: 46,
-    backgroundColor: COLORS.surfaceSoft,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.primaryBorder,
+  logRow: {
+    paddingHorizontal: 22,
+    paddingVertical: 20,
+    backgroundColor: "#FFFFFF",
     flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 20,
+    alignItems: "flex-start",
+    gap: 16,
   },
 
-  tableHeadText: {
-    fontSize: 13,
-    color: COLORS.textMuted,
-    fontWeight: "600",
+  logRowBorder: {
+    borderTopWidth: 1,
+    borderTopColor: "#E4EAF3",
   },
 
-  tableBodyRow: {
-    minHeight: 68,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E4EAF3",
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    backgroundColor: COLORS.white,
-    position: "relative",
-    zIndex: 1,
-  },
-
-  activeTableBodyRow: {
-    zIndex: 999,
-  },
-
-  tableCellText: {
-    fontSize: 13,
-    color: COLORS.text,
-  },
-
-  colLogId: {
-    width: 110,
-  },
-
-  colType: {
-    width: 150,
-    justifyContent: "center",
-  },
-
-  colActor: {
-    width: 220,
-  },
-
-  colAction: {
-    width: 360,
-  },
-
-  colTarget: {
-    width: 140,
-  },
-
-  colTime: {
-    width: 180,
-  },
-
-  colStatus: {
-    width: 120,
-    justifyContent: "center",
-  },
-
-  colTableAction: {
-    width: 100,
-    justifyContent: "center",
-    alignItems: "center",
-    position: "relative",
-  },
-
-  actorCell: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-
-  actorIconWrap: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: COLORS.primarySoft,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 10,
-  },
-
-  actorText: {
-    flex: 1,
-    fontSize: 13,
-    color: COLORS.text,
-    fontWeight: "600",
-  },
-
-  typeBadge: {
-    alignSelf: "flex-start",
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    backgroundColor: COLORS.primarySoft,
-    borderRadius: 999,
-  },
-
-  typeBadgeText: {
-    color: COLORS.primary,
-    fontSize: 12,
-    fontWeight: "700",
-  },
-
-  statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 999,
-    alignSelf: "flex-start",
-  },
-
-  statusBadgeText: {
-    fontWeight: "700",
-    fontSize: 12,
-  },
-
-  dotsButton: {
-    width: 34,
-    height: 34,
+  logIconBox: {
+    width: 52,
+    height: 52,
     borderRadius: 17,
-    backgroundColor: COLORS.primarySoft,
     alignItems: "center",
     justifyContent: "center",
   },
 
-  actionMenu: {
-    position: "absolute",
-    top: 48,
-    right: 8,
-    width: 165,
-    backgroundColor: COLORS.white,
-    borderWidth: 1,
-    borderColor: COLORS.primaryBorder,
-    borderRadius: 12,
-    paddingVertical: 6,
-    shadowColor: "#000000",
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    shadowOffset: {
-      width: 0,
-      height: 6,
-    },
-    elevation: 10,
-    zIndex: 9999,
+  logContent: {
+    flex: 1,
+    minWidth: 0,
   },
 
-  actionMenuItem: {
+  logTopRow: {
     flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 12,
+    marginBottom: 10,
+  },
+
+  logTitleBox: {
+    flex: 1,
+  },
+
+  logTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#111827",
+    lineHeight: 23,
+    marginBottom: 4,
+  },
+
+  logMeta: {
+    fontSize: 14,
+    color: "#5D6F92",
+    lineHeight: 20,
+    fontWeight: "400",
+  },
+
+  actionBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 999,
+  },
+
+  actionBadgeText: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+
+  logDetails: {
+    fontSize: 15,
+    color: "#5D6F92",
+    lineHeight: 22,
+    marginBottom: 14,
+    fontWeight: "400",
+  },
+
+  statusChangeBox: {
+    flexDirection: "row",
+    alignItems: "stretch",
+    flexWrap: "wrap",
+    gap: 10,
+  },
+
+  statusItem: {
+    flex: 1,
+    minWidth: 160,
+    backgroundColor: "#F7F9FD",
+    borderWidth: 1,
+    borderColor: "#E4EAF3",
+    borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 10,
   },
 
-  actionMenuText: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: COLORS.primary,
+  statusLabel: {
+    fontSize: 12,
+    color: "#7A8BA8",
+    fontWeight: "500",
+    marginBottom: 5,
   },
 
-  sideCard: {
-    backgroundColor: COLORS.white,
-    borderWidth: 1,
-    borderColor: COLORS.primaryBorder,
-    borderRadius: 14,
-    overflow: "hidden",
-  },
-
-  sideCardTitle: {
-    fontSize: 15,
-    fontWeight: "800",
-    color: COLORS.primary,
-    paddingHorizontal: 18,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.primaryBorder,
-    backgroundColor: COLORS.surfaceSoft,
-  },
-
-  breakdownRow: {
-    paddingHorizontal: 18,
-    paddingVertical: 13,
-    borderTopWidth: 1,
-    borderTopColor: "#E4EAF3",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-
-  breakdownText: {
-    color: COLORS.text,
-    fontSize: 13,
-    flex: 1,
-    marginRight: 12,
-  },
-
-  breakdownCount: {
-    color: COLORS.primary,
-    fontWeight: "800",
+  statusValue: {
     fontSize: 14,
+    color: "#294880",
+    fontWeight: "600",
+    lineHeight: 19,
   },
 
-  notesContent: {
-    padding: 18,
+  statusArrowBox: {
+    width: 34,
+    alignItems: "center",
+    justifyContent: "center",
   },
 
-  notesHeading: {
-    color: COLORS.text,
-    fontWeight: "700",
-    marginBottom: 8,
+  emptyState: {
+    paddingVertical: 48,
+    alignItems: "center",
+    justifyContent: "center",
   },
 
-  notesHeadingSpacing: {
-    marginTop: 14,
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#2F4267",
+    marginTop: 12,
+    marginBottom: 6,
   },
 
-  notesText: {
-    color: COLORS.textMuted,
-    lineHeight: 21,
-    fontSize: 13,
+  emptyText: {
+    fontSize: 15,
+    color: "#5D6F92",
+    fontWeight: "400",
   },
 });

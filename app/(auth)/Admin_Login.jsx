@@ -11,54 +11,373 @@ import {
   Platform,
   Alert,
   ScrollView,
+  Modal,
 } from "react-native";
-import { MaterialIcons, FontAwesome } from "@expo/vector-icons";
+import { MaterialIcons, FontAwesome, Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 
 const { width, height } = Dimensions.get("window");
 
-if (!globalThis.adminAccount) {
-  globalThis.adminAccount = {
+export default function Admin_Login() {
+  const defaultSadminacc = {
+    fullName: "ARGUS SuperAdmin",
+    email: "superadmin@argus.com",
+    password: "SuperAdmin123",
+    role: "SuperAdmin",
+  };
+
+  const defaultNadminacc = {
+    fullName: "ARGUS Admin",
     email: "admin@argus.com",
     password: "Admin123",
+    role: "Admin",
   };
-}
 
-export default function AdminLogin() {
+  const [Sadminacc, setSadminacc] = useState(defaultSadminacc);
+  const [Nadminacc, setNadminacc] = useState(defaultNadminacc);
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleAdminLogin = () => {
+  const [showPassword, setShowPassword] = useState(false);
+
+  const [forgotVisible, setForgotVisible] = useState(false);
+  const [forgotStep, setForgotStep] = useState("email");
+
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [generatedOtp, setGeneratedOtp] = useState("");
+  const [enteredOtp, setEnteredOtp] = useState("");
+
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
+
+  const getAdminByEmail = (targetEmail) => {
+    const cleanEmail = targetEmail.trim().toLowerCase();
+
+    if (cleanEmail === Sadminacc.email.toLowerCase()) {
+      return {
+        type: "sadmin",
+        account: Sadminacc,
+      };
+    }
+
+    if (cleanEmail === Nadminacc.email.toLowerCase()) {
+      return {
+        type: "nadmin",
+        account: Nadminacc,
+      };
+    }
+
+    return null;
+  };
+
+  const handleLogin = () => {
     if (Platform.OS !== "web") {
       Alert.alert("Restricted", "Admin login is available on web only.");
       return;
     }
 
     const cleanEmail = email.trim().toLowerCase();
+    const cleanPassword = password.trim();
 
-    if (!cleanEmail || !password) {
-      Alert.alert("Error", "Please fill in all fields.");
-      return;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(cleanEmail)) {
-      Alert.alert("Error", "Please enter a valid email address.");
+    if (!cleanEmail || !cleanPassword) {
+      Alert.alert("Error", "Please enter both email and password.");
       return;
     }
 
     if (
-      cleanEmail === globalThis.adminAccount.email.toLowerCase() &&
-      password === globalThis.adminAccount.password
+      cleanEmail === Sadminacc.email.toLowerCase() &&
+      cleanPassword === Sadminacc.password
     ) {
-      Alert.alert("Success", "Admin login successful!");
+      globalThis.adminAccount = Sadminacc;
+      router.replace("/(sadmin)/SAdmin_Dashboard");
+      return;
+    }
+
+    if (
+      cleanEmail === Nadminacc.email.toLowerCase() &&
+      cleanPassword === Nadminacc.password
+    ) {
+      globalThis.adminAccount = Nadminacc;
       router.replace("/(admin)/Admin_Dashboard");
-    } else {
-      Alert.alert(
-        "Login Failed",
-        `Use:\nEmail: ${globalThis.adminAccount.email}\nPassword: ${globalThis.adminAccount.password}`,
+      return;
+    }
+
+    Alert.alert("Login Failed", "Invalid admin email or password.");
+  };
+
+  const resetForgotForm = () => {
+    setForgotStep("email");
+    setForgotEmail("");
+    setGeneratedOtp("");
+    setEnteredOtp("");
+    setNewPassword("");
+    setConfirmNewPassword("");
+    setShowNewPassword(false);
+    setShowConfirmNewPassword(false);
+  };
+
+  const openForgotPassword = () => {
+    resetForgotForm();
+    setForgotVisible(true);
+  };
+
+  const closeForgotPassword = () => {
+    setForgotVisible(false);
+    resetForgotForm();
+  };
+
+  const handleSendOtp = () => {
+    const cleanEmail = forgotEmail.trim().toLowerCase();
+
+    if (!cleanEmail) {
+      Alert.alert("Error", "Please enter your admin email address.");
+      return;
+    }
+
+    const foundAdmin = getAdminByEmail(cleanEmail);
+
+    if (!foundAdmin) {
+      Alert.alert("Account Not Found", "No admin account found with this email.");
+      return;
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    setGeneratedOtp(otp);
+    setForgotStep("otp");
+
+    Alert.alert(
+      "OTP Sent",
+      `Your OTP code is ${otp}.\n\nFor now, this is shown here for testing. Later, this can be sent through email.`
+    );
+  };
+
+  const handleVerifyOtp = () => {
+    if (!enteredOtp.trim()) {
+      Alert.alert("Error", "Please enter the OTP code.");
+      return;
+    }
+
+    if (enteredOtp.trim() !== generatedOtp) {
+      Alert.alert("Invalid OTP", "The OTP code you entered is incorrect.");
+      return;
+    }
+
+    setForgotStep("newPassword");
+  };
+
+  const handleResetPassword = () => {
+    const cleanEmail = forgotEmail.trim().toLowerCase();
+
+    if (!newPassword || !confirmNewPassword) {
+      Alert.alert("Error", "Please fill in the new password fields.");
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      Alert.alert("Error", "Password must be at least 6 characters.");
+      return;
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      Alert.alert("Error", "Passwords do not match.");
+      return;
+    }
+
+    const foundAdmin = getAdminByEmail(cleanEmail);
+
+    if (!foundAdmin) {
+      Alert.alert("Error", "Admin account not found.");
+      return;
+    }
+
+    if (foundAdmin.type === "sadmin") {
+      setSadminacc({
+        ...Sadminacc,
+        password: newPassword,
+      });
+    }
+
+    if (foundAdmin.type === "nadmin") {
+      setNadminacc({
+        ...Nadminacc,
+        password: newPassword,
+      });
+    }
+
+    setPassword("");
+    setEmail(cleanEmail);
+
+    Alert.alert("Success", "Password has been reset successfully.", [
+      {
+        text: "OK",
+        onPress: closeForgotPassword,
+      },
+    ]);
+  };
+
+  const renderForgotContent = () => {
+    if (forgotStep === "email") {
+      return (
+        <>
+          <Text style={styles.modalTitle}>Forgot Password</Text>
+          <Text style={styles.modalSubtitle}>
+            Enter your admin email address to receive an OTP code.
+          </Text>
+
+          <View style={styles.inputWrapper}>
+            <MaterialIcons
+              name="email"
+              size={20}
+              color="#2F4F8F"
+              style={styles.inputIcon}
+            />
+
+            <TextInput
+              style={styles.input}
+              placeholder="Admin Email Address"
+              placeholderTextColor="#6E7FA5"
+              value={forgotEmail}
+              onChangeText={setForgotEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+          </View>
+
+          <TouchableOpacity
+            style={styles.modalPrimaryButton}
+            onPress={handleSendOtp}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.modalPrimaryButtonText}>Send OTP</Text>
+          </TouchableOpacity>
+        </>
       );
     }
+
+    if (forgotStep === "otp") {
+      return (
+        <>
+          <Text style={styles.modalTitle}>Enter OTP</Text>
+          <Text style={styles.modalSubtitle}>
+            Enter the 6-digit OTP code sent to your admin email.
+          </Text>
+
+          <View style={styles.inputWrapper}>
+            <Ionicons
+              name="keypad-outline"
+              size={20}
+              color="#2F4F8F"
+              style={styles.inputIcon}
+            />
+
+            <TextInput
+              style={styles.input}
+              placeholder="Enter OTP"
+              placeholderTextColor="#6E7FA5"
+              value={enteredOtp}
+              onChangeText={setEnteredOtp}
+              keyboardType="number-pad"
+              maxLength={6}
+            />
+          </View>
+
+          <TouchableOpacity
+            style={styles.modalPrimaryButton}
+            onPress={handleVerifyOtp}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.modalPrimaryButtonText}>Verify OTP</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.modalSecondaryButton}
+            onPress={handleSendOtp}
+            activeOpacity={0.75}
+          >
+            <Text style={styles.modalSecondaryButtonText}>Resend OTP</Text>
+          </TouchableOpacity>
+        </>
+      );
+    }
+
+    return (
+      <>
+        <Text style={styles.modalTitle}>Set New Password</Text>
+        <Text style={styles.modalSubtitle}>
+          Create a new password for your admin account.
+        </Text>
+
+        <View style={styles.inputWrapper}>
+          <FontAwesome
+            name="lock"
+            size={20}
+            color="#2F4F8F"
+            style={styles.inputIcon}
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholder="New Password"
+            placeholderTextColor="#6E7FA5"
+            value={newPassword}
+            onChangeText={setNewPassword}
+            secureTextEntry={!showNewPassword}
+          />
+
+          <TouchableOpacity
+            onPress={() => setShowNewPassword(!showNewPassword)}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name={showNewPassword ? "eye-off-outline" : "eye-outline"}
+              size={20}
+              color="#5A6F9E"
+            />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.inputWrapper}>
+          <FontAwesome
+            name="lock"
+            size={20}
+            color="#2F4F8F"
+            style={styles.inputIcon}
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholder="Confirm New Password"
+            placeholderTextColor="#6E7FA5"
+            value={confirmNewPassword}
+            onChangeText={setConfirmNewPassword}
+            secureTextEntry={!showConfirmNewPassword}
+          />
+
+          <TouchableOpacity
+            onPress={() => setShowConfirmNewPassword(!showConfirmNewPassword)}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name={showConfirmNewPassword ? "eye-off-outline" : "eye-outline"}
+              size={20}
+              color="#5A6F9E"
+            />
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity
+          style={styles.modalPrimaryButton}
+          onPress={handleResetPassword}
+          activeOpacity={0.85}
+        >
+          <Text style={styles.modalPrimaryButtonText}>Reset Password</Text>
+        </TouchableOpacity>
+      </>
+    );
   };
 
   if (Platform.OS !== "web") {
@@ -70,17 +389,19 @@ export default function AdminLogin() {
             style={styles.backgroundBanner}
             resizeMode="cover"
           />
+
           <View style={styles.overlay} />
 
           <View style={[styles.container, styles.centerContent]}>
             <View style={styles.webCard}>
               <Image
                 source={require("../../assets/img/logotext.png")}
-                style={styles.logo}
+                style={styles.logonoText}
                 resizeMode="contain"
               />
 
               <Text style={styles.title}>Admin Login</Text>
+
               <Text style={styles.webOnlyText}>
                 This page is available on web only.
               </Text>
@@ -117,12 +438,13 @@ export default function AdminLogin() {
           <View style={styles.container}>
             <View style={styles.webCard}>
               <Image
-                source={require("../../assets/img/logotext.png")}
-                style={styles.logo}
+                source={require("../../assets/img/logonotext.png")}
+                style={styles.logoNoText}
                 resizeMode="contain"
               />
 
               <Text style={styles.title}>Admin Login</Text>
+
               <Text style={styles.subtitle}>
                 Sign in to access the ARGUS admin dashboard
               </Text>
@@ -134,6 +456,7 @@ export default function AdminLogin() {
                   color="#2F4F8F"
                   style={styles.inputIcon}
                 />
+
                 <TextInput
                   style={styles.input}
                   placeholder="Admin Email Address"
@@ -152,47 +475,71 @@ export default function AdminLogin() {
                   color="#2F4F8F"
                   style={styles.inputIcon}
                 />
+
                 <TextInput
                   style={styles.input}
                   placeholder="Admin Password"
                   placeholderTextColor="#6E7FA5"
                   value={password}
                   onChangeText={setPassword}
-                  secureTextEntry
+                  secureTextEntry={!showPassword}
                 />
+
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons
+                    name={showPassword ? "eye-off-outline" : "eye-outline"}
+                    size={20}
+                    color="#5A6F9E"
+                  />
+                </TouchableOpacity>
               </View>
 
               <TouchableOpacity
-                style={styles.loginButton}
-                onPress={handleAdminLogin}
-                activeOpacity={0.85}
+                style={styles.forgotButton}
+                onPress={openForgotPassword}
+                activeOpacity={0.75}
               >
-                <Text style={styles.loginButtonText}>Login as Admin</Text>
+                <Text style={styles.forgotText}>Forgot Password?</Text>
               </TouchableOpacity>
 
-              <View style={styles.bottomSection}>
-                <View style={styles.lineRow}>
-                  <View style={styles.line} />
-                  <Text style={styles.signupQuestion}>No admin account yet?</Text>
-                  <View style={styles.line} />
-                </View>
-
-                <TouchableOpacity
-                  onPress={() => router.push("/(auth)/Admin_Register")}
-                >
-                  <Text style={styles.signupLink}>Admin Register</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={() => router.push("/(auth)/User_Login")}
-                  style={styles.backLinkWrap}
-                >
-                  <Text style={styles.backLink}>Back to User Login</Text>
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity
+                style={styles.loginButton}
+                onPress={handleLogin}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.loginButtonText}>Login</Text>
+              </TouchableOpacity>
             </View>
           </View>
         </ScrollView>
+
+        <Modal
+          visible={forgotVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={closeForgotPassword}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalCard}>
+              <TouchableOpacity
+                style={styles.modalCloseButton}
+                onPress={closeForgotPassword}
+                activeOpacity={0.75}
+              >
+                <Ionicons name="close-outline" size={24} color="#294880" />
+              </TouchableOpacity>
+
+              <View style={styles.modalIconCircle}>
+                <Ionicons name="lock-closed-outline" size={28} color="#FFFFFF" />
+              </View>
+
+              {renderForgotContent()}
+            </View>
+          </View>
+        </Modal>
       </View>
     </SafeAreaView>
   );
@@ -251,17 +598,21 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#D9E2F2",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 6 },
+    shadowOffset: {
+      width: 0,
+      height: 6,
+    },
     shadowOpacity: 0.08,
     shadowRadius: 14,
     elevation: 4,
   },
 
-  logo: {
-    width: 1.5 * width,
-    height: 200,
+  logoNoText: {
+    width: 210,
+    height: 210,
     alignSelf: "center",
-    marginBottom: 8,
+    marginBottom: -8,
+    marginTop: -12,
   },
 
   title: {
@@ -301,6 +652,20 @@ const styles = StyleSheet.create({
     height: "100%",
     color: "#294880",
     fontSize: 14,
+    outlineStyle: "none",
+  },
+
+  forgotButton: {
+    alignSelf: "flex-end",
+    marginTop: -4,
+    marginBottom: 16,
+  },
+
+  forgotText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#294880",
+    textDecorationLine: "underline",
   },
 
   loginButton: {
@@ -311,7 +676,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#007bff",
     marginTop: 4,
-    marginBottom: 22,
+    marginBottom: 4,
   },
 
   loginButtonText: {
@@ -320,51 +685,112 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 
-  bottomSection: {
-    alignItems: "center",
-  },
-
-  lineRow: {
-    width: "100%",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 10,
-  },
-
-  line: {
-    flex: 1,
-    height: 1,
-    backgroundColor: "#A8B6D4",
-  },
-
-  signupQuestion: {
-    marginHorizontal: 10,
-    fontSize: 12,
-    color: "#6C7B9D",
-  },
-
-  signupLink: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#294880",
-    textDecorationLine: "underline",
-  },
-
-  backLinkWrap: {
-    marginTop: 14,
-  },
-
-  backLink: {
-    fontSize: 13,
-    color: "#5A6F9E",
-    textDecorationLine: "underline",
-  },
-
   webOnlyText: {
     fontSize: 15,
     color: "#5A6F9E",
     textAlign: "center",
     marginBottom: 24,
+  },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(15, 30, 55, 0.35)",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 20,
+  },
+
+  modalCard: {
+    width: "100%",
+    maxWidth: 430,
+    backgroundColor: "rgba(255,255,255,0.98)",
+    borderRadius: 20,
+    paddingHorizontal: 26,
+    paddingTop: 28,
+    paddingBottom: 26,
+    borderWidth: 1,
+    borderColor: "#D9E2F2",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    shadowOpacity: 0.14,
+    shadowRadius: 20,
+    elevation: 8,
+  },
+
+  modalCloseButton: {
+    position: "absolute",
+    top: 14,
+    right: 14,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#EEF2F8",
+    zIndex: 10,
+  },
+
+  modalIconCircle: {
+    width: 62,
+    height: 62,
+    borderRadius: 31,
+    backgroundColor: "#294880",
+    alignSelf: "center",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 14,
+  },
+
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#294880",
+    textAlign: "center",
+    marginBottom: 8,
+  },
+
+  modalSubtitle: {
+    fontSize: 13,
+    color: "#6C7B9D",
+    textAlign: "center",
+    lineHeight: 19,
+    marginBottom: 22,
+  },
+
+  modalPrimaryButton: {
+    width: "100%",
+    height: 50,
+    borderRadius: 10,
+    backgroundColor: "#007bff",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 2,
+  },
+
+  modalPrimaryButtonText: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "700",
+  },
+
+  modalSecondaryButton: {
+    width: "100%",
+    height: 44,
+    borderRadius: 10,
+    backgroundColor: "#EEF2F8",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: "#D9E2F2",
+  },
+
+  modalSecondaryButtonText: {
+    color: "#294880",
+    fontSize: 14,
+    fontWeight: "700",
   },
 });

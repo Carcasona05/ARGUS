@@ -1,15 +1,9 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  TextInput,
-  ScrollView,
-} from "react-native";
-import { Ionicons, MaterialIcons, Feather } from "@expo/vector-icons";
+import { View, Text, TouchableOpacity, ScrollView } from "react-native";
+import { Ionicons, Feather } from "@expo/vector-icons";
 import { useRouter, usePathname } from "expo-router";
 
-export default function Admin_Layout({ children }) {
+export default function SAdmin_Layout({ children }) {
   const router = useRouter();
   const pathname = usePathname();
 
@@ -19,82 +13,81 @@ export default function Admin_Layout({ children }) {
   const navItems = [
     {
       label: "Dashboard",
-      route: "/(admin)/Admin_Dashboard",
+      route: "/(sadmin)/SAdmin_Dashboard",
       icon: "grid",
       iconType: "Feather",
-    },
-    {
-      label: "Analytics",
-      route: "/(admin)/Admin_Analytics",
-      icon: "bar-chart-outline",
-      iconType: "Ionicons",
+      description: "SuperAdmin overview of reports, admin activity, and system status",
     },
     {
       label: "Validation",
       route: "/(admin)/Admin_Validation",
       icon: "shield-checkmark-outline",
       iconType: "Ionicons",
+      description: "Review report validation and AI credibility results",
     },
     {
-      label: "Reports",
-      route: "/(admin)/Admin_Reports",
-      icon: "description",
-      iconType: "MaterialIcons",
-    },
-    {
-      label: "Logs",
-      route: "/(admin)/Admin_Logs",
+      label: "Audit Logs",
+      route: "/(sadmin)/SAdmin_AuditLogs",
       icon: "list-outline",
       iconType: "Ionicons",
+      description: "View audit trail, deleted reports, and admin actions",
+    },
+    {
+      label: "Admin Accounts",
+      route: "/(sadmin)/SAdmin_AdminAccounts",
+      icon: "people-outline",
+      iconType: "Ionicons",
+      description: "Manage admin accounts, roles, and admin requests",
     },
     {
       label: "Settings",
-      route: "/(admin)/Admin_Settings",
+      route: "/(sadmin)/SAdmin_Settings",
       icon: "settings-outline",
       iconType: "Ionicons",
+      description: "Configure AI thresholds, map settings, and system preferences",
     },
   ];
 
   const notifications = [
     {
-      id: "N-001",
-      type: "report",
-      title: "New Report Submitted",
-      message: "A new flood report was submitted near Brgy. San Isidro.",
-      time: "2 minutes ago",
+      id: "SN-001",
+      type: "admin",
+      title: "Admin Account Request",
+      message: "A new admin account request needs review.",
+      time: "3 minutes ago",
       priority: "High",
       unread: true,
-      route: "/(admin)/Admin_Reports",
+      route: "/(sadmin)/SAdmin_AdminAccounts",
     },
     {
-      id: "N-002",
-      type: "ai",
-      title: "AI Validation Completed",
-      message: "Report #ARG-2031 received a credibility score of 92%.",
-      time: "8 minutes ago",
+      id: "SN-002",
+      type: "log",
+      title: "Report Deleted",
+      message: "A report was soft deleted and recorded in audit logs.",
+      time: "12 minutes ago",
       priority: "Medium",
       unread: true,
-      route: "/(admin)/Admin_Validation",
+      route: "/(sadmin)/SAdmin_AuditLogs",
     },
     {
-      id: "N-003",
-      type: "admin",
-      title: "Report Approved",
-      message: "Admin R. Ramos approved Report #ARG-2019.",
-      time: "20 minutes ago",
-      priority: "Low",
-      unread: true,
-      route: "/(admin)/Admin_Logs",
-    },
-    {
-      id: "N-004",
+      id: "SN-003",
       type: "system",
-      title: "System Activity Logged",
-      message: "AI processing logs were updated successfully.",
-      time: "35 minutes ago",
+      title: "AI Threshold Updated",
+      message: "System configuration was changed by SuperAdmin.",
+      time: "25 minutes ago",
       priority: "Low",
       unread: false,
-      route: "/(admin)/Admin_Logs",
+      route: "/(sadmin)/SAdmin_Settings",
+    },
+    {
+      id: "SN-004",
+      type: "report",
+      title: "Report Verification Updated",
+      message: "A verified report was corrected and logged successfully.",
+      time: "40 minutes ago",
+      priority: "Low",
+      unread: false,
+      route: "/(sadmin)/SAdmin_AuditLogs",
     },
   ];
 
@@ -107,32 +100,24 @@ export default function Admin_Layout({ children }) {
       return <Feather name={item.icon} size={22} color={color} />;
     }
 
-    if (item.iconType === "MaterialIcons") {
-      return <MaterialIcons name={item.icon} size={22} color={color} />;
-    }
-
     return <Ionicons name={item.icon} size={22} color={color} />;
   };
 
   const getNotificationIcon = (type) => {
-    if (type === "report") {
-      return (
-        <Ionicons name="document-text-outline" size={20} color="#2563EB" />
-      );
-    }
-
-    if (type === "ai") {
-      return <Ionicons name="sparkles-outline" size={20} color="#7C3AED" />;
-    }
-
     if (type === "admin") {
-      return (
-        <Ionicons name="person-circle-outline" size={21} color="#059669" />
-      );
+      return <Ionicons name="people-outline" size={20} color="#2563EB" />;
+    }
+
+    if (type === "log") {
+      return <Ionicons name="list-outline" size={20} color="#7C3AED" />;
     }
 
     if (type === "system") {
       return <Ionicons name="server-outline" size={20} color="#F59E0B" />;
+    }
+
+    if (type === "report") {
+      return <Ionicons name="document-text-outline" size={20} color="#059669" />;
     }
 
     return <Ionicons name="notifications-outline" size={20} color="#294880" />;
@@ -159,30 +144,53 @@ export default function Admin_Layout({ children }) {
     };
   };
 
-  const getCurrentPageName = () => {
+  const getCurrentPage = () => {
     const found = navItems.find((item) => item.route === pathname);
-    return found ? found.label : "Admin";
+
+    if (found) {
+      return found;
+    }
+
+    if (pathname.includes("Admin_ViewValidation")) {
+      return {
+        label: "View Validation",
+        description: "Review AI validation and report credibility details",
+      };
+    }
+
+    if (pathname.includes("Admin_ViewReport")) {
+      return {
+        label: "View Report",
+        description: "Review complete incident report information",
+      };
+    }
+
+    if (pathname.includes("SuperAdmin_EditReq")) {
+      return {
+        label: "Edit Request",
+        description: "Review and manage admin edit requests",
+      };
+    }
+
+    if (pathname.includes("Admin_AddAdmin")) {
+      return {
+        label: "Add Admin",
+        description: "Create or register a new admin account",
+      };
+    }
+
+    return {
+      label: "SuperAdmin",
+      description: "SuperAdmin panel",
+    };
   };
 
-  const getPageDescription = () => {
-    switch (pathname) {
-      case "/(admin)/Admin_Dashboard":
-        return "Overview of incidents, hotspots, and system health";
-      case "/(admin)/Admin_Map":
-        return "Monitor incidents and geographic activity across the city";
-      case "/(admin)/Admin_Analytics":
-        return "View trends, metrics, and incident intelligence";
-      case "/(admin)/Admin_Validation":
-        return "Validate reports and assess AI credibility results";
-      case "/(admin)/Admin_Reports":
-        return "Manage submitted reports and generated summaries";
-      case "/(admin)/Admin_Settings":
-        return "Configure admin preferences and system behavior";
-      case "/(admin)/Admin_Logs":
-        return "Track system logs and recent admin activities";
-      default:
-        return "Admin panel";
-    }
+  const currentPage = getCurrentPage();
+
+  const handleNavPress = (route) => {
+    setShowNotifications(false);
+    setShowProfileDropdown(false);
+    router.push(route);
   };
 
   const handleNotificationPress = (item) => {
@@ -191,27 +199,34 @@ export default function Admin_Layout({ children }) {
     router.push(item.route);
   };
 
-  const handleProfileSettings = () => {
-    setShowProfileDropdown(false);
-    setShowNotifications(false);
-    router.push("/(admin)/Admin_SuperSettings");
-  };
-
   const handleLogout = () => {
     setShowProfileDropdown(false);
     setShowNotifications(false);
     router.replace("/(auth)/Admin_Login");
   };
 
+  const closeDropdowns = () => {
+    if (showNotifications) {
+      setShowNotifications(false);
+    }
+
+    if (showProfileDropdown) {
+      setShowProfileDropdown(false);
+    }
+  };
+
   return (
     <View style={styles.container}>
-      {/* LEFT SIDEBAR */}
       <View style={styles.sidebar}>
         <View style={styles.logoSection}>
           <View style={styles.logoIcon}>
             <Text style={styles.logoIconText}>A</Text>
           </View>
-          <Text style={styles.logoText}>ARGUS</Text>
+
+          <View>
+            <Text style={styles.logoText}>ARGUS</Text>
+            <Text style={styles.logoSubText}>SuperAdmin Panel</Text>
+          </View>
         </View>
 
         <View style={styles.navList}>
@@ -222,19 +237,14 @@ export default function Admin_Layout({ children }) {
               <TouchableOpacity
                 key={index}
                 style={[styles.navItem, isActive && styles.activeNavItem]}
-                onPress={() => {
-                  setShowNotifications(false);
-                  setShowProfileDropdown(false);
-                  router.push(item.route);
-                }}
+                onPress={() => handleNavPress(item.route)}
+                activeOpacity={0.75}
               >
                 {isActive && <View style={styles.activeBar} />}
 
                 <View style={styles.navIcon}>{getIcon(item, isActive)}</View>
 
-                <Text
-                  style={[styles.navText, isActive && styles.activeNavText]}
-                >
+                <Text style={[styles.navText, isActive && styles.activeNavText]}>
                   {item.label}
                 </Text>
               </TouchableOpacity>
@@ -243,23 +253,18 @@ export default function Admin_Layout({ children }) {
         </View>
       </View>
 
-      {/* RIGHT CONTENT */}
       <View style={styles.mainContent}>
-        {/* TOP HEADER */}
         <View style={styles.topHeader}>
           <View style={styles.headerLeft}>
             <Text style={styles.breadcrumb}>
-              ARGUS Admin Dashboard:{" "}
-              <Text style={styles.breadcrumbHighlight}>
-                {getCurrentPageName()}
-              </Text>
+              ARGUS SuperAdmin Dashboard:{" "}
+              <Text style={styles.breadcrumbHighlight}>{currentPage.label}</Text>
             </Text>
 
-            <Text style={styles.pageDesc}>{getPageDescription()}</Text>
+            <Text style={styles.pageDesc}>{currentPage.description}</Text>
           </View>
 
           <View style={styles.headerRight}>
-            {/* NOTIFICATION BUTTON */}
             <View style={styles.notificationWrapper}>
               <TouchableOpacity
                 style={[
@@ -270,12 +275,9 @@ export default function Admin_Layout({ children }) {
                   setShowNotifications(!showNotifications);
                   setShowProfileDropdown(false);
                 }}
+                activeOpacity={0.75}
               >
-                <Ionicons
-                  name="notifications-outline"
-                  size={24}
-                  color="#294880"
-                />
+                <Ionicons name="notifications-outline" size={24} color="#294880" />
 
                 {unreadCount > 0 && (
                   <View style={styles.badge}>
@@ -284,14 +286,11 @@ export default function Admin_Layout({ children }) {
                 )}
               </TouchableOpacity>
 
-              {/* NOTIFICATION DROPDOWN */}
               {showNotifications && (
                 <View style={styles.notificationDropdown}>
                   <View style={styles.notificationHeader}>
                     <View>
-                      <Text style={styles.notificationTitle}>
-                        Notifications
-                      </Text>
+                      <Text style={styles.notificationTitle}>Notifications</Text>
                       <Text style={styles.notificationSubtitle}>
                         {unreadCount} unread alerts
                       </Text>
@@ -300,12 +299,9 @@ export default function Admin_Layout({ children }) {
                     <TouchableOpacity
                       style={styles.closeNotificationButton}
                       onPress={() => setShowNotifications(false)}
+                      activeOpacity={0.75}
                     >
-                      <Ionicons
-                        name="close-outline"
-                        size={22}
-                        color="#4B5D7A"
-                      />
+                      <Ionicons name="close-outline" size={22} color="#4B5D7A" />
                     </TouchableOpacity>
                   </View>
 
@@ -324,6 +320,7 @@ export default function Admin_Layout({ children }) {
                             item.unread && styles.unreadNotificationItem,
                           ]}
                           onPress={() => handleNotificationPress(item)}
+                          activeOpacity={0.75}
                         >
                           <View style={styles.notificationIconBox}>
                             {getNotificationIcon(item.type)}
@@ -377,12 +374,11 @@ export default function Admin_Layout({ children }) {
                     onPress={() => {
                       setShowNotifications(false);
                       setShowProfileDropdown(false);
-                      router.push("/(admin)/Admin_Logs");
+                      router.push("/(sadmin)/SAdmin_AuditLogs");
                     }}
+                    activeOpacity={0.75}
                   >
-                    <Text style={styles.viewAllText}>
-                      View all notifications
-                    </Text>
+                    <Text style={styles.viewAllText}>View all notifications</Text>
                     <Ionicons
                       name="arrow-forward-outline"
                       size={16}
@@ -393,7 +389,6 @@ export default function Admin_Layout({ children }) {
               )}
             </View>
 
-            {/* PROFILE DROPDOWN */}
             <View style={styles.profileWrapper}>
               <TouchableOpacity
                 style={[
@@ -404,14 +399,15 @@ export default function Admin_Layout({ children }) {
                   setShowProfileDropdown(!showProfileDropdown);
                   setShowNotifications(false);
                 }}
+                activeOpacity={0.75}
               >
                 <View style={styles.avatar}>
-                  <Text style={styles.avatarText}>R</Text>
+                  <Text style={styles.avatarText}>S</Text>
                 </View>
 
                 <View>
-                  <Text style={styles.profileText}>Admin: R. Ramos</Text>
-                  <Text style={styles.profileRole}>System Administrator</Text>
+                  <Text style={styles.profileText}>SuperAdmin</Text>
+                  <Text style={styles.profileRole}>System Owner</Text>
                 </View>
 
                 <Ionicons
@@ -429,31 +425,8 @@ export default function Admin_Layout({ children }) {
                 <View style={styles.profileDropdown}>
                   <TouchableOpacity
                     style={styles.profileDropdownItem}
-                    onPress={handleProfileSettings}
-                  >
-                    <View style={styles.profileDropdownIconBox}>
-                      <Ionicons
-                        name="person-circle-outline"
-                        size={20}
-                        color="#294880"
-                      />
-                    </View>
-
-                    <View style={styles.profileDropdownTextBox}>
-                      <Text style={styles.profileDropdownTitle}>
-                        Profile Settings
-                      </Text>
-                      <Text style={styles.profileDropdownSubtitle}>
-                        Manage admin account
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-
-                  <View style={styles.profileDropdownDivider} />
-
-                  <TouchableOpacity
-                    style={styles.profileDropdownItem}
                     onPress={handleLogout}
+                    activeOpacity={0.75}
                   >
                     <View
                       style={[
@@ -461,11 +434,7 @@ export default function Admin_Layout({ children }) {
                         styles.logoutIconBox,
                       ]}
                     >
-                      <Ionicons
-                        name="log-out-outline"
-                        size={20}
-                        color="#DC2626"
-                      />
+                      <Ionicons name="log-out-outline" size={20} color="#DC2626" />
                     </View>
 
                     <View style={styles.profileDropdownTextBox}>
@@ -485,19 +454,10 @@ export default function Admin_Layout({ children }) {
           </View>
         </View>
 
-        {/* PAGE CONTENT */}
         <TouchableOpacity
           activeOpacity={1}
           style={styles.pageContent}
-          onPress={() => {
-            if (showNotifications) {
-              setShowNotifications(false);
-            }
-
-            if (showProfileDropdown) {
-              setShowProfileDropdown(false);
-            }
-          }}
+          onPress={closeDropdowns}
         >
           {children}
         </TouchableOpacity>
@@ -514,7 +474,7 @@ const styles = {
   },
 
   sidebar: {
-    width: 235,
+    width: 250,
     minHeight: "100vh",
     backgroundColor: "#F3F6FB",
     borderRightWidth: 1,
@@ -552,6 +512,12 @@ const styles = {
     color: "#294880",
   },
 
+  logoSubText: {
+    fontSize: 11,
+    color: "#6B7A99",
+    marginTop: 1,
+  },
+
   navList: {
     gap: 4,
   },
@@ -587,7 +553,7 @@ const styles = {
   },
 
   navText: {
-    fontSize: 16,
+    fontSize: 15.5,
     fontWeight: "500",
     color: "#4B5D7A",
   },
@@ -640,26 +606,6 @@ const styles = {
     alignItems: "center",
     gap: 16,
     position: "relative",
-  },
-
-  searchBox: {
-    width: 220,
-    height: 42,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#D5DEEC",
-    backgroundColor: "#F8FAFD",
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 14,
-  },
-
-  searchInput: {
-    flex: 1,
-    marginLeft: 10,
-    fontSize: 15,
-    color: "#294880",
-    outlineStyle: "none",
   },
 
   notificationWrapper: {
@@ -958,11 +904,6 @@ const styles = {
 
   logoutText: {
     color: "#DC2626",
-  },
-
-  profileDropdownDivider: {
-    height: 1,
-    backgroundColor: "#EEF3FA",
   },
 
   pageContent: {

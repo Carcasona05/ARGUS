@@ -81,7 +81,9 @@ export default function UserLogin() {
     if (
       cleanEmail === globalThis.demoAccount.email.toLowerCase() &&
       password === globalThis.demoAccount.password
-    ) {
+    ) // mao nani ihatag
+
+    {
       Alert.alert("Success", "Login successful!");
       router.replace("/(tabs)/User_Home");
     } else {
