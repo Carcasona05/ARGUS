@@ -10,6 +10,7 @@ import {
   Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useFonts } from "expo-font";
 
 import SAdmin_Layout from "../../components/SAdmin_Compo/SAdmin_Layout";
 import Admin_AddAdmin from "../../components/modals/Admin_AddAdmin";
@@ -78,7 +79,9 @@ function AdminAccountRow({ admin, isLast, onEdit, onDelete, onToggleStatus }) {
             activeOpacity={0.8}
           >
             <Ionicons
-              name={admin.status === "Active" ? "pause-outline" : "checkmark-outline"}
+              name={
+                admin.status === "Active" ? "pause-outline" : "checkmark-outline"
+              }
               size={16}
               color="#294880"
             />
@@ -113,6 +116,16 @@ export default function SAdmin_AdminAccounts() {
   const [isAddAdminVisible, setIsAddAdminVisible] = useState(false);
   const [isEditRequestVisible, setIsEditRequestVisible] = useState(false);
   const [selectedAdmin, setSelectedAdmin] = useState(null);
+
+  const [fontsLoaded] = useFonts({
+    PoppinsRegular: require("../../assets/fonts/Poppins-Regular.ttf"),
+    PoppinsMedium: require("../../assets/fonts/Poppins-Medium.ttf"),
+    PoppinsSemiBold: require("../../assets/fonts/Poppins-SemiBold.ttf"),
+  });
+
+  if (!fontsLoaded) {
+    return null;
+  }
 
   const [adminAccounts, setAdminAccounts] = useState([
     {
@@ -173,10 +186,14 @@ export default function SAdmin_AdminAccounts() {
     );
   });
 
-  const activeCount = adminAccounts.filter((admin) => admin.status === "Active").length;
+  const activeCount = adminAccounts.filter(
+    (admin) => admin.status === "Active"
+  ).length;
+
   const disabledCount = adminAccounts.filter(
     (admin) => admin.status === "Disabled"
   ).length;
+
   const superAdminCount = adminAccounts.filter((admin) =>
     admin.role.toLowerCase().includes("super")
   ).length;
@@ -236,7 +253,9 @@ export default function SAdmin_AdminAccounts() {
     };
 
     if (Platform.OS === "web") {
-      const confirmed = window.confirm("Are you sure you want to delete this admin?");
+      const confirmed = window.confirm(
+        "Are you sure you want to delete this admin?"
+      );
 
       if (confirmed) {
         deleteAction();
@@ -280,8 +299,6 @@ export default function SAdmin_AdminAccounts() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.pageHeader}>
-            
-
             <TouchableOpacity
               style={styles.addButton}
               onPress={() => setIsAddAdminVisible(true)}
@@ -297,6 +314,7 @@ export default function SAdmin_AdminAccounts() {
               <View style={styles.summaryIconBox}>
                 <Ionicons name="people-outline" size={24} color="#294880" />
               </View>
+
               <View>
                 <Text style={styles.summaryValue}>{adminAccounts.length}</Text>
                 <Text style={styles.summaryLabel}>Total Accounts</Text>
@@ -305,8 +323,13 @@ export default function SAdmin_AdminAccounts() {
 
             <View style={styles.summaryCard}>
               <View style={styles.successIconBox}>
-                <Ionicons name="checkmark-circle-outline" size={24} color="#22A06B" />
+                <Ionicons
+                  name="checkmark-circle-outline"
+                  size={24}
+                  color="#22A06B"
+                />
               </View>
+
               <View>
                 <Text style={styles.summaryValue}>{activeCount}</Text>
                 <Text style={styles.summaryLabel}>Active Admins</Text>
@@ -317,6 +340,7 @@ export default function SAdmin_AdminAccounts() {
               <View style={styles.warningIconBox}>
                 <Ionicons name="star-outline" size={24} color="#C98A2E" />
               </View>
+
               <View>
                 <Text style={styles.summaryValue}>{superAdminCount}</Text>
                 <Text style={styles.summaryLabel}>SuperAdmins</Text>
@@ -325,8 +349,13 @@ export default function SAdmin_AdminAccounts() {
 
             <View style={styles.summaryCard}>
               <View style={styles.dangerIconBox}>
-                <Ionicons name="person-remove-outline" size={24} color="#E45757" />
+                <Ionicons
+                  name="person-remove-outline"
+                  size={24}
+                  color="#E45757"
+                />
               </View>
+
               <View>
                 <Text style={styles.summaryValue}>{disabledCount}</Text>
                 <Text style={styles.summaryLabel}>Disabled</Text>
@@ -345,6 +374,7 @@ export default function SAdmin_AdminAccounts() {
 
               <View style={styles.searchBox}>
                 <Ionicons name="search-outline" size={18} color="#5D6F92" />
+
                 <TextInput
                   style={styles.searchInput}
                   placeholder="Search admin..."
@@ -421,7 +451,7 @@ const styles = StyleSheet.create({
     padding: 22,
     marginBottom: 16,
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "flex-end",
     alignItems: "center",
     gap: 16,
   },
@@ -429,13 +459,14 @@ const styles = StyleSheet.create({
   pageTitle: {
     fontSize: 24,
     color: "#294880",
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     marginBottom: 6,
   },
 
   pageSubtitle: {
     fontSize: 14,
     color: "#5D6F92",
+    fontFamily: "PoppinsRegular",
     lineHeight: 21,
     maxWidth: 720,
   },
@@ -454,7 +485,7 @@ const styles = StyleSheet.create({
   addButtonText: {
     color: "#FFFFFF",
     fontSize: 14,
-    fontWeight: "700",
+    fontFamily: "PoppinsMedium",
   },
 
   summaryGrid: {
@@ -518,12 +549,13 @@ const styles = StyleSheet.create({
 
   summaryValue: {
     fontSize: 22,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     color: "#2F4267",
   },
 
   summaryLabel: {
     fontSize: 13,
+    fontFamily: "PoppinsRegular",
     color: "#5D6F92",
     marginTop: 4,
   },
@@ -551,13 +583,14 @@ const styles = StyleSheet.create({
 
   sectionTitle: {
     fontSize: 17,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     color: "#294880",
     marginBottom: 4,
   },
 
   sectionSubtitle: {
     fontSize: 13,
+    fontFamily: "PoppinsRegular",
     color: "#5D6F92",
   },
 
@@ -578,6 +611,7 @@ const styles = StyleSheet.create({
     height: "100%",
     marginLeft: 8,
     fontSize: 14,
+    fontFamily: "PoppinsRegular",
     color: "#294880",
     outlineStyle: Platform.OS === "web" ? "none" : undefined,
   },
@@ -618,7 +652,7 @@ const styles = StyleSheet.create({
   avatarText: {
     color: "#FFFFFF",
     fontSize: 14,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
   },
 
   adminInfo: {
@@ -628,13 +662,14 @@ const styles = StyleSheet.create({
 
   adminName: {
     fontSize: 15,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     color: "#2F4267",
     marginBottom: 4,
   },
 
   adminEmail: {
     fontSize: 13,
+    fontFamily: "PoppinsRegular",
     color: "#5D6F92",
     marginBottom: 5,
   },
@@ -648,11 +683,13 @@ const styles = StyleSheet.create({
 
   adminMeta: {
     fontSize: 12,
+    fontFamily: "PoppinsRegular",
     color: "#5D6F92",
   },
 
   adminDot: {
     fontSize: 12,
+    fontFamily: "PoppinsRegular",
     color: "#8A98B3",
   },
 
@@ -669,7 +706,7 @@ const styles = StyleSheet.create({
 
   statusBadgeText: {
     fontSize: 12,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
   },
 
   activeBadge: {
@@ -717,7 +754,7 @@ const styles = StyleSheet.create({
   smallButtonText: {
     color: "#294880",
     fontSize: 12,
-    fontWeight: "700",
+    fontFamily: "PoppinsMedium",
   },
 
   iconButton: {
@@ -747,7 +784,7 @@ const styles = StyleSheet.create({
 
   emptyTitle: {
     fontSize: 16,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     color: "#2F4267",
     marginTop: 10,
     marginBottom: 4,
@@ -755,6 +792,7 @@ const styles = StyleSheet.create({
 
   emptyText: {
     fontSize: 13,
+    fontFamily: "PoppinsRegular",
     color: "#5D6F92",
     textAlign: "center",
   },

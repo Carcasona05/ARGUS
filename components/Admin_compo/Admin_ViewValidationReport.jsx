@@ -8,6 +8,7 @@ import {
   StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useFonts } from "expo-font";
 
 export default function Admin_ViewValidationReport({
   visible,
@@ -17,6 +18,16 @@ export default function Admin_ViewValidationReport({
   onReject,
   onMapAndVerify,
 }) {
+  const [fontsLoaded] = useFonts({
+    PoppinsRegular: require("../../assets/fonts/Poppins-Regular.ttf"),
+    PoppinsMedium: require("../../assets/fonts/Poppins-Medium.ttf"),
+    PoppinsSemiBold: require("../../assets/fonts/Poppins-SemiBold.ttf"),
+  });
+
+  if (!fontsLoaded) {
+    return null;
+  }
+
   if (!report) return null;
 
   const isPending = report.status === "Pending";
@@ -315,12 +326,13 @@ const styles = StyleSheet.create({
 
   modalTitle: {
     fontSize: 20,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     color: "#294880",
   },
 
   modalSubtitle: {
     fontSize: 13,
+    fontFamily: "PoppinsRegular",
     color: "#5D6F92",
     marginTop: 3,
   },
@@ -370,7 +382,7 @@ const styles = StyleSheet.create({
   postAvatarText: {
     color: "#FFFFFF",
     fontSize: 14,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
   },
 
   postHeaderInfo: {
@@ -379,7 +391,7 @@ const styles = StyleSheet.create({
 
   postAuthor: {
     fontSize: 15,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     color: "#111827",
     marginBottom: 3,
   },
@@ -392,12 +404,13 @@ const styles = StyleSheet.create({
 
   postMetaText: {
     fontSize: 12,
+    fontFamily: "PoppinsMedium",
     color: "#6B7280",
-    fontWeight: "500",
   },
 
   postDot: {
     fontSize: 12,
+    fontFamily: "PoppinsRegular",
     color: "#6B7280",
     marginHorizontal: 5,
   },
@@ -408,13 +421,14 @@ const styles = StyleSheet.create({
 
   postTitle: {
     fontSize: 17,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     color: "#111827",
     marginBottom: 8,
   },
 
   postDetails: {
     fontSize: 14,
+    fontFamily: "PoppinsRegular",
     color: "#374151",
     lineHeight: 21,
     marginBottom: 10,
@@ -428,8 +442,8 @@ const styles = StyleSheet.create({
 
   postLocation: {
     fontSize: 13,
+    fontFamily: "PoppinsMedium",
     color: "#294880",
-    fontWeight: "700",
   },
 
   postImageBox: {
@@ -445,8 +459,8 @@ const styles = StyleSheet.create({
 
   postImageText: {
     fontSize: 13,
+    fontFamily: "PoppinsMedium",
     color: "#6B7280",
-    fontWeight: "600",
     marginTop: 8,
   },
 
@@ -471,15 +485,15 @@ const styles = StyleSheet.create({
 
   postInfoLabel: {
     fontSize: 12,
+    fontFamily: "PoppinsMedium",
     color: "#6B7280",
     marginBottom: 5,
-    fontWeight: "600",
   },
 
   postInfoValue: {
     fontSize: 13,
+    fontFamily: "PoppinsSemiBold",
     color: "#111827",
-    fontWeight: "800",
     lineHeight: 18,
   },
 
@@ -492,7 +506,7 @@ const styles = StyleSheet.create({
 
   statusText: {
     fontSize: 12,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
   },
 
   sectionBox: {
@@ -506,7 +520,7 @@ const styles = StyleSheet.create({
 
   sectionTitle: {
     fontSize: 15,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     color: "#294880",
     marginBottom: 8,
   },
@@ -528,12 +542,13 @@ const styles = StyleSheet.create({
 
   aiScore: {
     fontSize: 26,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     color: "#294880",
   },
 
   aiLabel: {
     fontSize: 12,
+    fontFamily: "PoppinsRegular",
     color: "#5D6F92",
     marginTop: 3,
   },
@@ -544,13 +559,14 @@ const styles = StyleSheet.create({
 
   aiInfoText: {
     fontSize: 14,
+    fontFamily: "PoppinsRegular",
     color: "#5D6F92",
     lineHeight: 22,
   },
 
   aiInfoBold: {
     color: "#2F4267",
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
   },
 
   infoLine: {
@@ -564,15 +580,15 @@ const styles = StyleSheet.create({
 
   infoLineLabel: {
     fontSize: 13,
+    fontFamily: "PoppinsMedium",
     color: "#5D6F92",
-    fontWeight: "600",
   },
 
   infoLineValue: {
     flex: 1,
     fontSize: 13,
+    fontFamily: "PoppinsMedium",
     color: "#2F4267",
-    fontWeight: "700",
     textAlign: "right",
   },
 
@@ -602,7 +618,7 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     color: "#2F4267",
     fontSize: 13,
-    fontWeight: "700",
+    fontFamily: "PoppinsMedium",
   },
 
   rejectButton: {
@@ -619,7 +635,7 @@ const styles = StyleSheet.create({
   rejectButtonText: {
     color: "#E45757",
     fontSize: 13,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
   },
 
   verifyButton: {
@@ -636,7 +652,7 @@ const styles = StyleSheet.create({
   verifyButtonText: {
     color: "#FFFFFF",
     fontSize: 13,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
   },
 
   mapButton: {
@@ -653,6 +669,6 @@ const styles = StyleSheet.create({
   mapButtonText: {
     color: "#FFFFFF",
     fontSize: 13,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
   },
 });

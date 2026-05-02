@@ -8,10 +8,21 @@ import {
 } from "react-native";
 import { Ionicons, MaterialIcons, Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useFonts } from "expo-font";
 import SAdmin_Layout from "../../components/SAdmin_Compo/SAdmin_Layout";
 
 export default function SAdmin_Dashboard() {
   const router = useRouter();
+
+  const [fontsLoaded] = useFonts({
+    PoppinsRegular: require("../../assets/fonts/Poppins-Regular.ttf"),
+    PoppinsMedium: require("../../assets/fonts/Poppins-Medium.ttf"),
+    PoppinsSemiBold: require("../../assets/fonts/Poppins-SemiBold.ttf"),
+  });
+
+  if (!fontsLoaded) {
+    return null;
+  }
 
   const overviewCards = [
     {
@@ -184,33 +195,6 @@ export default function SAdmin_Dashboard() {
     },
   ];
 
-  const quickActions = [
-    {
-      label: "Manage Admins",
-      description: "Review admin accounts and requests",
-      icon: "people-outline",
-      route: "/(sadmin)/SAdmin_AdminAccounts",
-    },
-    {
-      label: "View Audit Logs",
-      description: "Monitor recent admin and system actions",
-      icon: "list-outline",
-      route: "/(sadmin)/SAdmin_AuditLogs",
-    },
-    {
-      label: "System Settings",
-      description: "Adjust AI, map, and notification settings",
-      icon: "settings-outline",
-      route: "/(sadmin)/SAdmin_Settings",
-    },
-    {
-      label: "Review Reports",
-      description: "Open the master reports database",
-      icon: "document-text-outline",
-      route: "/(admin)/Admin_Reports",
-    },
-  ];
-
   const getCardIcon = (item) => {
     if (item.iconType === "Feather") {
       return <Feather name={item.icon} size={23} color={item.color} />;
@@ -230,8 +214,6 @@ export default function SAdmin_Dashboard() {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        
-
         <View style={styles.overviewGrid}>
           {overviewCards.map((item, index) => (
             <View key={index} style={styles.overviewCard}>
@@ -452,8 +434,6 @@ export default function SAdmin_Dashboard() {
                 ))}
               </View>
             </View>
-
-            
           </View>
         </View>
       </ScrollView>
@@ -469,77 +449,6 @@ const styles = StyleSheet.create({
 
   contentContainer: {
     paddingBottom: 30,
-  },
-
-  heroCard: {
-    backgroundColor: "#294880",
-    borderRadius: 24,
-    padding: 24,
-    marginBottom: 22,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    shadowColor: "#294880",
-    shadowOpacity: 0.2,
-    shadowRadius: 18,
-    shadowOffset: {
-      width: 0,
-      height: 10,
-    },
-    elevation: 8,
-  },
-
-  heroLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-    marginRight: 20,
-  },
-
-  heroIconBox: {
-    width: 62,
-    height: 62,
-    borderRadius: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.16)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 18,
-  },
-
-  heroTextBox: {
-    flex: 1,
-  },
-
-  heroTitle: {
-    fontSize: 25,
-    fontWeight: "800",
-    color: "#FFFFFF",
-    marginBottom: 6,
-  },
-
-  heroSubtitle: {
-    fontSize: 14,
-    color: "#DCE7F7",
-    lineHeight: 21,
-    maxWidth: 680,
-  },
-
-  heroButton: {
-    height: 44,
-    paddingHorizontal: 18,
-    borderRadius: 14,
-    backgroundColor: "rgba(255, 255, 255, 0.18)",
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.25)",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-
-  heroButtonText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "700",
   },
 
   overviewGrid: {
@@ -585,19 +494,20 @@ const styles = StyleSheet.create({
 
   overviewValue: {
     fontSize: 24,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     color: "#294880",
     marginBottom: 2,
   },
 
   overviewTitle: {
     fontSize: 14,
-    fontWeight: "700",
+    fontFamily: "PoppinsSemiBold",
     color: "#30415F",
   },
 
   overviewNote: {
     fontSize: 12,
+    fontFamily: "PoppinsRegular",
     color: "#6B7A99",
     marginTop: 3,
   },
@@ -648,13 +558,14 @@ const styles = StyleSheet.create({
 
   panelTitle: {
     fontSize: 18,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     color: "#294880",
     marginBottom: 4,
   },
 
   panelSubtitle: {
     fontSize: 13,
+    fontFamily: "PoppinsRegular",
     color: "#6B7A99",
     lineHeight: 18,
   },
@@ -671,7 +582,7 @@ const styles = StyleSheet.create({
 
   smallActionText: {
     fontSize: 13,
-    fontWeight: "700",
+    fontFamily: "PoppinsMedium",
     color: "#294880",
   },
 
@@ -691,13 +602,13 @@ const styles = StyleSheet.create({
 
   breakdownLabel: {
     fontSize: 14,
-    fontWeight: "700",
+    fontFamily: "PoppinsMedium",
     color: "#30415F",
   },
 
   breakdownValue: {
     fontSize: 14,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     color: "#294880",
   },
 
@@ -747,17 +658,19 @@ const styles = StyleSheet.create({
   activityTitle: {
     flex: 1,
     fontSize: 14,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     color: "#294880",
   },
 
   activityTime: {
     fontSize: 12,
+    fontFamily: "PoppinsRegular",
     color: "#8A98B3",
   },
 
   activityDesc: {
     fontSize: 13,
+    fontFamily: "PoppinsRegular",
     color: "#5F6F8C",
     lineHeight: 19,
     marginTop: 4,
@@ -774,7 +687,7 @@ const styles = StyleSheet.create({
 
   activityTagText: {
     fontSize: 11,
-    fontWeight: "700",
+    fontFamily: "PoppinsMedium",
     color: "#294880",
   },
 
@@ -813,13 +726,13 @@ const styles = StyleSheet.create({
 
   adminSummaryLabel: {
     fontSize: 13,
-    fontWeight: "700",
+    fontFamily: "PoppinsMedium",
     color: "#30415F",
   },
 
   adminSummaryValue: {
     fontSize: 16,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     color: "#294880",
   },
 
@@ -836,7 +749,7 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     color: "#FFFFFF",
     fontSize: 14,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
   },
 
   aiList: {
@@ -859,13 +772,14 @@ const styles = StyleSheet.create({
 
   aiLabel: {
     fontSize: 12,
+    fontFamily: "PoppinsRegular",
     color: "#6B7A99",
     marginBottom: 3,
   },
 
   aiValue: {
     fontSize: 14,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     color: "#294880",
   },
 
@@ -882,54 +796,11 @@ const styles = StyleSheet.create({
 
   statusPillText: {
     fontSize: 11,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     color: "#294880",
   },
 
   activeStatusPillText: {
     color: "#059669",
-  },
-
-  quickActionList: {
-    gap: 10,
-  },
-
-  quickActionItem: {
-    minHeight: 62,
-    borderRadius: 15,
-    backgroundColor: "#F8FAFD",
-    borderWidth: 1,
-    borderColor: "#E5ECF6",
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-
-  quickActionIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 13,
-    backgroundColor: "#E8EFFB",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-  },
-
-  quickActionTextBox: {
-    flex: 1,
-  },
-
-  quickActionLabel: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: "#294880",
-    marginBottom: 2,
-  },
-
-  quickActionDesc: {
-    fontSize: 12,
-    color: "#6B7A99",
-    lineHeight: 17,
   },
 });

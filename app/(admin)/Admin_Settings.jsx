@@ -10,6 +10,7 @@ import {
   Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useFonts } from "expo-font";
 import Admin_Layout from "../../components/Admin_compo/Admin_Layout";
 
 const COLORS = {
@@ -110,6 +111,16 @@ export default function Admin_Settings() {
     confirmPassword: "",
   });
 
+  const [fontsLoaded] = useFonts({
+    PoppinsRegular: require("../../assets/fonts/Poppins-Regular.ttf"),
+    PoppinsMedium: require("../../assets/fonts/Poppins-Medium.ttf"),
+    PoppinsSemiBold: require("../../assets/fonts/Poppins-SemiBold.ttf"),
+  });
+
+  if (!fontsLoaded) {
+    return null;
+  }
+
   const showMessage = (title, message) => {
     if (Platform.OS === "web") {
       window.alert(`${title}\n\n${message}`);
@@ -131,7 +142,7 @@ export default function Admin_Settings() {
 
     showMessage(
       "Profile Updated",
-      "Your profile details have been updated successfully.",
+      "Your profile details have been updated successfully."
     );
   };
 
@@ -144,7 +155,7 @@ export default function Admin_Settings() {
     if (emailData.newEmail !== emailData.confirmEmail) {
       showMessage(
         "Email Mismatch",
-        "New email and confirm email do not match.",
+        "New email and confirm email do not match."
       );
       return;
     }
@@ -171,7 +182,7 @@ export default function Admin_Settings() {
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       showMessage(
         "Password Mismatch",
-        "New password and confirm password do not match.",
+        "New password and confirm password do not match."
       );
       return;
     }
@@ -189,7 +200,7 @@ export default function Admin_Settings() {
 
     showMessage(
       "Password Updated",
-      "Your password has been changed successfully.",
+      "Your password has been changed successfully."
     );
   };
 
@@ -201,15 +212,6 @@ export default function Admin_Settings() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.contentWrap}>
-          <View style={styles.pageHeader}>
-            <View>
-              <Text style={styles.pageTitle}>Account Settings</Text>
-              <Text style={styles.pageSubtitle}>
-                Manage your admin profile, email address, and password.
-              </Text>
-            </View>
-          </View>
-
           <FormSection
             icon="person-circle-outline"
             title="Edit Profile Details"
@@ -415,13 +417,14 @@ const styles = StyleSheet.create({
   pageTitle: {
     fontSize: 24,
     color: COLORS.primary,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     marginBottom: 6,
   },
 
   pageSubtitle: {
     fontSize: 14,
     color: COLORS.textMuted,
+    fontFamily: "PoppinsRegular",
     lineHeight: 21,
   },
 
@@ -461,13 +464,14 @@ const styles = StyleSheet.create({
   infoTitle: {
     fontSize: 15,
     color: COLORS.text,
-    fontWeight: "700",
+    fontFamily: "PoppinsSemiBold",
     marginBottom: 5,
   },
 
   infoDescription: {
     fontSize: 13,
     color: COLORS.textMuted,
+    fontFamily: "PoppinsRegular",
     lineHeight: 19,
   },
 
@@ -509,7 +513,7 @@ const styles = StyleSheet.create({
 
   sectionTitle: {
     fontSize: 17,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     color: COLORS.primary,
     marginBottom: 4,
   },
@@ -517,6 +521,7 @@ const styles = StyleSheet.create({
   sectionDescription: {
     fontSize: 13,
     color: COLORS.textMuted,
+    fontFamily: "PoppinsRegular",
     lineHeight: 19,
   },
 
@@ -538,7 +543,7 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 13,
     color: COLORS.text,
-    fontWeight: "600",
+    fontFamily: "PoppinsMedium",
     marginBottom: 8,
   },
 
@@ -559,6 +564,7 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     color: COLORS.text,
     fontSize: 14,
+    fontFamily: "PoppinsRegular",
     outlineStyle: Platform.OS === "web" ? "none" : undefined,
   },
 
@@ -576,6 +582,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     color: COLORS.primary,
     fontSize: 13,
+    fontFamily: "PoppinsRegular",
     lineHeight: 19,
   },
 
@@ -599,6 +606,6 @@ const styles = StyleSheet.create({
   saveButtonText: {
     color: COLORS.white,
     fontSize: 14,
-    fontWeight: "700",
+    fontFamily: "PoppinsSemiBold",
   },
 });

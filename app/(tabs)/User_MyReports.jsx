@@ -174,9 +174,7 @@ const User_MyReports = () => {
 
         <View style={styles.sectionBlock}>
           <View style={styles.sectionHeaderRow}>
-            <ThemedText style={styles.sectionTitle}>
-              My Submitted Reports
-            </ThemedText>
+            
           </View>
 
           <View style={styles.filterRow}>

@@ -9,6 +9,7 @@ import {
   Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useFonts } from "expo-font";
 
 import SAdmin_Layout from "../../components/SAdmin_Compo/SAdmin_Layout";
 
@@ -153,6 +154,16 @@ export default function SAdmin_AuditLogs() {
   const [searchText, setSearchText] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("All");
 
+  const [fontsLoaded] = useFonts({
+    PoppinsRegular: require("../../assets/fonts/Poppins-Regular.ttf"),
+    PoppinsMedium: require("../../assets/fonts/Poppins-Medium.ttf"),
+    PoppinsSemiBold: require("../../assets/fonts/Poppins-SemiBold.ttf"),
+  });
+
+  if (!fontsLoaded) {
+    return null;
+  }
+
   const auditLogs = [
     {
       id: "LOG-001",
@@ -218,8 +229,7 @@ export default function SAdmin_AuditLogs() {
       title: "System settings updated",
       actor: "SuperAdmin",
       actionType: "System Settings Updated",
-      details:
-        "AI high credibility threshold was updated from 85% to 90%.",
+      details: "AI high credibility threshold was updated from 85% to 90%.",
       reportId: null,
       oldValue: "85%",
       newValue: "90%",
@@ -276,13 +286,12 @@ export default function SAdmin_AuditLogs() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          
-
           <View style={styles.summaryGrid}>
             <View style={styles.summaryCard}>
               <View style={styles.summaryIconBox}>
                 <Ionicons name="list-outline" size={24} color="#294880" />
               </View>
+
               <View>
                 <Text style={styles.summaryValue}>{auditLogs.length}</Text>
                 <Text style={styles.summaryLabel}>Total Logs</Text>
@@ -291,8 +300,13 @@ export default function SAdmin_AuditLogs() {
 
             <View style={styles.summaryCard}>
               <View style={styles.successIconBox}>
-                <Ionicons name="shield-checkmark-outline" size={24} color="#22A06B" />
+                <Ionicons
+                  name="shield-checkmark-outline"
+                  size={24}
+                  color="#22A06B"
+                />
               </View>
+
               <View>
                 <Text style={styles.summaryValue}>{verifiedCount}</Text>
                 <Text style={styles.summaryLabel}>Verified Reports</Text>
@@ -303,6 +317,7 @@ export default function SAdmin_AuditLogs() {
               <View style={styles.dangerIconBox}>
                 <Ionicons name="trash-outline" size={24} color="#E45757" />
               </View>
+
               <View>
                 <Text style={styles.summaryValue}>{deletedCount}</Text>
                 <Text style={styles.summaryLabel}>Deleted Reports</Text>
@@ -311,8 +326,13 @@ export default function SAdmin_AuditLogs() {
 
             <View style={styles.summaryCard}>
               <View style={styles.warningIconBox}>
-                <Ionicons name="person-circle-outline" size={24} color="#C98A2E" />
+                <Ionicons
+                  name="person-circle-outline"
+                  size={24}
+                  color="#C98A2E"
+                />
               </View>
+
               <View>
                 <Text style={styles.summaryValue}>{adminActionCount}</Text>
                 <Text style={styles.summaryLabel}>Admin Actions</Text>
@@ -323,6 +343,7 @@ export default function SAdmin_AuditLogs() {
           <View style={styles.filterCard}>
             <View style={styles.searchBox}>
               <Ionicons name="search-outline" size={18} color="#5D6F92" />
+
               <TextInput
                 style={styles.searchInput}
                 placeholder="Search logs by report ID, action, actor, or details..."
@@ -343,7 +364,10 @@ export default function SAdmin_AuditLogs() {
                 return (
                   <TouchableOpacity
                     key={filter}
-                    style={[styles.filterPill, isActive && styles.activeFilterPill]}
+                    style={[
+                      styles.filterPill,
+                      isActive && styles.activeFilterPill,
+                    ]}
                     onPress={() => setSelectedFilter(filter)}
                     activeOpacity={0.8}
                   >
@@ -366,20 +390,26 @@ export default function SAdmin_AuditLogs() {
               <View>
                 <Text style={styles.sectionTitle}>Recent System Activity</Text>
                 <Text style={styles.sectionSubtitle}>
-                  Audit logs are system-generated and should not be manually edited.
+                  Audit logs are system-generated and should not be manually
+                  edited.
                 </Text>
               </View>
 
               <View style={styles.resultPill}>
                 <Text style={styles.resultPillText}>
-                  {filteredLogs.length} result{filteredLogs.length === 1 ? "" : "s"}
+                  {filteredLogs.length} result
+                  {filteredLogs.length === 1 ? "" : "s"}
                 </Text>
               </View>
             </View>
 
             {filteredLogs.length === 0 ? (
               <View style={styles.emptyState}>
-                <Ionicons name="document-text-outline" size={38} color="#5D6F92" />
+                <Ionicons
+                  name="document-text-outline"
+                  size={38}
+                  color="#5D6F92"
+                />
                 <Text style={styles.emptyTitle}>No audit logs found</Text>
                 <Text style={styles.emptyText}>
                   Try changing the search keyword or selected filter.
@@ -428,13 +458,14 @@ const styles = StyleSheet.create({
   pageTitle: {
     fontSize: 24,
     color: "#294880",
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     marginBottom: 6,
   },
 
   pageSubtitle: {
     fontSize: 14,
     color: "#5D6F92",
+    fontFamily: "PoppinsRegular",
     lineHeight: 21,
     maxWidth: 820,
   },
@@ -500,12 +531,13 @@ const styles = StyleSheet.create({
 
   summaryValue: {
     fontSize: 22,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     color: "#2F4267",
   },
 
   summaryLabel: {
     fontSize: 13,
+    fontFamily: "PoppinsRegular",
     color: "#5D6F92",
     marginTop: 4,
   },
@@ -537,6 +569,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     color: "#294880",
     fontSize: 14,
+    fontFamily: "PoppinsRegular",
     outlineStyle: Platform.OS === "web" ? "none" : undefined,
   },
 
@@ -562,7 +595,7 @@ const styles = StyleSheet.create({
 
   filterPillText: {
     fontSize: 13,
-    fontWeight: "700",
+    fontFamily: "PoppinsMedium",
     color: "#294880",
   },
 
@@ -593,13 +626,14 @@ const styles = StyleSheet.create({
 
   sectionTitle: {
     fontSize: 17,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     color: "#294880",
     marginBottom: 4,
   },
 
   sectionSubtitle: {
     fontSize: 13,
+    fontFamily: "PoppinsRegular",
     color: "#5D6F92",
   },
 
@@ -613,7 +647,7 @@ const styles = StyleSheet.create({
   resultPillText: {
     color: "#294880",
     fontSize: 12,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
   },
 
   logRow: {
@@ -656,13 +690,14 @@ const styles = StyleSheet.create({
 
   logTitle: {
     fontSize: 15,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     color: "#2F4267",
     marginBottom: 4,
   },
 
   logMeta: {
     fontSize: 12,
+    fontFamily: "PoppinsRegular",
     color: "#5D6F92",
   },
 
@@ -674,11 +709,12 @@ const styles = StyleSheet.create({
 
   logBadgeText: {
     fontSize: 11,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
   },
 
   logDescription: {
     fontSize: 13,
+    fontFamily: "PoppinsRegular",
     color: "#5D6F92",
     lineHeight: 19,
     marginBottom: 12,
@@ -703,14 +739,15 @@ const styles = StyleSheet.create({
 
   logInfoLabel: {
     fontSize: 11,
+    fontFamily: "PoppinsRegular",
     color: "#5D6F92",
     marginBottom: 4,
   },
 
   logInfoValue: {
     fontSize: 13,
+    fontFamily: "PoppinsMedium",
     color: "#294880",
-    fontWeight: "700",
   },
 
   emptyState: {
@@ -722,7 +759,7 @@ const styles = StyleSheet.create({
 
   emptyTitle: {
     fontSize: 16,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     color: "#2F4267",
     marginTop: 10,
     marginBottom: 4,
@@ -730,6 +767,7 @@ const styles = StyleSheet.create({
 
   emptyText: {
     fontSize: 13,
+    fontFamily: "PoppinsRegular",
     color: "#5D6F92",
     textAlign: "center",
   },

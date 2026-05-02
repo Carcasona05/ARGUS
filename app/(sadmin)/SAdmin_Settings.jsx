@@ -11,6 +11,7 @@ import {
   TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useFonts } from "expo-font";
 
 import SAdmin_Layout from "../../components/SAdmin_Compo/SAdmin_Layout";
 
@@ -130,6 +131,16 @@ export default function SAdmin_Settings() {
   const [modelVersion, setModelVersion] = useState("ARGUS-AI v4.3.01");
   const [apiEndpoint, setApiEndpoint] = useState("https://api.argus.local/v1");
 
+  const [fontsLoaded] = useFonts({
+    PoppinsRegular: require("../../assets/fonts/Poppins-Regular.ttf"),
+    PoppinsMedium: require("../../assets/fonts/Poppins-Medium.ttf"),
+    PoppinsSemiBold: require("../../assets/fonts/Poppins-SemiBold.ttf"),
+  });
+
+  if (!fontsLoaded) {
+    return null;
+  }
+
   const incidentCategories = [
     "Public Safety Incidents",
     "Property-Related Incidents",
@@ -186,7 +197,10 @@ export default function SAdmin_Settings() {
     }
 
     if (newPassword !== confirmNewPassword) {
-      showMessage("Password Mismatch", "New password and confirm password do not match.");
+      showMessage(
+        "Password Mismatch",
+        "New password and confirm password do not match."
+      );
       return;
     }
 
@@ -220,7 +234,10 @@ export default function SAdmin_Settings() {
     setModelVersion("ARGUS-AI v4.3.01");
     setApiEndpoint("https://api.argus.local/v1");
 
-    showMessage("Settings Reset", "System settings have been restored to default values.");
+    showMessage(
+      "Settings Reset",
+      "System settings have been restored to default values."
+    );
   };
 
   return (
@@ -233,8 +250,6 @@ export default function SAdmin_Settings() {
         >
           <View style={styles.contentWrap}>
             <View style={styles.leftSection}>
-              
-
               <View style={styles.summaryRow}>
                 <SummaryCard
                   icon="person-circle-outline"
@@ -270,9 +285,12 @@ export default function SAdmin_Settings() {
               <View style={styles.sectionCard}>
                 <View style={styles.sectionHeader}>
                   <View style={styles.sectionHeaderText}>
-                    <Text style={styles.sectionTitle}>SuperAdmin Profile Settings</Text>
+                    <Text style={styles.sectionTitle}>
+                      SuperAdmin Profile Settings
+                    </Text>
                     <Text style={styles.sectionDescription}>
-                      Update your own SuperAdmin name, email address, and phone number.
+                      Update your own SuperAdmin name, email address, and phone
+                      number.
                     </Text>
                   </View>
 
@@ -324,7 +342,9 @@ export default function SAdmin_Settings() {
                     activeOpacity={0.85}
                   >
                     <Ionicons name="save-outline" size={17} color="#FFFFFF" />
-                    <Text style={styles.primaryActionButtonText}>Save Profile</Text>
+                    <Text style={styles.primaryActionButtonText}>
+                      Save Profile
+                    </Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -356,11 +376,15 @@ export default function SAdmin_Settings() {
                       />
 
                       <TouchableOpacity
-                        onPress={() => setShowCurrentPassword(!showCurrentPassword)}
+                        onPress={() =>
+                          setShowCurrentPassword(!showCurrentPassword)
+                        }
                         activeOpacity={0.7}
                       >
                         <Ionicons
-                          name={showCurrentPassword ? "eye-off-outline" : "eye-outline"}
+                          name={
+                            showCurrentPassword ? "eye-off-outline" : "eye-outline"
+                          }
                           size={20}
                           color="#5D6F92"
                         />
@@ -433,7 +457,11 @@ export default function SAdmin_Settings() {
                     onPress={handleChangePassword}
                     activeOpacity={0.85}
                   >
-                    <Ionicons name="lock-closed-outline" size={17} color="#FFFFFF" />
+                    <Ionicons
+                      name="lock-closed-outline"
+                      size={17}
+                      color="#FFFFFF"
+                    />
                     <Text style={styles.primaryActionButtonText}>
                       Update Password
                     </Text>
@@ -444,9 +472,12 @@ export default function SAdmin_Settings() {
               <View style={styles.sectionCard}>
                 <View style={styles.sectionHeader}>
                   <View style={styles.sectionHeaderText}>
-                    <Text style={styles.sectionTitle}>AI Threshold Configuration</Text>
+                    <Text style={styles.sectionTitle}>
+                      AI Threshold Configuration
+                    </Text>
                     <Text style={styles.sectionDescription}>
-                      Configure AI credibility scoring used during report validation.
+                      Configure AI credibility scoring used during report
+                      validation.
                     </Text>
                   </View>
 
@@ -472,7 +503,9 @@ export default function SAdmin_Settings() {
 
                 <View style={styles.inputGrid}>
                   <View style={styles.inputCard}>
-                    <Text style={styles.inputLabel}>High Credibility Threshold</Text>
+                    <Text style={styles.inputLabel}>
+                      High Credibility Threshold
+                    </Text>
                     <TextInput
                       value={highThreshold}
                       onChangeText={setHighThreshold}
@@ -484,7 +517,9 @@ export default function SAdmin_Settings() {
                   </View>
 
                   <View style={styles.inputCard}>
-                    <Text style={styles.inputLabel}>Medium Credibility Threshold</Text>
+                    <Text style={styles.inputLabel}>
+                      Medium Credibility Threshold
+                    </Text>
                     <TextInput
                       value={mediumThreshold}
                       onChangeText={setMediumThreshold}
@@ -500,9 +535,12 @@ export default function SAdmin_Settings() {
               <View style={styles.sectionCard}>
                 <View style={styles.sectionHeader}>
                   <View style={styles.sectionHeaderText}>
-                    <Text style={styles.sectionTitle}>Incident Category Management</Text>
+                    <Text style={styles.sectionTitle}>
+                      Incident Category Management
+                    </Text>
                     <Text style={styles.sectionDescription}>
-                      Review the category groups used for submitted incident reports.
+                      Review the category groups used for submitted incident
+                      reports.
                     </Text>
                   </View>
 
@@ -523,7 +561,8 @@ export default function SAdmin_Settings() {
                   <View style={styles.sectionHeaderText}>
                     <Text style={styles.sectionTitle}>Map Settings</Text>
                     <Text style={styles.sectionDescription}>
-                      Control how verified reports appear on the Argao incident map.
+                      Control how verified reports appear on the Argao incident
+                      map.
                     </Text>
                   </View>
 
@@ -602,7 +641,9 @@ export default function SAdmin_Settings() {
               <View style={styles.sectionCard}>
                 <View style={styles.sectionHeader}>
                   <View style={styles.sectionHeaderText}>
-                    <Text style={styles.sectionTitle}>Notification Preferences</Text>
+                    <Text style={styles.sectionTitle}>
+                      Notification Preferences
+                    </Text>
                     <Text style={styles.sectionDescription}>
                       Configure SuperAdmin system alerts and notification channels.
                     </Text>
@@ -644,7 +685,9 @@ export default function SAdmin_Settings() {
               <View style={styles.sectionCard}>
                 <View style={styles.sectionHeader}>
                   <View style={styles.sectionHeaderText}>
-                    <Text style={styles.sectionTitle}>API and Model Settings</Text>
+                    <Text style={styles.sectionTitle}>
+                      API and Model Settings
+                    </Text>
                     <Text style={styles.sectionDescription}>
                       Manage model version and system API endpoint settings.
                     </Text>
@@ -657,7 +700,9 @@ export default function SAdmin_Settings() {
                       showMessage("Connection Test", "API connection test completed.")
                     }
                   >
-                    <Text style={styles.secondaryButtonText}>Test Connection</Text>
+                    <Text style={styles.secondaryButtonText}>
+                      Test Connection
+                    </Text>
                   </TouchableOpacity>
                 </View>
 
@@ -692,7 +737,9 @@ export default function SAdmin_Settings() {
                   onPress={handleResetSettings}
                   activeOpacity={0.85}
                 >
-                  <Text style={styles.resetButtonText}>Reset System Settings</Text>
+                  <Text style={styles.resetButtonText}>
+                    Reset System Settings
+                  </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -701,7 +748,9 @@ export default function SAdmin_Settings() {
                   activeOpacity={0.85}
                 >
                   <Ionicons name="save-outline" size={18} color="#FFFFFF" />
-                  <Text style={styles.saveButtonText}>Save System Settings</Text>
+                  <Text style={styles.saveButtonText}>
+                    Save System Settings
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -830,13 +879,14 @@ const styles = StyleSheet.create({
   pageTitle: {
     fontSize: 24,
     color: "#294880",
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     marginBottom: 6,
   },
 
   pageSubtitle: {
     fontSize: 14,
     color: "#5D6F92",
+    fontFamily: "PoppinsRegular",
     lineHeight: 21,
   },
 
@@ -877,7 +927,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#5D6F92",
     marginBottom: 6,
-    fontWeight: "500",
+    fontFamily: "PoppinsMedium",
   },
 
   summaryValueRow: {
@@ -889,13 +939,13 @@ const styles = StyleSheet.create({
 
   summaryValue: {
     fontSize: 21,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     color: "#2F4267",
   },
 
   summarySubtext: {
     fontSize: 13,
-    fontWeight: "600",
+    fontFamily: "PoppinsSemiBold",
   },
 
   sectionCard: {
@@ -926,13 +976,14 @@ const styles = StyleSheet.create({
 
   sectionTitle: {
     fontSize: 16,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     color: "#294880",
     marginBottom: 4,
   },
 
   sectionDescription: {
     fontSize: 13,
+    fontFamily: "PoppinsRegular",
     color: "#5D6F92",
     lineHeight: 19,
   },
@@ -966,7 +1017,7 @@ const styles = StyleSheet.create({
   primaryActionButtonText: {
     color: "#FFFFFF",
     fontSize: 13,
-    fontWeight: "700",
+    fontFamily: "PoppinsMedium",
   },
 
   secondaryButton: {
@@ -983,7 +1034,7 @@ const styles = StyleSheet.create({
   secondaryButtonText: {
     color: "#294880",
     fontSize: 13,
-    fontWeight: "700",
+    fontFamily: "PoppinsMedium",
   },
 
   statusBadge: {
@@ -994,8 +1045,8 @@ const styles = StyleSheet.create({
   },
 
   statusBadgeText: {
-    fontWeight: "700",
     fontSize: 12,
+    fontFamily: "PoppinsMedium",
   },
 
   settingRow: {
@@ -1036,13 +1087,14 @@ const styles = StyleSheet.create({
 
   settingTitle: {
     fontSize: 14,
-    fontWeight: "700",
+    fontFamily: "PoppinsMedium",
     color: "#2F4267",
     marginBottom: 4,
   },
 
   settingDescription: {
     fontSize: 13,
+    fontFamily: "PoppinsRegular",
     color: "#5D6F92",
     lineHeight: 19,
   },
@@ -1066,7 +1118,7 @@ const styles = StyleSheet.create({
 
   inputLabel: {
     fontSize: 13,
-    fontWeight: "600",
+    fontFamily: "PoppinsMedium",
     color: "#2F4267",
     marginBottom: 8,
   },
@@ -1080,6 +1132,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     color: "#2F4267",
     fontSize: 14,
+    fontFamily: "PoppinsRegular",
     outlineStyle: Platform.OS === "web" ? "none" : undefined,
   },
 
@@ -1099,6 +1152,7 @@ const styles = StyleSheet.create({
     height: "100%",
     color: "#2F4267",
     fontSize: 14,
+    fontFamily: "PoppinsRegular",
     outlineStyle: Platform.OS === "web" ? "none" : undefined,
   },
 
@@ -1118,7 +1172,7 @@ const styles = StyleSheet.create({
 
   categoryTagText: {
     fontSize: 13,
-    fontWeight: "700",
+    fontFamily: "PoppinsMedium",
     color: "#294880",
   },
 
@@ -1144,7 +1198,7 @@ const styles = StyleSheet.create({
   resetButtonText: {
     color: "#2F4267",
     fontSize: 14,
-    fontWeight: "700",
+    fontFamily: "PoppinsMedium",
   },
 
   saveButton: {
@@ -1161,7 +1215,7 @@ const styles = StyleSheet.create({
   saveButtonText: {
     color: "#FFFFFF",
     fontSize: 14,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
   },
 
   sideCard: {
@@ -1174,7 +1228,7 @@ const styles = StyleSheet.create({
 
   sideCardTitle: {
     fontSize: 15,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     color: "#294880",
     paddingHorizontal: 18,
     paddingVertical: 14,
@@ -1196,13 +1250,14 @@ const styles = StyleSheet.create({
   breakdownText: {
     color: "#2F4267",
     fontSize: 13,
+    fontFamily: "PoppinsRegular",
     flex: 1,
     marginRight: 12,
   },
 
   breakdownCount: {
     color: "#294880",
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     fontSize: 14,
   },
 
@@ -1212,7 +1267,7 @@ const styles = StyleSheet.create({
 
   notesHeading: {
     color: "#2F4267",
-    fontWeight: "700",
+    fontFamily: "PoppinsMedium",
     marginBottom: 8,
   },
 
@@ -1224,5 +1279,6 @@ const styles = StyleSheet.create({
     color: "#5D6F92",
     lineHeight: 21,
     fontSize: 13,
+    fontFamily: "PoppinsRegular",
   },
 });

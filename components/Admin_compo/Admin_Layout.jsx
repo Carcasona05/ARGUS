@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import { Ionicons, Feather } from "@expo/vector-icons";
 import { useRouter, usePathname } from "expo-router";
+import { useFonts } from "expo-font";
 
 const ARGUS_BLUE = "#294880";
 const DARK_BLUE = "#183865";
@@ -18,6 +19,16 @@ export default function Admin_Layout({ children }) {
 
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+
+  const [fontsLoaded] = useFonts({
+    PoppinsRegular: require("../../assets/fonts/Poppins-Regular.ttf"),
+    PoppinsMedium: require("../../assets/fonts/Poppins-Medium.ttf"),
+    PoppinsSemiBold: require("../../assets/fonts/Poppins-SemiBold.ttf"),
+  });
+
+  if (!fontsLoaded) {
+    return null;
+  }
 
   const navItems = [
     {
@@ -42,7 +53,8 @@ export default function Admin_Layout({ children }) {
       path: "/Admin_Validation",
       icon: "shield-checkmark-outline",
       iconType: "Ionicons",
-      description: "Manage reports, validate submissions, and review AI credibility",
+      description:
+        "Manage reports, validate submissions, and review AI credibility",
     },
     {
       label: "Logs",
@@ -122,10 +134,10 @@ export default function Admin_Layout({ children }) {
       return found;
     }
 
-    if (pathname.includes("Admin_ViewReport")) {
+    if (pathname.includes("Admin_ViewValidationReport")) {
       return {
-        label: "View Report",
-        description: "Review complete incident report details",
+        label: "View Validation Report",
+        description: "Review submitted incident validation information",
       };
     }
 
@@ -133,13 +145,6 @@ export default function Admin_Layout({ children }) {
       return {
         label: "View Validation",
         description: "Review AI validation and report credibility details",
-      };
-    }
-
-    if (pathname.includes("Admin_ViewValidationReport")) {
-      return {
-        label: "View Validation Report",
-        description: "Review submitted incident validation information",
       };
     }
 
@@ -170,7 +175,9 @@ export default function Admin_Layout({ children }) {
 
   const getNotificationIcon = (type) => {
     if (type === "report") {
-      return <Ionicons name="document-text-outline" size={20} color={ARGUS_BLUE} />;
+      return (
+        <Ionicons name="document-text-outline" size={20} color={ARGUS_BLUE} />
+      );
     }
 
     if (type === "ai") {
@@ -185,7 +192,9 @@ export default function Admin_Layout({ children }) {
       return <Ionicons name="server-outline" size={20} color="#F59E0B" />;
     }
 
-    return <Ionicons name="notifications-outline" size={20} color={ARGUS_BLUE} />;
+    return (
+      <Ionicons name="notifications-outline" size={20} color={ARGUS_BLUE} />
+    );
   };
 
   const getPriorityStyle = (priority) => {
@@ -261,7 +270,9 @@ export default function Admin_Layout({ children }) {
                 >
                   <View style={styles.navIcon}>{getIcon(item, isActive)}</View>
 
-                  <Text style={[styles.navText, isActive && styles.activeNavText]}>
+                  <Text
+                    style={[styles.navText, isActive && styles.activeNavText]}
+                  >
                     {item.label}
                   </Text>
                 </TouchableOpacity>
@@ -557,7 +568,7 @@ const styles = {
     marginLeft: 14,
     marginBottom: 12,
     letterSpacing: 1,
-    fontWeight: "700",
+    fontFamily: "PoppinsSemiBold",
   },
 
   navList: {
@@ -584,13 +595,13 @@ const styles = {
 
   navText: {
     fontSize: 17,
-    fontWeight: "500",
+    fontFamily: "PoppinsMedium",
     color: "#B9C8E6",
   },
 
   activeNavText: {
     color: "#FFFFFF",
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
   },
 
   sidebarFooter: {
@@ -614,7 +625,7 @@ const styles = {
   footerAvatarText: {
     color: ARGUS_BLUE,
     fontSize: 13,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
   },
 
   footerInfo: {
@@ -624,12 +635,13 @@ const styles = {
   footerName: {
     color: "#FFFFFF",
     fontSize: 15,
-    fontWeight: "700",
+    fontFamily: "PoppinsSemiBold",
   },
 
   footerRole: {
     color: "#B9C8E6",
     fontSize: 12,
+    fontFamily: "PoppinsRegular",
     marginTop: 2,
   },
 
@@ -675,14 +687,14 @@ const styles = {
   pageTitle: {
     fontSize: 34,
     color: "#16233A",
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     marginBottom: 4,
   },
 
   pageDesc: {
     fontSize: 17,
     color: "#5F6F8C",
-    fontWeight: "500",
+    fontFamily: "PoppinsMedium",
   },
 
   headerRight: {
@@ -732,7 +744,7 @@ const styles = {
   badgeText: {
     color: "#FFFFFF",
     fontSize: 10,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
   },
 
   notificationDropdown: {
@@ -769,13 +781,14 @@ const styles = {
 
   notificationTitle: {
     fontSize: 18,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     color: "#16233A",
   },
 
   notificationSubtitle: {
     fontSize: 13,
     color: "#6B7A99",
+    fontFamily: "PoppinsRegular",
     marginTop: 3,
   },
 
@@ -827,7 +840,7 @@ const styles = {
 
   notificationItemTitle: {
     fontSize: 14,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     color: "#16233A",
     flex: 1,
   },
@@ -843,6 +856,7 @@ const styles = {
   notificationMessage: {
     fontSize: 13,
     color: "#5F6F8C",
+    fontFamily: "PoppinsRegular",
     lineHeight: 18,
     marginTop: 4,
   },
@@ -857,6 +871,7 @@ const styles = {
   notificationTime: {
     fontSize: 12,
     color: "#8A98B3",
+    fontFamily: "PoppinsRegular",
   },
 
   priorityBadge: {
@@ -867,7 +882,7 @@ const styles = {
 
   priorityText: {
     fontSize: 11,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
   },
 
   viewAllButton: {
@@ -884,7 +899,7 @@ const styles = {
 
   viewAllText: {
     fontSize: 14,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     color: ARGUS_BLUE,
   },
 
@@ -917,7 +932,7 @@ const styles = {
   avatarText: {
     color: "#FFFFFF",
     fontSize: 13,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
   },
 
   profileInfo: {
@@ -926,13 +941,14 @@ const styles = {
 
   profileText: {
     fontSize: 15,
-    fontWeight: "700",
+    fontFamily: "PoppinsSemiBold",
     color: "#16233A",
   },
 
   profileRole: {
     fontSize: 12,
     color: "#6B7A99",
+    fontFamily: "PoppinsRegular",
     marginTop: 1,
   },
 
@@ -986,13 +1002,14 @@ const styles = {
 
   profileDropdownTitle: {
     fontSize: 14,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     color: "#16233A",
   },
 
   profileDropdownSubtitle: {
     fontSize: 12,
     color: "#6B7A99",
+    fontFamily: "PoppinsRegular",
     marginTop: 2,
   },
 

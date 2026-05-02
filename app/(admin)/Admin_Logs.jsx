@@ -9,12 +9,23 @@ import {
   Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useFonts } from "expo-font";
 
 import Admin_Layout from "../../components/Admin_compo/Admin_Layout";
 
 export default function Admin_Logs() {
   const [searchText, setSearchText] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("All");
+
+  const [fontsLoaded] = useFonts({
+    PoppinsRegular: require("../../assets/fonts/Poppins-Regular.ttf"),
+    PoppinsMedium: require("../../assets/fonts/Poppins-Medium.ttf"),
+    PoppinsSemiBold: require("../../assets/fonts/Poppins-SemiBold.ttf"),
+  });
+
+  if (!fontsLoaded) {
+    return null;
+  }
 
   const logs = [
     {
@@ -234,16 +245,6 @@ export default function Admin_Logs() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.headerCard}>
-            <View style={styles.headerTextBox}>
-              <Text style={styles.pageTitle}>Logs</Text>
-              <Text style={styles.pageSubtitle}>
-                Track recent report validation actions, AI processing,
-                admin-created reports, and notification events.
-              </Text>
-            </View>
-          </View>
-
           <View style={styles.statsRow}>
             <StatCard
               icon="list-outline"
@@ -469,7 +470,7 @@ const styles = StyleSheet.create({
   pageTitle: {
     fontSize: 30,
     color: "#294880",
-    fontWeight: "700",
+    fontFamily: "PoppinsSemiBold",
     marginBottom: 8,
   },
 
@@ -478,7 +479,7 @@ const styles = StyleSheet.create({
     color: "#5D6F92",
     lineHeight: 24,
     maxWidth: 900,
-    fontWeight: "400",
+    fontFamily: "PoppinsRegular",
   },
 
   statsRow: {
@@ -515,7 +516,7 @@ const styles = StyleSheet.create({
 
   statValue: {
     fontSize: 26,
-    fontWeight: "700",
+    fontFamily: "PoppinsSemiBold",
     color: "#2F4267",
   },
 
@@ -523,7 +524,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: "#5D6F92",
     marginTop: 4,
-    fontWeight: "500",
+    fontFamily: "PoppinsMedium",
   },
 
   filterCard: {
@@ -553,6 +554,7 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     color: "#294880",
     fontSize: 16,
+    fontFamily: "PoppinsRegular",
     outlineStyle: Platform.OS === "web" ? "none" : undefined,
   },
 
@@ -578,13 +580,12 @@ const styles = StyleSheet.create({
 
   filterPillText: {
     fontSize: 14,
-    fontWeight: "600",
+    fontFamily: "PoppinsMedium",
     color: "#294880",
   },
 
   activeFilterPillText: {
     color: "#FFFFFF",
-    fontWeight: "600",
   },
 
   logsCard: {
@@ -610,7 +611,7 @@ const styles = StyleSheet.create({
 
   sectionTitle: {
     fontSize: 21,
-    fontWeight: "700",
+    fontFamily: "PoppinsSemiBold",
     color: "#294880",
     marginBottom: 5,
   },
@@ -618,12 +619,12 @@ const styles = StyleSheet.create({
   sectionSubtitle: {
     fontSize: 15,
     color: "#5D6F92",
-    fontWeight: "400",
+    fontFamily: "PoppinsRegular",
   },
 
   resultText: {
     fontSize: 15,
-    fontWeight: "600",
+    fontFamily: "PoppinsMedium",
     color: "#294880",
   },
 
@@ -668,7 +669,7 @@ const styles = StyleSheet.create({
 
   logTitle: {
     fontSize: 18,
-    fontWeight: "600",
+    fontFamily: "PoppinsMedium",
     color: "#111827",
     lineHeight: 23,
     marginBottom: 4,
@@ -678,7 +679,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#5D6F92",
     lineHeight: 20,
-    fontWeight: "400",
+    fontFamily: "PoppinsRegular",
   },
 
   actionBadge: {
@@ -689,7 +690,7 @@ const styles = StyleSheet.create({
 
   actionBadgeText: {
     fontSize: 12,
-    fontWeight: "600",
+    fontFamily: "PoppinsMedium",
   },
 
   logDetails: {
@@ -697,7 +698,7 @@ const styles = StyleSheet.create({
     color: "#5D6F92",
     lineHeight: 22,
     marginBottom: 14,
-    fontWeight: "400",
+    fontFamily: "PoppinsRegular",
   },
 
   statusChangeBox: {
@@ -721,14 +722,14 @@ const styles = StyleSheet.create({
   statusLabel: {
     fontSize: 12,
     color: "#7A8BA8",
-    fontWeight: "500",
+    fontFamily: "PoppinsMedium",
     marginBottom: 5,
   },
 
   statusValue: {
     fontSize: 14,
     color: "#294880",
-    fontWeight: "600",
+    fontFamily: "PoppinsMedium",
     lineHeight: 19,
   },
 
@@ -746,7 +747,7 @@ const styles = StyleSheet.create({
 
   emptyTitle: {
     fontSize: 18,
-    fontWeight: "600",
+    fontFamily: "PoppinsMedium",
     color: "#2F4267",
     marginTop: 12,
     marginBottom: 6,
@@ -755,6 +756,6 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 15,
     color: "#5D6F92",
-    fontWeight: "400",
+    fontFamily: "PoppinsRegular",
   },
 });

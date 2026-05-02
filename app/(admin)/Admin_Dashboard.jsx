@@ -2,10 +2,21 @@ import React from "react";
 import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useFonts } from "expo-font";
 import Admin_Layout from "../../components/Admin_compo/Admin_Layout";
 
 export default function Admin_Dashboard() {
   const router = useRouter();
+
+  const [fontsLoaded] = useFonts({
+    PoppinsRegular: require("../../assets/fonts/Poppins-Regular.ttf"),
+    PoppinsMedium: require("../../assets/fonts/Poppins-Medium.ttf"),
+    PoppinsSemiBold: require("../../assets/fonts/Poppins-SemiBold.ttf"),
+  });
+
+  if (!fontsLoaded) {
+    return null;
+  }
 
   const summaryCards = [
     {
@@ -457,7 +468,7 @@ const styles = {
     fontSize: 14,
     color: "#4B5D7A",
     marginBottom: 6,
-    fontWeight: "500",
+    fontFamily: "PoppinsMedium",
   },
 
   summaryValueRow: {
@@ -469,13 +480,13 @@ const styles = {
 
   summaryValue: {
     fontSize: 21,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     color: "#2E3F63",
   },
 
   summarySubtext: {
     fontSize: 13,
-    fontWeight: "600",
+    fontFamily: "PoppinsSemiBold",
   },
 
   middleSection: {
@@ -517,13 +528,14 @@ const styles = {
 
   cardTitle: {
     fontSize: 16,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     color: "#294880",
   },
 
   cardSubtitle: {
     fontSize: 12,
     color: "#6B7A99",
+    fontFamily: "PoppinsRegular",
     marginTop: 3,
   },
 
@@ -549,7 +561,7 @@ const styles = {
   controlButtonText: {
     fontSize: 13,
     color: "#5D6F92",
-    fontWeight: "500",
+    fontFamily: "PoppinsMedium",
   },
 
   filterButton: {
@@ -567,7 +579,7 @@ const styles = {
   filterButtonText: {
     fontSize: 13,
     color: "#4B5D7A",
-    fontWeight: "500",
+    fontFamily: "PoppinsMedium",
   },
 
   mapCardBody: {
@@ -693,7 +705,7 @@ const styles = {
   hotspotBadgeText: {
     color: "#FFFFFF",
     fontSize: 10,
-    fontWeight: "700",
+    fontFamily: "PoppinsMedium",
   },
 
   centerUserWrap: {
@@ -733,7 +745,7 @@ const styles = {
     top: "52%",
     left: "56%",
     fontSize: 15,
-    fontWeight: "700",
+    fontFamily: "PoppinsSemiBold",
     color: "#4B5D7A",
   },
 
@@ -751,7 +763,7 @@ const styles = {
 
   legendTitle: {
     fontSize: 11,
-    fontWeight: "700",
+    fontFamily: "PoppinsSemiBold",
     color: "#4B5D7A",
     marginBottom: 6,
   },
@@ -772,7 +784,7 @@ const styles = {
   legendText: {
     fontSize: 11,
     color: "#4B5D7A",
-    fontWeight: "500",
+    fontFamily: "PoppinsMedium",
   },
 
   zoomBox: {
@@ -795,7 +807,7 @@ const styles = {
 
   zoomText: {
     fontSize: 17,
-    fontWeight: "700",
+    fontFamily: "PoppinsSemiBold",
     color: "#5D6F92",
     lineHeight: 18,
   },
@@ -821,13 +833,13 @@ const styles = {
 
   sideCardTitle: {
     fontSize: 18,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     color: "#294880",
   },
 
   viewAllText: {
     fontSize: 14,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     color: "#294880",
   },
 
@@ -860,7 +872,7 @@ const styles = {
     marginLeft: 7,
     fontSize: 15,
     color: "#111827",
-    fontWeight: "600",
+    fontFamily: "PoppinsSemiBold",
     flexShrink: 1,
     lineHeight: 20,
   },
@@ -868,12 +880,13 @@ const styles = {
   feedTime: {
     fontSize: 13,
     color: "#7A8BA8",
-    fontWeight: "600",
+    fontFamily: "PoppinsMedium",
   },
 
   feedLocation: {
     fontSize: 14,
     color: "#6D7D99",
+    fontFamily: "PoppinsRegular",
     marginBottom: 10,
     marginLeft: 24,
     lineHeight: 19,
@@ -895,18 +908,19 @@ const styles = {
 
   feedStatusText: {
     fontSize: 12,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
   },
 
   feedSource: {
     fontSize: 13,
     color: "#6D7D99",
-    fontWeight: "700",
+    fontFamily: "PoppinsMedium",
   },
 
   feedMeta: {
     fontSize: 14,
     color: "#6D7D99",
+    fontFamily: "PoppinsRegular",
     marginLeft: 24,
     marginBottom: 4,
     lineHeight: 19,
@@ -914,11 +928,11 @@ const styles = {
 
   feedScore: {
     color: "#294880",
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
   },
 
   feedSentiment: {
     color: "#E45757",
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
   },
 };

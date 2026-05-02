@@ -9,6 +9,7 @@ import {
   Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useFonts } from "expo-font";
 
 import Admin_Layout from "../../components/Admin_compo/Admin_Layout";
 import Admin_ViewValidationReport from "../../components/Admin_compo/Admin_ViewValidationReport";
@@ -18,6 +19,16 @@ export default function Admin_Validation() {
   const [searchText, setSearchText] = useState("");
   const [selectedReport, setSelectedReport] = useState(null);
   const [isViewVisible, setIsViewVisible] = useState(false);
+
+  const [fontsLoaded] = useFonts({
+    PoppinsRegular: require("../../assets/fonts/Poppins-Regular.ttf"),
+    PoppinsMedium: require("../../assets/fonts/Poppins-Medium.ttf"),
+    PoppinsSemiBold: require("../../assets/fonts/Poppins-SemiBold.ttf"),
+  });
+
+  if (!fontsLoaded) {
+    return null;
+  }
 
   const [reports, setReports] = useState([
     {
@@ -76,8 +87,7 @@ export default function Admin_Validation() {
       submittedBy: "Maria Lopez",
       submittedRole: "User",
       status: "Pending",
-      details:
-        "Heavy rain caused roadside flooding near a residential area.",
+      details: "Heavy rain caused roadside flooding near a residential area.",
       photo: "flood_report.jpg",
       aiScore: 88,
       sentiment: "Anxious",
@@ -280,11 +290,7 @@ export default function Admin_Validation() {
         >
           <View style={styles.headerCard}>
             <View>
-              <Text style={styles.pageTitle}>Validation</Text>
-              <Text style={styles.pageSubtitle}>
-                Manage submitted reports, validate user reports, and add
-                admin-created reports.
-              </Text>
+              
             </View>
 
             <TouchableOpacity
@@ -516,13 +522,14 @@ const styles = StyleSheet.create({
   pageTitle: {
     fontSize: 24,
     color: "#294880",
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     marginBottom: 6,
   },
 
   pageSubtitle: {
     fontSize: 14,
     color: "#5D6F92",
+    fontFamily: "PoppinsRegular",
     lineHeight: 21,
   },
 
@@ -540,7 +547,7 @@ const styles = StyleSheet.create({
   addButtonText: {
     color: "#FFFFFF",
     fontSize: 14,
-    fontWeight: "700",
+    fontFamily: "PoppinsMedium",
   },
 
   statsRow: {
@@ -573,12 +580,13 @@ const styles = StyleSheet.create({
 
   statValue: {
     fontSize: 22,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     color: "#2F4267",
   },
 
   statTitle: {
     fontSize: 13,
+    fontFamily: "PoppinsRegular",
     color: "#5D6F92",
     marginTop: 4,
   },
@@ -610,6 +618,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     color: "#294880",
     fontSize: 14,
+    fontFamily: "PoppinsRegular",
     outlineStyle: Platform.OS === "web" ? "none" : undefined,
   },
 
@@ -635,7 +644,7 @@ const styles = StyleSheet.create({
 
   filterPillText: {
     fontSize: 13,
-    fontWeight: "700",
+    fontFamily: "PoppinsMedium",
     color: "#294880",
   },
 
@@ -666,19 +675,20 @@ const styles = StyleSheet.create({
 
   sectionTitle: {
     fontSize: 17,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     color: "#294880",
     marginBottom: 4,
   },
 
   sectionSubtitle: {
     fontSize: 13,
+    fontFamily: "PoppinsRegular",
     color: "#5D6F92",
   },
 
   resultText: {
     fontSize: 13,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     color: "#294880",
   },
 
@@ -730,18 +740,20 @@ const styles = StyleSheet.create({
 
   reportTitle: {
     fontSize: 15,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     color: "#111827",
   },
 
   reportMeta: {
     fontSize: 13,
+    fontFamily: "PoppinsRegular",
     color: "#5D6F92",
     marginBottom: 4,
   },
 
   reportSubMeta: {
     fontSize: 12,
+    fontFamily: "PoppinsRegular",
     color: "#7A8BA8",
   },
 
@@ -753,7 +765,7 @@ const styles = StyleSheet.create({
 
   statusText: {
     fontSize: 11,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
   },
 
   reportRight: {
@@ -764,12 +776,13 @@ const styles = StyleSheet.create({
 
   scoreText: {
     fontSize: 18,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     color: "#294880",
   },
 
   scoreLabel: {
     fontSize: 11,
+    fontFamily: "PoppinsRegular",
     color: "#7A8BA8",
     marginBottom: 4,
   },
@@ -782,7 +795,7 @@ const styles = StyleSheet.create({
 
   emptyTitle: {
     fontSize: 16,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     color: "#2F4267",
     marginTop: 10,
     marginBottom: 4,
@@ -790,6 +803,7 @@ const styles = StyleSheet.create({
 
   emptyText: {
     fontSize: 13,
+    fontFamily: "PoppinsRegular",
     color: "#5D6F92",
   },
 });

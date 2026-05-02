@@ -1,9 +1,20 @@
 import React from "react";
 import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useFonts } from "expo-font";
 import Admin_Layout from "../../components/Admin_compo/Admin_Layout";
 
 export default function Admin_Analytics() {
+  const [fontsLoaded] = useFonts({
+    PoppinsRegular: require("../../assets/fonts/Poppins-Regular.ttf"),
+    PoppinsMedium: require("../../assets/fonts/Poppins-Medium.ttf"),
+    PoppinsSemiBold: require("../../assets/fonts/Poppins-SemiBold.ttf"),
+  });
+
+  if (!fontsLoaded) {
+    return null;
+  }
+
   const summaryCards = [
     {
       title: "Active Incidents",
@@ -50,27 +61,23 @@ export default function Admin_Analytics() {
     { top: "10%", left: "56%", color: "#F56B6B" },
     { top: "18%", left: "66%", color: "#3DBB74" },
     { top: "13%", left: "74%", color: "#F56B6B" },
-
     { top: "24%", left: "20%", color: "#F29A2E" },
     { top: "24%", left: "34%", color: "#4F8EF7" },
     { top: "26%", left: "48%", color: "#F56B6B" },
     { top: "22%", left: "60%", color: "#3DBB74" },
     { top: "28%", left: "70%", color: "#4F8EF7" },
-
     { top: "36%", left: "14%", color: "#F56B6B", label: "H1" },
     { top: "33%", left: "26%", color: "#3DBB74" },
     { top: "38%", left: "38%", color: "#F29A2E" },
     { top: "34%", left: "49%", color: "#F56B6B" },
     { top: "33%", left: "58%", color: "#4F8EF7" },
     { top: "35%", left: "71%", color: "#F56B6B", label: "H2" },
-
     { top: "47%", left: "19%", color: "#F56B6B" },
     { top: "49%", left: "30%", color: "#F29A2E" },
     { top: "46%", left: "42%", color: "#4F8EF7" },
     { top: "48%", left: "54%", color: "#F56B6B", label: "H4" },
     { top: "45%", left: "63%", color: "#3DBB74" },
     { top: "50%", left: "74%", color: "#F56B6B" },
-
     { top: "60%", left: "17%", color: "#F29A2E" },
     { top: "63%", left: "28%", color: "#4F8EF7" },
     { top: "57%", left: "39%", color: "#F56B6B" },
@@ -564,7 +571,7 @@ const styles = {
     fontSize: 14,
     color: "#4B5D7A",
     marginBottom: 6,
-    fontWeight: "500",
+    fontFamily: "PoppinsMedium",
   },
 
   summaryValueRow: {
@@ -576,13 +583,13 @@ const styles = {
 
   summaryValue: {
     fontSize: 21,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     color: "#2E3F63",
   },
 
   summarySubtext: {
     fontSize: 13,
-    fontWeight: "600",
+    fontFamily: "PoppinsSemiBold",
   },
 
   middleRow: {
@@ -623,7 +630,7 @@ const styles = {
 
   cardTitle: {
     fontSize: 16,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     color: "#294880",
   },
 
@@ -775,7 +782,7 @@ const styles = {
     marginLeft: 8,
     fontSize: 13,
     color: "#5D6F92",
-    fontWeight: "500",
+    fontFamily: "PoppinsMedium",
   },
 
   pinWrap: {
@@ -799,7 +806,7 @@ const styles = {
   hotspotBadgeText: {
     color: "#FFFFFF",
     fontSize: 11,
-    fontWeight: "700",
+    fontFamily: "PoppinsMedium",
   },
 
   centerUserWrap: {
@@ -839,7 +846,7 @@ const styles = {
     top: "53%",
     left: "61%",
     fontSize: 18,
-    fontWeight: "700",
+    fontFamily: "PoppinsSemiBold",
     color: "#243E67",
   },
 
@@ -858,7 +865,7 @@ const styles = {
 
   legendTitle: {
     fontSize: 12,
-    fontWeight: "700",
+    fontFamily: "PoppinsSemiBold",
     color: "#35507A",
     marginBottom: 8,
   },
@@ -879,7 +886,7 @@ const styles = {
   legendText: {
     fontSize: 12,
     color: "#4B5D7A",
-    fontWeight: "500",
+    fontFamily: "PoppinsMedium",
   },
 
   mapAvatarBottom: {
@@ -925,7 +932,7 @@ const styles = {
 
   zoomText: {
     fontSize: 18,
-    fontWeight: "700",
+    fontFamily: "PoppinsSemiBold",
     color: "#5D6F92",
     lineHeight: 20,
   },
@@ -956,7 +963,7 @@ const styles = {
 
   sideCardTitle: {
     fontSize: 15,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     color: "#294880",
     paddingHorizontal: 18,
     paddingVertical: 14,
@@ -972,7 +979,7 @@ const styles = {
   chartSubhead: {
     fontSize: 13,
     color: "#4F70A5",
-    fontWeight: "700",
+    fontFamily: "PoppinsSemiBold",
     marginBottom: 10,
   },
 
@@ -1031,7 +1038,7 @@ const styles = {
   axisText: {
     fontSize: 11,
     color: "#6A7C9B",
-    fontWeight: "500",
+    fontFamily: "PoppinsMedium",
   },
 
   chartBands: {
@@ -1150,19 +1157,19 @@ const styles = {
   anxiousLabel: {
     fontSize: 12,
     color: "#F04E45",
-    fontWeight: "600",
+    fontFamily: "PoppinsSemiBold",
   },
 
   neutralLabel: {
     fontSize: 12,
     color: "#C9731D",
-    fontWeight: "600",
+    fontFamily: "PoppinsSemiBold",
   },
 
   calmLabel: {
     fontSize: 12,
     color: "#2F7DE1",
-    fontWeight: "600",
+    fontFamily: "PoppinsSemiBold",
   },
 
   xAxisRow: {
@@ -1178,7 +1185,7 @@ const styles = {
     color: "#5D6F92",
     lineHeight: 18,
     marginBottom: 10,
-    fontWeight: "500",
+    fontFamily: "PoppinsMedium",
   },
 
   scatterChartBox: {
@@ -1268,7 +1275,7 @@ const styles = {
     transform: [{ rotate: "-90deg" }],
     fontSize: 12,
     color: "#5D6F92",
-    fontWeight: "600",
+    fontFamily: "PoppinsSemiBold",
   },
 
   xAxisTitle: {
@@ -1277,7 +1284,7 @@ const styles = {
     left: 70,
     fontSize: 12,
     color: "#5D6F92",
-    fontWeight: "600",
+    fontFamily: "PoppinsSemiBold",
   },
 
   forecastCard: {
@@ -1290,7 +1297,7 @@ const styles = {
 
   forecastTitle: {
     fontSize: 18,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     color: "#294880",
     marginBottom: 4,
   },
@@ -1298,7 +1305,7 @@ const styles = {
   forecastSubtitle: {
     fontSize: 13,
     color: "#4F70A5",
-    fontWeight: "500",
+    fontFamily: "PoppinsMedium",
   },
 
   forecastDivider: {
@@ -1309,7 +1316,7 @@ const styles = {
 
   forecastSectionTitle: {
     fontSize: 14,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     color: "#2F4267",
     marginBottom: 8,
   },
@@ -1318,24 +1325,24 @@ const styles = {
     fontSize: 13,
     color: "#435A84",
     lineHeight: 22,
-    fontWeight: "500",
+    fontFamily: "PoppinsMedium",
   },
 
   forecastBigText: {
     fontSize: 15,
     color: "#2F4267",
-    fontWeight: "700",
+    fontFamily: "PoppinsSemiBold",
   },
 
   highRiskText: {
     color: "#E45757",
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
   },
 
   trendText: {
     fontSize: 14,
     color: "#22A06B",
-    fontWeight: "700",
+    fontFamily: "PoppinsSemiBold",
   },
 
   forecastListRow: {
