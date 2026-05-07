@@ -18,19 +18,9 @@ import ThemedHeader from "../../components/ThemedHeader";
 
 const credibilityLevels = [
   {
-    label: "All good!",
-    color: "#22C55E",
-    bg: "#DCFCE7",
-  },
-  {
-    label: "Limited",
-    color: "#294880",
-    bg: "#E8EEF9",
-  },
-  {
-    label: "Very limited",
-    color: "#F59E0B",
-    bg: "#FEF3C7",
+    label: "Suspended",
+    color: "#6B7280",
+    bg: "#E5E7EB",
   },
   {
     label: "At risk",
@@ -38,13 +28,23 @@ const credibilityLevels = [
     bg: "#FEE2E2",
   },
   {
-    label: "Suspended",
-    color: "#6B7280",
-    bg: "#E5E7EB",
+    label: "Very Limited",
+    color: "#F59E0B",
+    bg: "#FEF3C7",
+  },
+  {
+    label: "Limited",
+    color: "#294880",
+    bg: "#E8EEF9",
+  },
+  {
+    label: "All good",
+    color: "#22C55E",
+    bg: "#DCFCE7",
   },
 ];
 
-const CredibilityScore = ({ statusIndex = 0 }) => {
+const CredibilityScore = ({ statusIndex = 3 }) => {
   const currentStatus = credibilityLevels[statusIndex];
 
   return (
@@ -55,11 +55,12 @@ const CredibilityScore = ({ statusIndex = 0 }) => {
         </View>
 
         <View style={styles.credibilityTextWrap}>
-          <ThemedText style={styles.credibilityTitle}>
+          <ThemedHeader style={styles.cardTitle}>
             Credibility Score
-          </ThemedText>
+          </ThemedHeader>
+
           <ThemedText style={styles.credibilitySubtitle}>
-            Your account standing will show up here.
+            
           </ThemedText>
         </View>
 
@@ -139,7 +140,7 @@ const UserProfileSettings = () => {
     username: "Mika",
     location: "Langtad, Argao, Cebu",
     email: "mika@gmail.com",
-    credibilityStatus: 0,
+    credibilityStatus: 3,
   });
 
   const [tempDetails, setTempDetails] = useState(userDetails);
@@ -214,7 +215,7 @@ const UserProfileSettings = () => {
             <Divboxwhite style={styles.detailsCard}>
               <View style={styles.cardHeader}>
                 <ThemedHeader style={styles.cardTitle}>
-                  Account Settings
+                  Profile Details
                 </ThemedHeader>
 
                 {editMode ? (
@@ -557,17 +558,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  credibilityTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: "#1F2A37",
-    marginBottom: 3,
-  },
-
   credibilitySubtitle: {
     fontSize: 12,
     lineHeight: 17,
     color: "#6B7280",
+    marginTop: 3,
   },
 
   currentBadge: {
@@ -583,7 +578,7 @@ const styles = StyleSheet.create({
 
   timelineWrapper: {
     position: "relative",
-    paddingTop: 2,
+    paddingTop: 5,
   },
 
   timelineLineBg: {
