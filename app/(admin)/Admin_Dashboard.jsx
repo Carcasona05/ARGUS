@@ -102,6 +102,28 @@ export default function Admin_Dashboard() {
       statusColor: "#22A06B",
       statusBg: "#EAF8F1",
     },
+    {
+      title: "Illegal parking near Municipal Hall",
+      location: "Municipal Hall Area, Argao",
+      score: "84%",
+      sentiment: "Concern",
+      status: "Pending",
+      source: "User",
+      time: "10:22",
+      statusColor: "#D97A1E",
+      statusBg: "#FFF4E5",
+    },
+    {
+      title: "Streetlight outage near Tulic",
+      location: "Brgy. Tulic, Argao",
+      score: "79%",
+      sentiment: "Low Risk",
+      status: "Verified",
+      source: "User",
+      time: "09:40",
+      statusColor: "#22A06B",
+      statusBg: "#EAF8F1",
+    },
   ];
 
   const mapPins = [
@@ -363,60 +385,69 @@ export default function Admin_Dashboard() {
                   </TouchableOpacity>
                 </View>
 
-                {incidentFeed.map((item, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={[
-                      styles.feedRow,
-                      index !== 0 && styles.feedRowBorder,
-                    ]}
-                    activeOpacity={0.8}
-                    onPress={() => router.push("/(admin)/Admin_Validation")}
-                  >
-                    <View style={styles.feedTopRow}>
-                      <View style={styles.feedTitleWrap}>
-                        <Ionicons name="warning" size={17} color="#E45757" />
-                        <Text style={styles.feedTitle}>{item.title}</Text>
+                <ScrollView
+                  style={styles.feedScrollArea}
+                  contentContainerStyle={styles.feedScrollContent}
+                  showsVerticalScrollIndicator={false}
+                  nestedScrollEnabled
+                >
+                  {incidentFeed.map((item, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={[
+                        styles.feedRow,
+                        index !== 0 && styles.feedRowBorder,
+                      ]}
+                      activeOpacity={0.8}
+                      onPress={() => router.push("/(admin)/Admin_Validation")}
+                    >
+                      <View style={styles.feedTopRow}>
+                        <View style={styles.feedTitleWrap}>
+                          <Ionicons name="warning" size={17} color="#E45757" />
+                          <Text style={styles.feedTitle}>{item.title}</Text>
+                        </View>
+
+                        <Text style={styles.feedTime}>{item.time}</Text>
                       </View>
 
-                      <Text style={styles.feedTime}>{item.time}</Text>
-                    </View>
+                      <Text style={styles.feedLocation}>{item.location}</Text>
 
-                    <Text style={styles.feedLocation}>{item.location}</Text>
-
-                    <View style={styles.feedStatusRow}>
-                      <View
-                        style={[
-                          styles.feedStatusBadge,
-                          { backgroundColor: item.statusBg },
-                        ]}
-                      >
-                        <Text
+                      <View style={styles.feedStatusRow}>
+                        <View
                           style={[
-                            styles.feedStatusText,
-                            { color: item.statusColor },
+                            styles.feedStatusBadge,
+                            { backgroundColor: item.statusBg },
                           ]}
                         >
-                          {item.status}
+                          <Text
+                            style={[
+                              styles.feedStatusText,
+                              { color: item.statusColor },
+                            ]}
+                          >
+                            {item.status}
+                          </Text>
+                        </View>
+
+                        <Text style={styles.feedSource}>
+                          Source: {item.source}
                         </Text>
                       </View>
 
-                      <Text style={styles.feedSource}>Source: {item.source}</Text>
-                    </View>
-
-                    <Text style={styles.feedMeta}>
-                      AI Credibility Score:{" "}
-                      <Text style={styles.feedScore}>{item.score}</Text>
-                    </Text>
-
-                    <Text style={styles.feedMeta}>
-                      Sentiment:{" "}
-                      <Text style={styles.feedSentiment}>
-                        {item.sentiment}
+                      <Text style={styles.feedMeta}>
+                        AI Credibility Score:{" "}
+                        <Text style={styles.feedScore}>{item.score}</Text>
                       </Text>
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+
+                      <Text style={styles.feedMeta}>
+                        Sentiment:{" "}
+                        <Text style={styles.feedSentiment}>
+                          {item.sentiment}
+                        </Text>
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
               </View>
             </View>
           </View>
@@ -813,6 +844,7 @@ const styles = {
   },
 
   sideCard: {
+    height: 500,
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
     borderColor: "#D9E2F0",
@@ -841,6 +873,14 @@ const styles = {
     fontSize: 14,
     fontFamily: "PoppinsSemiBold",
     color: "#294880",
+  },
+
+  feedScrollArea: {
+    flex: 1,
+  },
+
+  feedScrollContent: {
+    paddingBottom: 4,
   },
 
   feedRow: {

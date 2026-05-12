@@ -11,7 +11,6 @@ import { useRouter, usePathname } from "expo-router";
 import { useFonts } from "expo-font";
 
 const ARGUS_BLUE = "#294880";
-const DARK_BLUE = "#183865";
 
 export default function SAdmin_Layout({ children }) {
   const router = useRouter();
@@ -41,8 +40,8 @@ export default function SAdmin_Layout({ children }) {
     },
     {
       label: "Validation",
-      route: "/(admin)/Admin_Validation",
-      path: "/Admin_Validation",
+      route: "/(sadmin)/SAdmin_Validation",
+      path: "/SAdmin_Validation",
       icon: "shield-checkmark-outline",
       iconType: "Ionicons",
       description: "Review report validation and AI credibility results",
@@ -62,14 +61,6 @@ export default function SAdmin_Layout({ children }) {
       icon: "people-outline",
       iconType: "Ionicons",
       description: "Manage admin accounts, roles, and admin requests",
-    },
-    {
-      label: "Settings",
-      route: "/(sadmin)/SAdmin_Settings",
-      path: "/SAdmin_Settings",
-      icon: "settings-outline",
-      iconType: "Ionicons",
-      description: "Configure AI thresholds, map settings, and system preferences",
     },
   ];
 
@@ -123,6 +114,14 @@ export default function SAdmin_Layout({ children }) {
       return found;
     }
 
+    if (pathname.includes("SAdmin_Settings")) {
+      return {
+        label: "Settings",
+        description:
+          "Configure AI thresholds, map settings, and system preferences",
+      };
+    }
+
     if (pathname.includes("Admin_ViewReport")) {
       return {
         label: "View Report",
@@ -160,7 +159,7 @@ export default function SAdmin_Layout({ children }) {
   const currentPage = getCurrentPage();
 
   const getIcon = (item, isActive) => {
-    const color = isActive ? "#FFFFFF" : "#B9C8E6";
+    const color = isActive ? ARGUS_BLUE : "#5F6F8C";
 
     if (item.iconType === "Feather") {
       return <Feather name={item.icon} size={21} color={color} />;
@@ -220,6 +219,12 @@ export default function SAdmin_Layout({ children }) {
     router.push(item.route);
   };
 
+  const handleSettingsPress = () => {
+    setShowNotifications(false);
+    setShowProfileDropdown(false);
+    router.push("/(sadmin)/SAdmin_Settings");
+  };
+
   const handleLogout = () => {
     setShowNotifications(false);
     setShowProfileDropdown(false);
@@ -270,17 +275,6 @@ export default function SAdmin_Layout({ children }) {
             })}
           </View>
         </View>
-
-        <View style={styles.sidebarFooter}>
-          <View style={styles.footerAvatar}>
-            <Text style={styles.footerAvatarText}>SA</Text>
-          </View>
-
-          <View style={styles.footerInfo}>
-            <Text style={styles.footerName}>SuperAdmin</Text>
-            <Text style={styles.footerRole}>System Owner</Text>
-          </View>
-        </View>
       </View>
 
       <View style={styles.mainContent}>
@@ -298,7 +292,7 @@ export default function SAdmin_Layout({ children }) {
             <View style={styles.notificationWrapper}>
               <TouchableOpacity
                 style={[
-                  styles.notificationButton,
+                  styles.headerIconButton,
                   showNotifications && styles.activeHeaderButton,
                 ]}
                 onPress={() => {
@@ -423,6 +417,18 @@ export default function SAdmin_Layout({ children }) {
               )}
             </View>
 
+            <TouchableOpacity
+              style={[
+                styles.headerIconButton,
+                pathname.includes("SAdmin_Settings") &&
+                  styles.activeHeaderButton,
+              ]}
+              onPress={handleSettingsPress}
+              activeOpacity={0.75}
+            >
+              <Ionicons name="settings-outline" size={23} color={ARGUS_BLUE} />
+            </TouchableOpacity>
+
             <View style={styles.profileWrapper}>
               <TouchableOpacity
                 style={[
@@ -515,18 +521,20 @@ const styles = {
   sidebar: {
     width: 260,
     minHeight: "100vh",
-    backgroundColor: DARK_BLUE,
+    backgroundColor: "#FFFFFF",
     paddingTop: 22,
     paddingBottom: 22,
     paddingHorizontal: 14,
-    shadowColor: "#102A4C",
-    shadowOpacity: 0.18,
-    shadowRadius: 20,
+    borderRightWidth: 1,
+    borderRightColor: "#DCE5F2",
+    shadowColor: "#294880",
+    shadowOpacity: 0.08,
+    shadowRadius: 18,
     shadowOffset: {
-      width: 6,
+      width: 4,
       height: 0,
     },
-    elevation: 8,
+    elevation: 6,
   },
 
   logoSection: {
@@ -543,7 +551,7 @@ const styles = {
 
   sidebarDivider: {
     height: 1,
-    backgroundColor: "rgba(255,255,255,0.14)",
+    backgroundColor: "#E1E8F4",
     marginHorizontal: 8,
     marginBottom: 22,
   },
@@ -554,7 +562,7 @@ const styles = {
 
   navSectionTitle: {
     fontSize: 13,
-    color: "#8FA8CF",
+    color: "#8A98B3",
     marginLeft: 14,
     marginBottom: 12,
     letterSpacing: 1,
@@ -574,7 +582,9 @@ const styles = {
   },
 
   activeNavItem: {
-    backgroundColor: "rgba(255,255,255,0.18)",
+    backgroundColor: "#E8EEF9",
+    borderWidth: 1,
+    borderColor: "#D6E0F0",
   },
 
   navIcon: {
@@ -586,53 +596,12 @@ const styles = {
   navText: {
     fontSize: 17,
     fontFamily: "PoppinsMedium",
-    color: "#B9C8E6",
+    color: "#5F6F8C",
   },
 
   activeNavText: {
-    color: "#FFFFFF",
-    fontFamily: "PoppinsSemiBold",
-  },
-
-  sidebarFooter: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 12,
-    borderRadius: 17,
-    backgroundColor: "rgba(255,255,255,0.10)",
-  },
-
-  footerAvatar: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    backgroundColor: "#FFFFFF",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 10,
-  },
-
-  footerAvatarText: {
     color: ARGUS_BLUE,
-    fontSize: 13,
     fontFamily: "PoppinsSemiBold",
-  },
-
-  footerInfo: {
-    flex: 1,
-  },
-
-  footerName: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontFamily: "PoppinsSemiBold",
-  },
-
-  footerRole: {
-    color: "#B9C8E6",
-    fontSize: 12,
-    fontFamily: "PoppinsRegular",
-    marginTop: 2,
   },
 
   mainContent: {
@@ -694,12 +663,7 @@ const styles = {
     position: "relative",
   },
 
-  notificationWrapper: {
-    position: "relative",
-    zIndex: 50,
-  },
-
-  notificationButton: {
+  headerIconButton: {
     width: 48,
     height: 48,
     borderRadius: 15,
@@ -714,6 +678,11 @@ const styles = {
   activeHeaderButton: {
     backgroundColor: "#E8EEF9",
     borderColor: "#D6E0F0",
+  },
+
+  notificationWrapper: {
+    position: "relative",
+    zIndex: 50,
   },
 
   badge: {
@@ -740,7 +709,7 @@ const styles = {
   notificationDropdown: {
     position: "absolute",
     top: 58,
-    right: -105,
+    right: -60,
     width: 385,
     maxHeight: 500,
     backgroundColor: "#FFFFFF",
@@ -903,7 +872,7 @@ const styles = {
     flexDirection: "row",
     alignItems: "center",
     gap: 9,
-    paddingHorizontal: 9,
+    paddingHorizontal: 10,
     borderRadius: 15,
     backgroundColor: "#FFFFFF",
     borderWidth: 1,

@@ -4,21 +4,21 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  TextInput,
   StyleSheet,
-  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFonts } from "expo-font";
 
 import Admin_Layout from "../../components/Admin_compo/Admin_Layout";
-import Admin_ViewValidationReport from "../../components/Admin_compo/Admin_ViewValidationReport";
+import Admin_ViewSimilarReportsModal from "../../components/Admin_compo/Admin_ViewSimilarReportsModal";
+
+const ARGUS_BLUE = "#294880";
 
 export default function Admin_Validation() {
-  const [selectedFilter, setSelectedFilter] = useState("All");
-  const [searchText, setSearchText] = useState("");
-  const [selectedReport, setSelectedReport] = useState(null);
-  const [isViewVisible, setIsViewVisible] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState("All");
+  const [selectedWeekRange, setSelectedWeekRange] = useState("All Weeks");
+  const [selectedCompiledGroup, setSelectedCompiledGroup] = useState(null);
+  const [viewVisible, setViewVisible] = useState(false);
 
   const [fontsLoaded] = useFonts({
     PoppinsRegular: require("../../assets/fonts/Poppins-Regular.ttf"),
@@ -26,254 +26,550 @@ export default function Admin_Validation() {
     PoppinsSemiBold: require("../../assets/fonts/Poppins-SemiBold.ttf"),
   });
 
+  const [reports, setReports] = useState([
+    {
+      id: "ARG-2031",
+      title: "Road Obstruction in Poblacion",
+      category: "Traffic and Road Incidents",
+      type: "Road Obstruction",
+      location: "Near Poblacion Public Market, Argao",
+      barangay: "Poblacion",
+      details:
+        "A fallen branch and several debris are blocking one lane of the road, causing traffic buildup.",
+      status: "Pending Review",
+      aiScore: 88,
+      severity: "Medium",
+      sentiment: "Negative",
+      credibilityReview:
+        "The report appears credible because the description is specific and includes a clear location and incident type.",
+      submittedBy: "Juan Dela Cruz",
+      submittedRole: "User",
+      submittedAt: "May 12, 2026 • 09:15 AM",
+      verifiedBy: "",
+      remarks: "",
+    },
+    {
+      id: "ARG-2036",
+      title: "Blocked Road Near Public Market",
+      category: "Traffic and Road Incidents",
+      type: "Road Obstruction",
+      location: "Near Poblacion Public Market, Argao",
+      barangay: "Poblacion",
+      details:
+        "The road near the public market is partly blocked by tree branches and trash. Vehicles are moving slowly.",
+      status: "Pending Review",
+      aiScore: 84,
+      severity: "Medium",
+      sentiment: "Negative",
+      credibilityReview:
+        "This report appears similar to other road obstruction posts in Poblacion and includes matching location details.",
+      submittedBy: "Carlo Mendoza",
+      submittedRole: "User",
+      submittedAt: "May 12, 2026 • 09:24 AM",
+      verifiedBy: "",
+      remarks: "",
+    },
+    {
+      id: "ARG-2037",
+      title: "Traffic Buildup Due to Road Debris",
+      category: "Traffic and Road Incidents",
+      type: "Road Obstruction",
+      location: "Near Poblacion Public Market, Argao",
+      barangay: "Poblacion",
+      details:
+        "There is debris blocking the road near the market. It is causing traffic and may lead to accidents.",
+      status: "Under Verification",
+      aiScore: 90,
+      severity: "Medium",
+      sentiment: "Concerned",
+      credibilityReview:
+        "The report is consistent with other submitted reports about the same obstruction in Poblacion.",
+      submittedBy: "Angel Reyes",
+      submittedRole: "User",
+      submittedAt: "May 12, 2026 • 09:37 AM",
+      verifiedBy: "Admin R. Ramos",
+      remarks: "Checking with barangay responders.",
+    },
+    {
+      id: "ARG-2032",
+      title: "Suspicious Person Near School",
+      category: "Suspicious Activities",
+      type: "Suspicious Person",
+      location: "Argao National High School Gate",
+      barangay: "Lamacan",
+      details:
+        "A person was repeatedly seen walking near the school gate and observing students during dismissal time.",
+      status: "Under Verification",
+      aiScore: 76,
+      severity: "High",
+      sentiment: "Concerned",
+      credibilityReview:
+        "The report needs further verification. It contains useful details but requires confirmation from nearby witnesses or barangay officials.",
+      submittedBy: "Maria Santos",
+      submittedRole: "User",
+      submittedAt: "May 12, 2026 • 10:40 AM",
+      verifiedBy: "Admin R. Ramos",
+      remarks: "Currently checking with barangay officials.",
+    },
+    {
+      id: "ARG-2038",
+      title: "Unknown Person Watching Students",
+      category: "Suspicious Activities",
+      type: "Suspicious Person",
+      location: "Argao National High School Gate",
+      barangay: "Lamacan",
+      details:
+        "An unknown person stayed near the school entrance for a long time and seemed to be watching students.",
+      status: "Pending Review",
+      aiScore: 79,
+      severity: "High",
+      sentiment: "Concerned",
+      credibilityReview:
+        "This report is similar to another suspicious person report near the same school gate.",
+      submittedBy: "Liza Fernandez",
+      submittedRole: "User",
+      submittedAt: "May 12, 2026 • 10:52 AM",
+      verifiedBy: "",
+      remarks: "",
+    },
+    {
+      id: "ARG-2033",
+      title: "Streetlight Outage",
+      category: "Community and Environmental Concerns",
+      type: "Streetlight Outage",
+      location: "Sitio Riverside, Talaga",
+      barangay: "Talaga",
+      details:
+        "Several streetlights are not working, making the area dark and unsafe at night.",
+      status: "Resolved",
+      aiScore: 91,
+      severity: "Low",
+      sentiment: "Neutral",
+      credibilityReview:
+        "The report is credible and matches a common community safety concern. Location and issue are clearly stated.",
+      submittedBy: "Admin Cruz",
+      submittedRole: "Admin",
+      submittedAt: "May 11, 2026 • 08:20 PM",
+      verifiedBy: "Admin Cruz",
+      remarks: "Forwarded to maintenance and marked as resolved.",
+    },
+    {
+      id: "ARG-2034",
+      title: "Garbage Pile Near Drainage",
+      category: "Community and Environmental Concerns",
+      type: "Garbage / Sanitation Issues",
+      location: "Near Barangay Hall, Canbanua",
+      barangay: "Canbanua",
+      details:
+        "Garbage is piling up near the drainage area and may cause blockage if it rains.",
+      status: "Pending Review",
+      aiScore: 82,
+      severity: "Medium",
+      sentiment: "Negative",
+      credibilityReview:
+        "The report is likely credible because it gives a specific place and a possible public safety effect.",
+      submittedBy: "Ana Lopez",
+      submittedRole: "User",
+      submittedAt: "May 12, 2026 • 11:05 AM",
+      verifiedBy: "",
+      remarks: "",
+    },
+    {
+      id: "ARG-2039",
+      title: "Trash Blocking Drainage",
+      category: "Community and Environmental Concerns",
+      type: "Garbage / Sanitation Issues",
+      location: "Near Barangay Hall, Canbanua",
+      barangay: "Canbanua",
+      details:
+        "Trash is blocking the drainage near the barangay hall. This may cause flooding when it rains.",
+      status: "Pending Review",
+      aiScore: 86,
+      severity: "Medium",
+      sentiment: "Negative",
+      credibilityReview:
+        "The report matches another sanitation issue in the same barangay and location.",
+      submittedBy: "Nico Flores",
+      submittedRole: "User",
+      submittedAt: "May 12, 2026 • 11:18 AM",
+      verifiedBy: "",
+      remarks: "",
+    },
+    {
+      id: "ARG-2035",
+      title: "False Fire Alarm Report",
+      category: "Community and Environmental Concerns",
+      type: "Fire Incident",
+      location: "Unknown street, Argao",
+      barangay: "Poblacion",
+      details:
+        "A fire was reported, but the information provided was unclear and lacked specific evidence.",
+      status: "Rejected",
+      aiScore: 41,
+      severity: "Low",
+      sentiment: "Unclear",
+      credibilityReview:
+        "The report has low credibility because the details are vague and the exact location is not properly identified.",
+      submittedBy: "Unknown User",
+      submittedRole: "User",
+      submittedAt: "May 10, 2026 • 03:45 PM",
+      verifiedBy: "Admin R. Ramos",
+      remarks: "Rejected due to unclear and unverifiable details.",
+    },
+  ]);
+
   if (!fontsLoaded) {
     return null;
   }
 
-  const [reports, setReports] = useState([
-    {
-      id: "ARG-2031",
-      title: "Road accident near Poblacion",
-      category: "Traffic and Road Incidents",
-      type: "Road Accident",
-      location: "Poblacion, Argao, Cebu",
-      barangay: "Poblacion",
-      submittedBy: "Juan Dela Cruz",
-      submittedRole: "User",
-      status: "Pending",
-      details:
-        "A motorcycle and tricycle collision was reported near the public market road.",
-      photo: "accident_photo.jpg",
-      aiScore: 92,
-      sentiment: "Urgent",
-      credibilityReview: "Highly credible based on location and report details.",
-      severity: "High",
-      submittedAt: "Apr 29, 2026 • 10:30 AM",
-      verifiedBy: null,
-      verifiedAt: null,
-      remarks: "",
-      mapVisible: false,
-    },
-    {
-      id: "ARG-2032",
-      title: "Suspicious activity near Public Market",
-      category: "Suspicious Activities",
-      type: "Suspicious Activity",
-      location: "Argao Public Market Area",
-      barangay: "Poblacion",
-      submittedBy: "Admin R. Ramos",
-      submittedRole: "Admin",
-      status: "Verified",
-      details:
-        "Admin-created report after monitoring suspicious activity around the market area.",
-      photo: "market_report.jpg",
-      aiScore: 95,
-      sentiment: "Concern",
-      credibilityReview: "Admin-created report. Automatically verified.",
-      severity: "Medium",
-      submittedAt: "Apr 29, 2026 • 9:46 AM",
-      verifiedBy: "Admin R. Ramos",
-      verifiedAt: "Apr 29, 2026 • 9:46 AM",
-      remarks: "Admin-created report. Auto verified and mapped.",
-      mapVisible: true,
-    },
-    {
-      id: "ARG-2033",
-      title: "Flood report near San Miguel",
-      category: "Community and Environmental Concerns",
-      type: "Flood",
-      location: "Brgy. San Miguel, Argao",
-      barangay: "San Miguel",
-      submittedBy: "Maria Lopez",
-      submittedRole: "User",
-      status: "Pending",
-      details: "Heavy rain caused roadside flooding near a residential area.",
-      photo: "flood_report.jpg",
-      aiScore: 88,
-      sentiment: "Anxious",
-      credibilityReview: "Likely credible but needs admin review.",
-      severity: "Medium",
-      submittedAt: "Apr 29, 2026 • 8:20 AM",
-      verifiedBy: null,
-      verifiedAt: null,
-      remarks: "",
-      mapVisible: false,
-    },
-    {
-      id: "ARG-2034",
-      title: "False fire alarm report",
-      category: "Public Safety Incidents",
-      type: "Fire",
-      location: "Brgy. Talaga, Argao",
-      barangay: "Talaga",
-      submittedBy: "Unknown User",
-      submittedRole: "User",
-      status: "Rejected",
-      details:
-        "Report was reviewed and marked invalid due to unclear details and duplicate submission.",
-      photo: "fire_report.jpg",
-      aiScore: 41,
-      sentiment: "Unclear",
-      credibilityReview: "Low credibility. Duplicate and incomplete information.",
-      severity: "Low",
-      submittedAt: "Apr 28, 2026 • 5:15 PM",
-      verifiedBy: "Admin R. Ramos",
-      verifiedAt: "Apr 28, 2026 • 5:30 PM",
-      remarks: "Rejected because the report was duplicate and unclear.",
-      mapVisible: false,
-    },
-  ]);
+  const statusFilters = [
+    "All",
+    "Pending Review",
+    "Under Verification",
+    "Resolved",
+    "Rejected",
+    "Archived",
+  ];
 
-  const filters = ["All", "Pending", "Verified", "Rejected", "Admin-Created"];
+  const weeklyRanges = ["All Weeks", "This Week", "Last Week"];
 
-  const filteredReports = useMemo(() => {
-    const query = searchText.trim().toLowerCase();
-
-    return reports.filter((report) => {
-      const matchesFilter =
-        selectedFilter === "All" ||
-        report.status === selectedFilter ||
-        (selectedFilter === "Admin-Created" &&
-          report.submittedRole === "Admin");
-
-      const matchesSearch =
-        !query ||
-        report.id.toLowerCase().includes(query) ||
-        report.title.toLowerCase().includes(query) ||
-        report.category.toLowerCase().includes(query) ||
-        report.type.toLowerCase().includes(query) ||
-        report.location.toLowerCase().includes(query) ||
-        report.status.toLowerCase().includes(query) ||
-        report.submittedRole.toLowerCase().includes(query);
-
-      return matchesFilter && matchesSearch;
-    });
-  }, [reports, selectedFilter, searchText]);
-
-  const totalCount = reports.length;
-  const pendingCount = reports.filter((item) => item.status === "Pending").length;
-  const verifiedCount = reports.filter((item) => item.status === "Verified").length;
-  const rejectedCount = reports.filter((item) => item.status === "Rejected").length;
-
-  const showMessage = (message) => {
-    if (Platform.OS === "web") {
-      window.alert(message);
-      return;
-    }
-
-    alert(message);
-  };
-
-  const openViewModal = (report) => {
-    setSelectedReport(report);
-    setIsViewVisible(true);
-  };
-
-  const closeViewModal = () => {
-    setSelectedReport(null);
-    setIsViewVisible(false);
-  };
-
-  const updateReportStatus = (reportId, status, remarks = "") => {
-    setReports((prev) =>
-      prev.map((report) => {
-        if (report.id !== reportId) return report;
-
-        return {
-          ...report,
-          status,
-          verifiedBy: "Admin R. Ramos",
-          verifiedAt: "Apr 29, 2026 • Current Time",
-          remarks,
-          mapVisible: status === "Verified",
-        };
-      })
-    );
-
-    closeViewModal();
-  };
-
-  const handleVerify = (report) => {
-    updateReportStatus(
-      report.id,
-      "Verified",
-      "Report verified by admin after review."
-    );
-  };
-
-  const handleReject = (report) => {
-    updateReportStatus(
-      report.id,
-      "Rejected",
-      "Report rejected after admin review."
-    );
-  };
-
-  const handleMapAndVerify = (report) => {
-    updateReportStatus(
-      report.id,
-      "Verified",
-      "Report mapped and verified by admin."
-    );
-  };
-
-  const handleAddAdminReport = () => {
-    const newReport = {
-      id: `ARG-${Date.now().toString().slice(-4)}`,
-      title: "Admin-created incident report",
-      category: "Public Safety Incidents",
-      type: "Admin Report",
-      location: "Poblacion, Argao, Cebu",
-      barangay: "Poblacion",
-      submittedBy: "Admin R. Ramos",
-      submittedRole: "Admin",
-      status: "Verified",
-      details:
-        "This is an admin-created report. Since it came from an admin, it is automatically verified and visible on the map.",
-      photo: "admin_report.jpg",
-      aiScore: 100,
-      sentiment: "Official",
-      credibilityReview: "Admin-created report. Automatically verified.",
-      severity: "Medium",
-      submittedAt: "Apr 29, 2026 • Current Time",
-      verifiedBy: "Admin R. Ramos",
-      verifiedAt: "Apr 29, 2026 • Current Time",
-      remarks: "Admin-created report. Auto verified and mapped.",
-      mapVisible: true,
+  const getHighestSeverity = (currentSeverity, newSeverity) => {
+    const level = {
+      Low: 1,
+      Medium: 2,
+      High: 3,
+      Critical: 4,
     };
 
-    setReports((prev) => [newReport, ...prev]);
-    showMessage("Admin report added and automatically verified.");
+    return level[newSeverity] > level[currentSeverity]
+      ? newSeverity
+      : currentSeverity;
   };
 
-  const getStatusStyle = (status) => {
-    if (status === "Verified") {
+  const getGroupMainStatus = (groupReports) => {
+    if (groupReports.some((item) => item.status === "Pending Review")) {
+      return "Pending Review";
+    }
+
+    if (groupReports.some((item) => item.status === "Under Verification")) {
+      return "Under Verification";
+    }
+
+    if (groupReports.every((item) => item.status === "Resolved")) {
+      return "Resolved";
+    }
+
+    if (groupReports.every((item) => item.status === "Rejected")) {
+      return "Rejected";
+    }
+
+    if (groupReports.every((item) => item.status === "Archived")) {
+      return "Archived";
+    }
+
+    return groupReports[0]?.status || "Pending Review";
+  };
+
+  const getGroupedReports = (reportsList) => {
+    const grouped = {};
+
+    reportsList.forEach((report) => {
+      const groupKey = `${report.category}-${report.type}-${report.barangay}`.toLowerCase();
+
+      if (!grouped[groupKey]) {
+        grouped[groupKey] = {
+          id: groupKey,
+          title: `${report.type} in ${report.barangay}`,
+          category: report.category,
+          type: report.type,
+          barangay: report.barangay,
+          location: report.location,
+          status: report.status,
+          aiScore: report.aiScore,
+          severity: report.severity,
+          sentiment: report.sentiment,
+          submittedAt: report.submittedAt,
+          reports: [report],
+        };
+      } else {
+        grouped[groupKey].reports.push(report);
+        grouped[groupKey].aiScore = Math.max(
+          grouped[groupKey].aiScore,
+          report.aiScore
+        );
+        grouped[groupKey].severity = getHighestSeverity(
+          grouped[groupKey].severity,
+          report.severity
+        );
+      }
+    });
+
+    return Object.values(grouped).map((group) => {
+      const statusSummary = group.reports.reduce((summary, report) => {
+        summary[report.status] = (summary[report.status] || 0) + 1;
+        return summary;
+      }, {});
+
+      const userReports = group.reports.filter(
+        (report) => report.submittedRole === "User"
+      );
+
+      const adminReports = group.reports.filter(
+        (report) => report.submittedRole === "Admin"
+      );
+
       return {
-        bg: "#EAF8F1",
+        ...group,
+        status: getGroupMainStatus(group.reports),
+        reportCount: group.reports.length,
+        userCount: userReports.length,
+        adminCount: adminReports.length,
+        highestAiScore: Math.max(
+          ...group.reports.map((report) => report.aiScore)
+        ),
+        statusSummary,
+      };
+    });
+  };
+
+  const groupedReports = useMemo(() => {
+    return getGroupedReports(reports);
+  }, [reports]);
+
+  const parseSubmittedDate = (submittedAt) => {
+    const datePart = submittedAt.split("•")[0]?.trim();
+    return new Date(datePart);
+  };
+
+  const isWithinWeeklyRange = (submittedAt, selectedRange) => {
+    if (selectedRange === "All Weeks") return true;
+
+    const reportDate = parseSubmittedDate(submittedAt);
+
+    if (Number.isNaN(reportDate.getTime())) return true;
+
+    const today = new Date();
+    const currentDay = today.getDay();
+
+    const startOfThisWeek = new Date(today);
+    startOfThisWeek.setDate(today.getDate() - currentDay);
+    startOfThisWeek.setHours(0, 0, 0, 0);
+
+    const endOfThisWeek = new Date(startOfThisWeek);
+    endOfThisWeek.setDate(startOfThisWeek.getDate() + 6);
+    endOfThisWeek.setHours(23, 59, 59, 999);
+
+    const startOfLastWeek = new Date(startOfThisWeek);
+    startOfLastWeek.setDate(startOfThisWeek.getDate() - 7);
+
+    const endOfLastWeek = new Date(startOfThisWeek);
+    endOfLastWeek.setMilliseconds(-1);
+
+    if (selectedRange === "This Week") {
+      return reportDate >= startOfThisWeek && reportDate <= endOfThisWeek;
+    }
+
+    if (selectedRange === "Last Week") {
+      return reportDate >= startOfLastWeek && reportDate <= endOfLastWeek;
+    }
+
+    return true;
+  };
+
+  const filteredReports = useMemo(() => {
+    return groupedReports.filter((group) => {
+      const matchesStatus =
+        selectedStatus === "All" ||
+        group.reports.some((report) => report.status === selectedStatus);
+
+      const matchesWeek =
+        selectedWeekRange === "All Weeks" ||
+        group.reports.some((report) =>
+          isWithinWeeklyRange(report.submittedAt, selectedWeekRange)
+        );
+
+      return matchesStatus && matchesWeek;
+    });
+  }, [groupedReports, selectedStatus, selectedWeekRange]);
+
+  const totalReports = reports.length;
+
+  const compiledIncidents = groupedReports.filter(
+    (group) => group.reportCount > 1
+  ).length;
+
+  const pendingReports = reports.filter(
+    (item) => item.status === "Pending Review"
+  ).length;
+
+  const verifyingReports = reports.filter(
+    (item) => item.status === "Under Verification"
+  ).length;
+
+  const resolvedReports = reports.filter(
+    (item) => item.status === "Resolved"
+  ).length;
+
+  const rejectedReports = reports.filter(
+    (item) => item.status === "Rejected"
+  ).length;
+
+  const getStatusStyle = (status) => {
+    if (status === "Resolved") {
+      return {
+        icon: "checkmark-circle-outline",
         color: "#22A06B",
+        bg: "#EAF8F1",
       };
     }
 
     if (status === "Rejected") {
+      return {
+        icon: "close-circle-outline",
+        color: "#E45757",
+        bg: "#FFF5F5",
+      };
+    }
+
+    if (status === "Under Verification") {
+      return {
+        icon: "sync-outline",
+        color: ARGUS_BLUE,
+        bg: "#EAF2FF",
+      };
+    }
+
+    if (status === "Archived") {
+      return {
+        icon: "archive-outline",
+        color: "#6B7280",
+        bg: "#EEF1F5",
+      };
+    }
+
+    return {
+      icon: "time-outline",
+      color: "#C98A2E",
+      bg: "#FFF4E5",
+    };
+  };
+
+  const getSeverityStyle = (severity) => {
+    if (severity === "High" || severity === "Critical") {
       return {
         bg: "#FFF5F5",
         color: "#E45757",
       };
     }
 
+    if (severity === "Medium") {
+      return {
+        bg: "#FFF4E5",
+        color: "#C98A2E",
+      };
+    }
+
     return {
-      bg: "#FFF4E5",
-      color: "#C98A2E",
+      bg: "#EAF8F1",
+      color: "#22A06B",
     };
+  };
+
+  const openCompiledGroup = (group) => {
+    setSelectedCompiledGroup(group);
+    setViewVisible(true);
+  };
+
+  const closeReport = () => {
+    setViewVisible(false);
+    setSelectedCompiledGroup(null);
+  };
+
+  const updateReportStatus = (target, newStatus, remarks = "") => {
+    if (!target) return;
+
+    const targetIds = target.reports
+      ? target.reports.map((item) => item.id)
+      : [target.id];
+
+    setReports((prevReports) =>
+      prevReports.map((item) => {
+        if (!targetIds.includes(item.id)) return item;
+
+        return {
+          ...item,
+          status: newStatus,
+          verifiedBy:
+            newStatus === "Pending Review" ? item.verifiedBy : "Current Admin",
+          remarks: remarks || item.remarks,
+        };
+      })
+    );
+
+    setSelectedCompiledGroup((prevGroup) => {
+      if (!prevGroup || !prevGroup.reports) return prevGroup;
+
+      const updatedReports = prevGroup.reports.map((item) => {
+        if (!targetIds.includes(item.id)) return item;
+
+        return {
+          ...item,
+          status: newStatus,
+          verifiedBy:
+            newStatus === "Pending Review" ? item.verifiedBy : "Current Admin",
+          remarks: remarks || item.remarks,
+        };
+      });
+
+      const statusSummary = updatedReports.reduce((summary, report) => {
+        summary[report.status] = (summary[report.status] || 0) + 1;
+        return summary;
+      }, {});
+
+      return {
+        ...prevGroup,
+        reports: updatedReports,
+        status: getGroupMainStatus(updatedReports),
+        statusSummary,
+      };
+    });
+  };
+
+  const handleVerify = (target) => {
+    updateReportStatus(
+      target,
+      "Under Verification",
+      "Report is now being verified by the admin."
+    );
+  };
+
+  const handleReject = (target) => {
+    updateReportStatus(
+      target,
+      "Rejected",
+      "Report was rejected after admin review."
+    );
+  };
+
+  const handleMapAndVerify = (target) => {
+    updateReportStatus(
+      target,
+      "Resolved",
+      "Report has been verified, resolved, and prepared for mapping."
+    );
+  };
+
+  const handleAddReport = () => {
+    console.log("Add Report clicked");
   };
 
   const StatCard = ({ icon, title, value, color, bg }) => (
     <View style={styles.statCard}>
       <View style={[styles.statIcon, { backgroundColor: bg }]}>
-        <Ionicons name={icon} size={23} color={color} />
+        <Ionicons name={icon} size={24} color={color} />
       </View>
 
-      <View>
+      <View style={styles.statTextBox}>
         <Text style={styles.statValue}>{value}</Text>
         <Text style={styles.statTitle}>{title}</Text>
       </View>
@@ -288,42 +584,43 @@ export default function Admin_Validation() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.headerCard}>
-            <View>
-              
-            </View>
-
-            <TouchableOpacity
-              style={styles.addButton}
-              onPress={handleAddAdminReport}
-              activeOpacity={0.85}
-            >
-              <Ionicons name="add" size={18} color="#FFFFFF" />
-              <Text style={styles.addButtonText}>Add Admin Report</Text>
-            </TouchableOpacity>
-          </View>
-
           <View style={styles.statsRow}>
             <StatCard
-              icon="document-text-outline"
+              icon="documents-outline"
               title="Total Reports"
-              value={totalCount}
-              color="#294880"
+              value={totalReports}
+              color={ARGUS_BLUE}
               bg="#EAF2FF"
             />
 
             <StatCard
+              icon="copy-outline"
+              title="Similar Groups"
+              value={compiledIncidents}
+              color="#7C3AED"
+              bg="#F3E8FF"
+            />
+
+            <StatCard
               icon="time-outline"
-              title="Pending"
-              value={pendingCount}
+              title="Pending Review"
+              value={pendingReports}
               color="#C98A2E"
               bg="#FFF4E5"
             />
 
             <StatCard
-              icon="shield-checkmark-outline"
-              title="Verified"
-              value={verifiedCount}
+              icon="sync-outline"
+              title="Under Verification"
+              value={verifyingReports}
+              color={ARGUS_BLUE}
+              bg="#EAF2FF"
+            />
+
+            <StatCard
+              icon="checkmark-circle-outline"
+              title="Resolved"
+              value={resolvedReports}
               color="#22A06B"
               bg="#EAF8F1"
             />
@@ -331,63 +628,138 @@ export default function Admin_Validation() {
             <StatCard
               icon="close-circle-outline"
               title="Rejected"
-              value={rejectedCount}
+              value={rejectedReports}
               color="#E45757"
               bg="#FFF5F5"
             />
           </View>
 
           <View style={styles.filterCard}>
-            <View style={styles.searchBox}>
-              <Ionicons name="search-outline" size={18} color="#5D6F92" />
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Search by ID, type, location, status..."
-                placeholderTextColor="#8A98B3"
-                value={searchText}
-                onChangeText={setSearchText}
-              />
+            <View style={styles.filterTopRow}>
+              <View style={styles.filterHeaderTitleBox}>
+                <View style={styles.filterMainIconBox}>
+                  <Ionicons name="options-outline" size={20} color={ARGUS_BLUE} />
+                </View>
+
+                <View>
+                  <Text style={styles.filterMainTitle}>Filter Reports</Text>
+                  <Text style={styles.filterMainSubtitle}>
+                    Filter by status and weekly date range
+                  </Text>
+                </View>
+              </View>
+
+              <TouchableOpacity
+                style={styles.addReportButton}
+                onPress={handleAddReport}
+                activeOpacity={0.85}
+              >
+                <Ionicons name="add-circle-outline" size={18} color="#FFFFFF" />
+                <Text style={styles.addReportButtonText}>Add Report</Text>
+              </TouchableOpacity>
             </View>
 
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.filterRow}
-            >
-              {filters.map((filter) => {
-                const isActive = selectedFilter === filter;
+            <View style={styles.filterBody}>
+              <View style={styles.filterColumn}>
+                <View style={styles.filterHeaderRow}>
+                  <View style={styles.filterTitleBox}>
+                    <Ionicons name="funnel-outline" size={17} color={ARGUS_BLUE} />
+                    <Text style={styles.filterTitle}>Status</Text>
+                  </View>
 
-                return (
-                  <TouchableOpacity
-                    key={filter}
-                    style={[
-                      styles.filterPill,
-                      isActive && styles.activeFilterPill,
-                    ]}
-                    onPress={() => setSelectedFilter(filter)}
-                    activeOpacity={0.8}
-                  >
-                    <Text
-                      style={[
-                        styles.filterPillText,
-                        isActive && styles.activeFilterPillText,
-                      ]}
-                    >
-                      {filter}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
+                  <Text style={styles.filterSelectedText}>{selectedStatus}</Text>
+                </View>
+
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.filterRow}
+                >
+                  {statusFilters.map((status) => {
+                    const isActive = selectedStatus === status;
+
+                    return (
+                      <TouchableOpacity
+                        key={status}
+                        style={[
+                          styles.filterPill,
+                          isActive && styles.activeFilterPill,
+                        ]}
+                        onPress={() => setSelectedStatus(status)}
+                        activeOpacity={0.8}
+                      >
+                        <Text
+                          style={[
+                            styles.filterPillText,
+                            isActive && styles.activeFilterPillText,
+                          ]}
+                        >
+                          {status}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+
+              <View style={styles.filterColumn}>
+                <View style={styles.filterHeaderRow}>
+                  <View style={styles.filterTitleBox}>
+                    <Ionicons
+                      name="calendar-outline"
+                      size={17}
+                      color={ARGUS_BLUE}
+                    />
+                    <Text style={styles.filterTitle}>Date Range</Text>
+                  </View>
+
+                  <Text style={styles.filterSelectedText}>Weekly only</Text>
+                </View>
+
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.filterRow}
+                >
+                  {weeklyRanges.map((range) => {
+                    const isActive = selectedWeekRange === range;
+
+                    return (
+                      <TouchableOpacity
+                        key={range}
+                        style={[
+                          styles.datePill,
+                          isActive && styles.activeDatePill,
+                        ]}
+                        onPress={() => setSelectedWeekRange(range)}
+                        activeOpacity={0.8}
+                      >
+                        <Ionicons
+                          name={isActive ? "calendar" : "calendar-outline"}
+                          size={15}
+                          color={isActive ? "#FFFFFF" : ARGUS_BLUE}
+                        />
+
+                        <Text
+                          style={[
+                            styles.datePillText,
+                            isActive && styles.activeDatePillText,
+                          ]}
+                        >
+                          {range}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+            </View>
           </View>
 
-          <View style={styles.reportListCard}>
+          <View style={styles.reportsCard}>
             <View style={styles.listHeader}>
-              <View>
-                <Text style={styles.sectionTitle}>Report List</Text>
-                <Text style={styles.sectionSubtitle}>
-                  Validation and report management are combined here.
-                </Text>
+              <View style={styles.listHeaderTextBox}>
+                <Text style={styles.sectionTitle}>Reports for Validation</Text>
               </View>
 
               <Text style={styles.resultText}>
@@ -398,90 +770,159 @@ export default function Admin_Validation() {
 
             {filteredReports.length === 0 ? (
               <View style={styles.emptyState}>
-                <Ionicons name="document-outline" size={38} color="#5D6F92" />
+                <Ionicons
+                  name="document-text-outline"
+                  size={42}
+                  color="#5D6F92"
+                />
                 <Text style={styles.emptyTitle}>No reports found</Text>
                 <Text style={styles.emptyText}>
-                  Try changing the search keyword or selected filter.
+                  Try changing the status or weekly date range.
                 </Text>
               </View>
             ) : (
-              filteredReports.map((report, index) => {
-                const statusStyle = getStatusStyle(report.status);
+              filteredReports.map((group, index) => {
+                const statusStyle = getStatusStyle(group.status);
+                const severityStyle = getSeverityStyle(group.severity);
+                const isCompiled = group.reportCount > 1;
 
                 return (
-                  <TouchableOpacity
-                    key={report.id}
+                  <View
+                    key={group.id}
                     style={[
                       styles.reportRow,
                       index !== 0 && styles.reportRowBorder,
                     ]}
-                    onPress={() => openViewModal(report)}
-                    activeOpacity={0.85}
                   >
-                    <View style={styles.reportLeft}>
-                      <View style={styles.reportIconBox}>
-                        <Ionicons
-                          name={
-                            report.submittedRole === "Admin"
-                              ? "person-circle-outline"
-                              : "document-text-outline"
-                          }
-                          size={22}
-                          color="#294880"
-                        />
-                      </View>
+                    <View
+                      style={[
+                        styles.reportIconBox,
+                        {
+                          backgroundColor: isCompiled
+                            ? "#F3E8FF"
+                            : statusStyle.bg,
+                        },
+                      ]}
+                    >
+                      <Ionicons
+                        name={isCompiled ? "copy-outline" : statusStyle.icon}
+                        size={25}
+                        color={isCompiled ? "#7C3AED" : statusStyle.color}
+                      />
+                    </View>
 
-                      <View style={styles.reportInfo}>
-                        <View style={styles.reportTitleRow}>
-                          <Text style={styles.reportTitle}>{report.title}</Text>
+                    <View style={styles.reportContent}>
+                      <View style={styles.reportTopRow}>
+                        <View style={styles.reportTitleBox}>
+                          <Text style={styles.reportTitle}>{group.title}</Text>
 
-                          <View
+                          <Text style={styles.reportMeta}>
+                            {group.reportCount} similar post
+                            {group.reportCount === 1 ? "" : "s"}
+                          </Text>
+                        </View>
+
+                        <View
+                          style={[
+                            styles.statusBadge,
+                            {
+                              backgroundColor: statusStyle.bg,
+                            },
+                          ]}
+                        >
+                          <Text
                             style={[
-                              styles.statusBadge,
-                              { backgroundColor: statusStyle.bg },
+                              styles.statusBadgeText,
+                              {
+                                color: statusStyle.color,
+                              },
                             ]}
                           >
-                            <Text
-                              style={[
-                                styles.statusText,
-                                { color: statusStyle.color },
-                              ]}
-                            >
-                              {report.status}
+                            {group.status}
+                          </Text>
+                        </View>
+                      </View>
+
+                      <View style={styles.infoBoxGrid}>
+                        <View style={styles.infoItem}>
+                          <Text style={styles.infoLabel}>Category</Text>
+                          <Text style={styles.infoValue}>{group.category}</Text>
+                        </View>
+
+                        <View style={styles.infoItem}>
+                          <Text style={styles.infoLabel}>Incident Type</Text>
+                          <Text style={styles.infoValue}>{group.type}</Text>
+                        </View>
+
+                        <View style={styles.infoItem}>
+                          <Text style={styles.infoLabel}>Location</Text>
+                          <View style={styles.infoLocationRow}>
+                            <Ionicons
+                              name="location-outline"
+                              size={15}
+                              color="#5D6F92"
+                            />
+                            <Text style={styles.infoLocationText}>
+                              {group.location}
                             </Text>
                           </View>
                         </View>
 
-                        <Text style={styles.reportMeta}>
-                          {report.id} • {report.type} • {report.location}
-                        </Text>
+                        <View style={styles.infoItem}>
+                          <Text style={styles.infoLabel}>Highest AI Score</Text>
+                          <Text style={styles.infoValue}>
+                            {group.highestAiScore}%
+                          </Text>
+                        </View>
 
-                        <Text style={styles.reportSubMeta}>
-                          Submitted by {report.submittedBy} ({report.submittedRole})
-                        </Text>
+                        <View style={styles.infoItem}>
+                          <Text style={styles.infoLabel}>Severity</Text>
+                          <View
+                            style={[
+                              styles.miniBadge,
+                              { backgroundColor: severityStyle.bg },
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                styles.miniBadgeText,
+                                { color: severityStyle.color },
+                              ]}
+                            >
+                              {group.severity}
+                            </Text>
+                          </View>
+                        </View>
+                      </View>
+
+                      <View style={styles.bottomRow}>
+                        <TouchableOpacity
+                          style={styles.viewButton}
+                          onPress={() => openCompiledGroup(group)}
+                          activeOpacity={0.85}
+                        >
+                          <Ionicons
+                            name="eye-outline"
+                            size={17}
+                            color="#FFFFFF"
+                          />
+                          <Text style={styles.viewButtonText}>
+                            {isCompiled ? "View Similar Posts" : "View Report"}
+                          </Text>
+                        </TouchableOpacity>
                       </View>
                     </View>
-
-                    <View style={styles.reportRight}>
-                      <Text style={styles.scoreText}>{report.aiScore}%</Text>
-                      <Text style={styles.scoreLabel}>AI Score</Text>
-                      <Ionicons
-                        name="chevron-forward-outline"
-                        size={18}
-                        color="#8A98B3"
-                      />
-                    </View>
-                  </TouchableOpacity>
+                  </View>
                 );
               })
             )}
           </View>
         </ScrollView>
 
-        <Admin_ViewValidationReport
-          visible={isViewVisible}
-          report={selectedReport}
-          onClose={closeViewModal}
+        <Admin_ViewSimilarReportsModal
+          visible={viewVisible}
+          compiledGroup={selectedCompiledGroup}
+          onClose={closeReport}
           onVerify={handleVerify}
           onReject={handleReject}
           onMapAndVerify={handleMapAndVerify}
@@ -503,79 +944,40 @@ const styles = StyleSheet.create({
   },
 
   scrollContent: {
-    paddingBottom: 30,
-  },
-
-  headerCard: {
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#D9E2F0",
-    borderRadius: 18,
-    padding: 22,
-    marginBottom: 16,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: 16,
-  },
-
-  pageTitle: {
-    fontSize: 24,
-    color: "#294880",
-    fontFamily: "PoppinsSemiBold",
-    marginBottom: 6,
-  },
-
-  pageSubtitle: {
-    fontSize: 14,
-    color: "#5D6F92",
-    fontFamily: "PoppinsRegular",
-    lineHeight: 21,
-  },
-
-  addButton: {
-    height: 42,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    backgroundColor: "#294880",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-  },
-
-  addButtonText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontFamily: "PoppinsMedium",
+    paddingBottom: 34,
   },
 
   statsRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 14,
-    marginBottom: 16,
+    flexWrap: "nowrap",
+    gap: 10,
+    marginBottom: 18,
   },
 
   statCard: {
     flex: 1,
-    minWidth: 190,
+    minWidth: 0,
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
     borderColor: "#D9E2F0",
     borderRadius: 16,
-    padding: 18,
+    padding: 14,
     flexDirection: "row",
     alignItems: "center",
   },
 
   statIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 14,
+    marginRight: 10,
+  },
+
+  statTextBox: {
+    flex: 1,
+    minWidth: 0,
   },
 
   statValue: {
@@ -585,10 +987,10 @@ const styles = StyleSheet.create({
   },
 
   statTitle: {
-    fontSize: 13,
-    fontFamily: "PoppinsRegular",
+    fontSize: 12,
     color: "#5D6F92",
-    marginTop: 4,
+    marginTop: 3,
+    fontFamily: "PoppinsMedium",
   },
 
   filterCard: {
@@ -596,39 +998,114 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#D9E2F0",
     borderRadius: 16,
-    padding: 16,
+    padding: 18,
+    marginBottom: 18,
+  },
+
+  filterTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 14,
     marginBottom: 16,
   },
 
-  searchBox: {
-    height: 44,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#D9E2F0",
-    backgroundColor: "#F7F9FD",
+  filterHeaderTitleBox: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 12,
-    marginBottom: 14,
+    gap: 10,
+    flex: 1,
   },
 
-  searchInput: {
-    flex: 1,
-    height: "100%",
-    marginLeft: 8,
-    color: "#294880",
-    fontSize: 14,
+  filterMainIconBox: {
+    width: 42,
+    height: 42,
+    borderRadius: 13,
+    backgroundColor: "#EAF2FF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  filterMainTitle: {
+    fontSize: 16,
+    fontFamily: "PoppinsSemiBold",
+    color: ARGUS_BLUE,
+  },
+
+  filterMainSubtitle: {
+    fontSize: 13,
     fontFamily: "PoppinsRegular",
-    outlineStyle: Platform.OS === "web" ? "none" : undefined,
+    color: "#5D6F92",
+    marginTop: 2,
+  },
+
+  addReportButton: {
+    height: 42,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: ARGUS_BLUE,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 7,
+  },
+
+  addReportButtonText: {
+    fontSize: 13,
+    fontFamily: "PoppinsSemiBold",
+    color: "#FFFFFF",
+  },
+
+  filterBody: {
+    flexDirection: "row",
+    gap: 18,
+    flexWrap: "wrap",
+  },
+
+  filterColumn: {
+    flex: 1,
+    minWidth: 320,
+    backgroundColor: "#F7F9FD",
+    borderWidth: 1,
+    borderColor: "#E4EAF3",
+    borderRadius: 14,
+    padding: 14,
+  },
+
+  filterHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+    marginBottom: 10,
+  },
+
+  filterTitleBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+  },
+
+  filterTitle: {
+    fontSize: 14,
+    fontFamily: "PoppinsSemiBold",
+    color: ARGUS_BLUE,
+  },
+
+  filterSelectedText: {
+    fontSize: 12,
+    fontFamily: "PoppinsMedium",
+    color: "#7A8BA8",
   },
 
   filterRow: {
     gap: 10,
+    paddingRight: 4,
   },
 
   filterPill: {
-    height: 36,
-    paddingHorizontal: 14,
+    height: 38,
+    paddingHorizontal: 15,
     borderRadius: 999,
     borderWidth: 1,
     borderColor: "#D9E2F0",
@@ -638,21 +1115,49 @@ const styles = StyleSheet.create({
   },
 
   activeFilterPill: {
-    backgroundColor: "#294880",
-    borderColor: "#294880",
+    backgroundColor: ARGUS_BLUE,
+    borderColor: ARGUS_BLUE,
   },
 
   filterPillText: {
     fontSize: 13,
     fontFamily: "PoppinsMedium",
-    color: "#294880",
+    color: ARGUS_BLUE,
   },
 
   activeFilterPillText: {
     color: "#FFFFFF",
   },
 
-  reportListCard: {
+  datePill: {
+    height: 38,
+    paddingHorizontal: 15,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#D9E2F0",
+    backgroundColor: "#FFFFFF",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 7,
+  },
+
+  activeDatePill: {
+    backgroundColor: ARGUS_BLUE,
+    borderColor: ARGUS_BLUE,
+  },
+
+  datePillText: {
+    fontSize: 13,
+    fontFamily: "PoppinsMedium",
+    color: ARGUS_BLUE,
+  },
+
+  activeDatePillText: {
+    color: "#FFFFFF",
+  },
+
+  reportsCard: {
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
     borderColor: "#D9E2F0",
@@ -661,9 +1166,9 @@ const styles = StyleSheet.create({
   },
 
   listHeader: {
-    minHeight: 76,
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    minHeight: 82,
+    paddingHorizontal: 22,
+    paddingVertical: 18,
     borderBottomWidth: 1,
     borderBottomColor: "#D9E2F0",
     backgroundColor: "#F7F9FD",
@@ -673,33 +1178,28 @@ const styles = StyleSheet.create({
     gap: 16,
   },
 
-  sectionTitle: {
-    fontSize: 17,
-    fontFamily: "PoppinsSemiBold",
-    color: "#294880",
-    marginBottom: 4,
+  listHeaderTextBox: {
+    flex: 1,
   },
 
-  sectionSubtitle: {
-    fontSize: 13,
-    fontFamily: "PoppinsRegular",
-    color: "#5D6F92",
+  sectionTitle: {
+    fontSize: 21,
+    fontFamily: "PoppinsSemiBold",
+    color: ARGUS_BLUE,
   },
 
   resultText: {
-    fontSize: 13,
-    fontFamily: "PoppinsSemiBold",
-    color: "#294880",
+    fontSize: 15,
+    fontFamily: "PoppinsMedium",
+    color: ARGUS_BLUE,
   },
 
   reportRow: {
-    minHeight: 92,
-    paddingHorizontal: 20,
-    paddingVertical: 15,
+    paddingHorizontal: 22,
+    paddingVertical: 20,
     backgroundColor: "#FFFFFF",
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-start",
     gap: 16,
   },
 
@@ -708,102 +1208,157 @@ const styles = StyleSheet.create({
     borderTopColor: "#E4EAF3",
   },
 
-  reportLeft: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    minWidth: 0,
-  },
-
   reportIconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 15,
-    backgroundColor: "#EAF2FF",
+    width: 52,
+    height: 52,
+    borderRadius: 17,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 14,
   },
 
-  reportInfo: {
+  reportContent: {
     flex: 1,
     minWidth: 0,
   },
 
-  reportTitleRow: {
+  reportTopRow: {
     flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    marginBottom: 6,
-    flexWrap: "wrap",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 12,
+    marginBottom: 14,
+  },
+
+  reportTitleBox: {
+    flex: 1,
   },
 
   reportTitle: {
-    fontSize: 15,
-    fontFamily: "PoppinsSemiBold",
+    fontSize: 18,
+    fontFamily: "PoppinsMedium",
     color: "#111827",
-  },
-
-  reportMeta: {
-    fontSize: 13,
-    fontFamily: "PoppinsRegular",
-    color: "#5D6F92",
+    lineHeight: 23,
     marginBottom: 4,
   },
 
-  reportSubMeta: {
-    fontSize: 12,
+  reportMeta: {
+    fontSize: 14,
+    color: "#5D6F92",
+    lineHeight: 20,
     fontFamily: "PoppinsRegular",
-    color: "#7A8BA8",
   },
 
   statusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 999,
+  },
+
+  statusBadgeText: {
+    fontSize: 12,
+    fontFamily: "PoppinsMedium",
+  },
+
+  infoBoxGrid: {
+    flexDirection: "row",
+    alignItems: "stretch",
+    flexWrap: "wrap",
+    gap: 10,
+    marginBottom: 14,
+  },
+
+  infoItem: {
+    flex: 1,
+    minWidth: 180,
+    backgroundColor: "#F7F9FD",
+    borderWidth: 1,
+    borderColor: "#E4EAF3",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+
+  infoLabel: {
+    fontSize: 12,
+    color: "#7A8BA8",
+    fontFamily: "PoppinsMedium",
+    marginBottom: 5,
+  },
+
+  infoValue: {
+    fontSize: 14,
+    color: ARGUS_BLUE,
+    fontFamily: "PoppinsMedium",
+    lineHeight: 19,
+  },
+
+  infoLocationRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 6,
+  },
+
+  infoLocationText: {
+    flex: 1,
+    fontSize: 14,
+    color: ARGUS_BLUE,
+    fontFamily: "PoppinsMedium",
+    lineHeight: 19,
+  },
+
+  miniBadge: {
+    alignSelf: "flex-start",
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 999,
   },
 
-  statusText: {
-    fontSize: 11,
+  miniBadgeText: {
+    fontSize: 12,
+    fontFamily: "PoppinsMedium",
+  },
+
+  bottomRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    flexWrap: "wrap",
+    gap: 12,
+  },
+
+  viewButton: {
+    height: 42,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: ARGUS_BLUE,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+  },
+
+  viewButtonText: {
+    fontSize: 13,
     fontFamily: "PoppinsSemiBold",
-  },
-
-  reportRight: {
-    minWidth: 88,
-    alignItems: "flex-end",
-    justifyContent: "center",
-  },
-
-  scoreText: {
-    fontSize: 18,
-    fontFamily: "PoppinsSemiBold",
-    color: "#294880",
-  },
-
-  scoreLabel: {
-    fontSize: 11,
-    fontFamily: "PoppinsRegular",
-    color: "#7A8BA8",
-    marginBottom: 4,
+    color: "#FFFFFF",
   },
 
   emptyState: {
-    paddingVertical: 42,
+    paddingVertical: 48,
     alignItems: "center",
     justifyContent: "center",
   },
 
   emptyTitle: {
-    fontSize: 16,
-    fontFamily: "PoppinsSemiBold",
+    fontSize: 18,
+    fontFamily: "PoppinsMedium",
     color: "#2F4267",
-    marginTop: 10,
-    marginBottom: 4,
+    marginTop: 12,
+    marginBottom: 6,
   },
 
   emptyText: {
-    fontSize: 13,
-    fontFamily: "PoppinsRegular",
+    fontSize: 15,
     color: "#5D6F92",
+    fontFamily: "PoppinsRegular",
   },
 });
