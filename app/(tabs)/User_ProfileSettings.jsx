@@ -11,10 +11,15 @@ import {
   TouchableWithoutFeedback,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useFonts } from "expo-font";
+import DateTimePicker from "@react-native-community/datetimepicker";
+
 import ThemedView from "../../components/ThemedView";
 import ThemedText from "../../components/ThemedText";
 import Divboxwhite from "../../components/Divboxwhite";
 import ThemedHeader from "../../components/ThemedHeader";
+
+const ARGUS_BLUE = "#294880";
 
 const credibilityLevels = [
   {
@@ -34,7 +39,7 @@ const credibilityLevels = [
   },
   {
     label: "Limited",
-    color: "#294880",
+    color: ARGUS_BLUE,
     bg: "#E8EEF9",
   },
   {
@@ -44,6 +49,16 @@ const credibilityLevels = [
   },
 ];
 
+const formatBirthdate = (date) => {
+  if (!date) return "";
+
+  return date.toLocaleDateString("en-US", {
+    month: "long",
+    day: "2-digit",
+    year: "numeric",
+  });
+};
+
 const CredibilityScore = ({ statusIndex = 3 }) => {
   const currentStatus = credibilityLevels[statusIndex];
 
@@ -51,7 +66,11 @@ const CredibilityScore = ({ statusIndex = 3 }) => {
     <Divboxwhite style={styles.credibilityCard}>
       <View style={styles.credibilityTop}>
         <View style={styles.credibilityIconBox}>
-          <Ionicons name="shield-checkmark-outline" size={22} color="#294880" />
+          <Ionicons
+            name="shield-checkmark-outline"
+            size={22}
+            color={ARGUS_BLUE}
+          />
         </View>
 
         <View style={styles.credibilityTextWrap}>
@@ -60,7 +79,7 @@ const CredibilityScore = ({ statusIndex = 3 }) => {
           </ThemedHeader>
 
           <ThemedText style={styles.credibilitySubtitle}>
-            
+            Your current account credibility level.
           </ThemedText>
         </View>
 
@@ -117,7 +136,7 @@ const CredibilityScore = ({ statusIndex = 3 }) => {
                     styles.timelineLabel,
                     isActive && {
                       color: item.color,
-                      fontWeight: "800",
+                      fontFamily: "PoppinsSemiBold",
                     },
                   ]}
                 >
@@ -133,11 +152,26 @@ const CredibilityScore = ({ statusIndex = 3 }) => {
 };
 
 const UserProfileSettings = () => {
+  const [fontsLoaded] = useFonts({
+    PoppinsRegular: require("../../assets/fonts/Poppins-Regular.ttf"),
+    PoppinsMedium: require("../../assets/fonts/Poppins-Medium.ttf"),
+    PoppinsSemiBold: require("../../assets/fonts/Poppins-SemiBold.ttf"),
+  });
+
   const [editMode, setEditMode] = useState(false);
   const [passwordEditMode, setPasswordEditMode] = useState(false);
+  const [showBirthdatePicker, setShowBirthdatePicker] = useState(false);
+
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [userDetails, setUserDetails] = useState({
+    firstName: "Mika",
+    lastName: "Santos",
     username: "Mika",
+    birthdate: new Date(2002, 4, 15),
+    contactNumber: "09123456789",
     location: "Langtad, Argao, Cebu",
     email: "mika@gmail.com",
     credibilityStatus: 3,
@@ -151,6 +185,10 @@ const UserProfileSettings = () => {
     confirmPassword: "",
   });
 
+  if (!fontsLoaded) {
+    return null;
+  }
+
   const handleEdit = () => {
     setTempDetails(userDetails);
     setEditMode(true);
@@ -159,11 +197,13 @@ const UserProfileSettings = () => {
   const handleSave = () => {
     setUserDetails(tempDetails);
     setEditMode(false);
+    setShowBirthdatePicker(false);
   };
 
   const handleCancel = () => {
     setTempDetails(userDetails);
     setEditMode(false);
+    setShowBirthdatePicker(false);
   };
 
   const handlePasswordSave = () => {
@@ -172,6 +212,10 @@ const UserProfileSettings = () => {
       newPassword: "",
       confirmPassword: "",
     });
+
+    setShowCurrentPassword(false);
+    setShowNewPassword(false);
+    setShowConfirmPassword(false);
     setPasswordEditMode(false);
   };
 
@@ -181,6 +225,10 @@ const UserProfileSettings = () => {
       newPassword: "",
       confirmPassword: "",
     });
+
+    setShowCurrentPassword(false);
+    setShowNewPassword(false);
+    setShowConfirmPassword(false);
     setPasswordEditMode(false);
   };
 
@@ -196,6 +244,51 @@ const UserProfileSettings = () => {
       ...prev,
       [key]: value,
     }));
+  };
+
+  const handleBirthdateChange = (event, selectedDate) => {
+    if (Platform.OS === "android") {
+      setShowBirthdatePicker(false);
+    }
+
+    if (selectedDate) {
+      updateTempDetail("birthdate", selectedDate);
+    }
+  };
+
+  const DetailRow = ({
+    icon,
+    label,
+    value,
+    editValue,
+    placeholder,
+    fieldKey,
+    keyboardType = "default",
+    autoCapitalize = "sentences",
+    isLast = false,
+  }) => {
+    return (
+      <View style={[styles.detailsRow, isLast && styles.noBorder]}>
+        <View style={styles.detailLabelWrap}>
+          <Ionicons name={icon} size={18} color={ARGUS_BLUE} />
+          <ThemedText style={styles.label}>{label}</ThemedText>
+        </View>
+
+        {editMode ? (
+          <TextInput
+            style={styles.input}
+            value={editValue}
+            onChangeText={(text) => updateTempDetail(fieldKey, text)}
+            placeholder={placeholder}
+            placeholderTextColor="#9CA3AF"
+            keyboardType={keyboardType}
+            autoCapitalize={autoCapitalize}
+          />
+        ) : (
+          <ThemedText style={styles.value}>{value}</ThemedText>
+        )}
+      </View>
+    );
   };
 
   return (
@@ -235,78 +328,106 @@ const UserProfileSettings = () => {
                 )}
               </View>
 
-              <View style={styles.detailsRow}>
-                <View style={styles.detailLabelWrap}>
-                  <Ionicons name="person-outline" size={18} color="#294880" />
-                  <ThemedText style={styles.label}>Username</ThemedText>
-                </View>
+              <DetailRow
+                icon="person-outline"
+                label="Firstname"
+                value={userDetails.firstName}
+                editValue={tempDetails.firstName}
+                placeholder="Enter firstname"
+                fieldKey="firstName"
+              />
 
-                {editMode ? (
-                  <TextInput
-                    style={styles.input}
-                    value={tempDetails.username}
-                    onChangeText={(value) =>
-                      updateTempDetail("username", value)
-                    }
-                    placeholder="Enter username"
-                    placeholderTextColor="#9CA3AF"
-                  />
-                ) : (
-                  <ThemedText style={styles.value}>
-                    {userDetails.username}
-                  </ThemedText>
-                )}
-              </View>
+              <DetailRow
+                icon="person-outline"
+                label="Lastname"
+                value={userDetails.lastName}
+                editValue={tempDetails.lastName}
+                placeholder="Enter lastname"
+                fieldKey="lastName"
+              />
+
+              <DetailRow
+                icon="person-circle-outline"
+                label="Username"
+                value={userDetails.username}
+                editValue={tempDetails.username}
+                placeholder="Enter username"
+                fieldKey="username"
+              />
 
               <View style={styles.detailsRow}>
                 <View style={styles.detailLabelWrap}>
                   <Ionicons
-                    name="location-outline"
+                    name="calendar-outline"
                     size={18}
-                    color="#294880"
+                    color={ARGUS_BLUE}
                   />
-                  <ThemedText style={styles.label}>Current Location</ThemedText>
+                  <ThemedText style={styles.label}>Birthdate</ThemedText>
                 </View>
 
                 {editMode ? (
-                  <TextInput
-                    style={styles.input}
-                    value={tempDetails.location}
-                    onChangeText={(value) =>
-                      updateTempDetail("location", value)
-                    }
-                    placeholder="Enter location"
-                    placeholderTextColor="#9CA3AF"
-                  />
+                  <TouchableOpacity
+                    style={styles.dateInput}
+                    activeOpacity={0.85}
+                    onPress={() => setShowBirthdatePicker(true)}
+                  >
+                    <ThemedText style={styles.dateInputText}>
+                      {formatBirthdate(tempDetails.birthdate)}
+                    </ThemedText>
+
+                    <Ionicons
+                      name="chevron-down"
+                      size={16}
+                      color={ARGUS_BLUE}
+                    />
+                  </TouchableOpacity>
                 ) : (
                   <ThemedText style={styles.value}>
-                    {userDetails.location}
+                    {formatBirthdate(userDetails.birthdate)}
                   </ThemedText>
                 )}
               </View>
 
-              <View style={[styles.detailsRow, styles.noBorder]}>
-                <View style={styles.detailLabelWrap}>
-                  <Ionicons name="mail-outline" size={18} color="#294880" />
-                  <ThemedText style={styles.label}>Email</ThemedText>
-                </View>
+              {showBirthdatePicker && editMode ? (
+                <DateTimePicker
+                  value={tempDetails.birthdate || new Date()}
+                  mode="date"
+                  display={Platform.OS === "ios" ? "spinner" : "default"}
+                  maximumDate={new Date()}
+                  onChange={handleBirthdateChange}
+                />
+              ) : null}
 
-                {editMode ? (
-                  <TextInput
-                    style={styles.input}
-                    value={tempDetails.email}
-                    onChangeText={(value) => updateTempDetail("email", value)}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    placeholder="Enter email"
-                    placeholderTextColor="#9CA3AF"
-                  />
-                ) : (
-                  <ThemedText style={styles.value}>
-                    {userDetails.email}
-                  </ThemedText>
-                )}
-              </View>
+              <DetailRow
+                icon="call-outline"
+                label="Contact Number"
+                value={userDetails.contactNumber}
+                editValue={tempDetails.contactNumber}
+                placeholder="Enter contact number"
+                fieldKey="contactNumber"
+                keyboardType="phone-pad"
+              />
+
+              <DetailRow
+                icon="location-outline"
+                label="Current Location"
+                value={userDetails.location}
+                editValue={tempDetails.location}
+                placeholder="Enter location"
+                fieldKey="location"
+              />
+
+              <DetailRow
+                icon="mail-outline"
+                label="Email"
+                value={userDetails.email}
+                editValue={tempDetails.email}
+                placeholder="Enter email"
+                fieldKey="email"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                isLast
+              />
             </Divboxwhite>
 
             <CredibilityScore statusIndex={userDetails.credibilityStatus} />
@@ -340,50 +461,104 @@ const UserProfileSettings = () => {
                     <Ionicons
                       name="lock-closed-outline"
                       size={18}
-                      color="#294880"
+                      color={ARGUS_BLUE}
                     />
+
                     <TextInput
                       style={styles.passwordInput}
                       value={passwordDetails.currentPassword}
                       onChangeText={(value) =>
                         updatePasswordDetail("currentPassword", value)
                       }
-                      secureTextEntry
-                      placeholder="Current password"
+                      secureTextEntry={!showCurrentPassword}
+                      placeholder="Current access code"
                       placeholderTextColor="#9CA3AF"
                     />
+
+                    <TouchableOpacity
+                      activeOpacity={0.8}
+                      onPress={() =>
+                        setShowCurrentPassword()
+                      }
+                    >
+                      <Ionicons
+                        name={
+                          showCurrentPassword
+                            ? "eye-off-outline"
+                            : "eye-outline"
+                        }
+                        size={20}
+                        color="#6B7280"
+                      />
+                    </TouchableOpacity>
                   </View>
 
                   <View style={styles.passwordInputWrap}>
-                    <Ionicons name="key-outline" size={18} color="#294880" />
+                    <Ionicons
+                      name="key-outline"
+                      size={18}
+                      color={ARGUS_BLUE}
+                    />
+
                     <TextInput
                       style={styles.passwordInput}
                       value={passwordDetails.newPassword}
                       onChangeText={(value) =>
                         updatePasswordDetail("newPassword", value)
                       }
-                      secureTextEntry
-                      placeholder="New password"
+                      secureTextEntry={!showNewPassword}
+                      placeholder="New access code"
                       placeholderTextColor="#9CA3AF"
                     />
+
+                    <TouchableOpacity
+                      activeOpacity={0.8}
+                      onPress={() => setShowNewPassword(!showNewPassword)}
+                    >
+                      <Ionicons
+                        name={
+                          showNewPassword ? "eye-off-outline" : "eye-outline"
+                        }
+                        size={20}
+                        color="#6B7280"
+                      />
+                    </TouchableOpacity>
                   </View>
 
                   <View style={styles.passwordInputWrap}>
                     <Ionicons
                       name="checkmark-circle-outline"
                       size={18}
-                      color="#294880"
+                      color={ARGUS_BLUE}
                     />
+
                     <TextInput
                       style={styles.passwordInput}
                       value={passwordDetails.confirmPassword}
                       onChangeText={(value) =>
                         updatePasswordDetail("confirmPassword", value)
                       }
-                      secureTextEntry
-                      placeholder="Confirm new password"
+                      secureTextEntry={!showConfirmPassword}
+                      placeholder="Confirm new access code"
                       placeholderTextColor="#9CA3AF"
                     />
+
+                    <TouchableOpacity
+                      activeOpacity={0.8}
+                      onPress={() =>
+                        setShowConfirmPassword(!showConfirmPassword)
+                      }
+                    >
+                      <Ionicons
+                        name={
+                          showConfirmPassword
+                            ? "eye-off-outline"
+                            : "eye-outline"
+                        }
+                        size={20}
+                        color="#6B7280"
+                      />
+                    </TouchableOpacity>
                   </View>
                 </View>
               ) : (
@@ -392,16 +567,18 @@ const UserProfileSettings = () => {
                     <Ionicons
                       name="shield-checkmark-outline"
                       size={20}
-                      color="#294880"
+                      color={ARGUS_BLUE}
                     />
                   </View>
 
                   <View style={styles.securityTextWrap}>
                     <ThemedText style={styles.securityTitle}>
-                      Password protected
+                      Account protected
                     </ThemedText>
+
                     <ThemedText style={styles.securitySubtitle}>
-                      Change your password anytime to keep your account secure.
+                      Update your sign-in access anytime to keep your account
+                      secure.
                     </ThemedText>
                   </View>
                 </View>
@@ -456,7 +633,8 @@ const styles = StyleSheet.create({
 
   cardTitle: {
     fontSize: 20,
-    color: "#294880",
+    fontFamily: "PoppinsSemiBold",
+    color: ARGUS_BLUE,
   },
 
   editButtons: {
@@ -466,21 +644,21 @@ const styles = StyleSheet.create({
 
   editText: {
     fontSize: 14,
-    fontWeight: "700",
-    color: "#294880",
+    fontFamily: "PoppinsSemiBold",
+    color: ARGUS_BLUE,
   },
 
   cancelText: {
     fontSize: 14,
-    fontWeight: "600",
+    fontFamily: "PoppinsMedium",
     color: "#7A7A7A",
     marginRight: 14,
   },
 
   saveText: {
     fontSize: 14,
-    fontWeight: "700",
-    color: "#294880",
+    fontFamily: "PoppinsSemiBold",
+    color: ARGUS_BLUE,
   },
 
   detailsRow: {
@@ -505,6 +683,7 @@ const styles = StyleSheet.create({
 
   label: {
     fontSize: 14,
+    fontFamily: "PoppinsRegular",
     color: "#6B7280",
     marginLeft: 8,
   },
@@ -512,7 +691,7 @@ const styles = StyleSheet.create({
   value: {
     flex: 1,
     fontSize: 14,
-    fontWeight: "600",
+    fontFamily: "PoppinsMedium",
     color: "#111827",
     textAlign: "right",
   },
@@ -520,12 +699,30 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 14,
-    fontWeight: "600",
+    fontFamily: "PoppinsMedium",
     color: "#111827",
     textAlign: "right",
     borderBottomWidth: 1,
-    borderBottomColor: "#294880",
+    borderBottomColor: ARGUS_BLUE,
     paddingVertical: 4,
+  },
+
+  dateInput: {
+    flex: 1,
+    borderBottomWidth: 1,
+    borderBottomColor: ARGUS_BLUE,
+    paddingVertical: 5,
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    alignItems: "center",
+  },
+
+  dateInputText: {
+    fontSize: 14,
+    fontFamily: "PoppinsMedium",
+    color: "#111827",
+    marginRight: 4,
+    textAlign: "right",
   },
 
   credibilityCard: {
@@ -561,6 +758,7 @@ const styles = StyleSheet.create({
   credibilitySubtitle: {
     fontSize: 12,
     lineHeight: 17,
+    fontFamily: "PoppinsRegular",
     color: "#6B7280",
     marginTop: 3,
   },
@@ -573,7 +771,7 @@ const styles = StyleSheet.create({
 
   currentBadgeText: {
     fontSize: 10,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
   },
 
   timelineWrapper: {
@@ -629,6 +827,7 @@ const styles = StyleSheet.create({
 
   timelineLabel: {
     fontSize: 10,
+    fontFamily: "PoppinsRegular",
     color: "#7A8699",
     textAlign: "center",
     lineHeight: 14,
@@ -649,7 +848,9 @@ const styles = StyleSheet.create({
   passwordInput: {
     flex: 1,
     marginLeft: 10,
+    marginRight: 8,
     fontSize: 14,
+    fontFamily: "PoppinsRegular",
     color: "#111827",
   },
 
@@ -679,7 +880,7 @@ const styles = StyleSheet.create({
 
   securityTitle: {
     fontSize: 14,
-    fontWeight: "700",
+    fontFamily: "PoppinsSemiBold",
     color: "#1F2A37",
     marginBottom: 3,
   },
@@ -687,6 +888,7 @@ const styles = StyleSheet.create({
   securitySubtitle: {
     fontSize: 12,
     lineHeight: 18,
+    fontFamily: "PoppinsRegular",
     color: "#6B7280",
   },
 });

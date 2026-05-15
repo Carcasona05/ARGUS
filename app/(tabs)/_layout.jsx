@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { Tabs, usePathname, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useFonts } from "expo-font";
 import BottomNavBar from "../../components/BottomNavBar";
 
 const ARGUS_BLUE = "#294880";
@@ -18,26 +19,37 @@ export default function TabLayout() {
   const pathname = usePathname();
   const colorScheme = useColorScheme();
 
+  const [fontsLoaded] = useFonts({
+    PoppinsRegular: require("../../assets/fonts/Poppins-Regular.ttf"),
+    PoppinsMedium: require("../../assets/fonts/Poppins-Medium.ttf"),
+    PoppinsSemiBold: require("../../assets/fonts/Poppins-SemiBold.ttf"),
+  });
+
+  if (!fontsLoaded) return null;
+
   const isDark = colorScheme === "dark";
 
   const isChildScreen =
     pathname.includes("User_RepPostView") ||
     pathname.includes("MyUser_RepPostView") ||
-    pathname.includes("User_ProfileSettings");
+    pathname.includes("MyUser_RepPostView_Edit") ||
+    pathname.includes("User_ProfileSettings") ||
+    pathname.includes("User_Notification");
 
   const showBottomNav = !isChildScreen;
 
   const getScreenTitle = () => {
     if (pathname.includes("User_ProfileSettings")) return "Account Settings";
+    if (pathname.includes("MyUser_RepPostView_Edit")) return "Edit Report";
     if (pathname.includes("User_RepPostView")) return "Post Details";
     if (pathname.includes("MyUser_RepPostView")) return "My Report";
+    if (pathname.includes("User_Notification")) return "Notifications";
 
     if (pathname.includes("User_Home")) return "Home";
     if (pathname.includes("User_Map")) return "Map";
     if (pathname.includes("User_MyReports")) return "My Reports";
     if (pathname.includes("User_Settings")) return "Settings";
     if (pathname.includes("User_PostReport")) return "Post Report";
-    if (pathname.includes("User_Notification")) return "Notifications";
 
     return "ARGUS";
   };
@@ -66,17 +78,7 @@ export default function TabLayout() {
             </Text>
           </View>
 
-          <TouchableOpacity
-            style={styles.notificationButton}
-            activeOpacity={0.75}
-            onPress={handleNotification}
-          >
-            <Ionicons
-              name="notifications-outline"
-              size={22}
-              color={ARGUS_BLUE}
-            />
-          </TouchableOpacity>
+          <View style={styles.rightPlaceholder} />
         </View>
       );
     }
@@ -85,12 +87,6 @@ export default function TabLayout() {
       <View style={styles.majorHeader}>
         <View style={styles.majorTitleWrap}>
           <Text style={styles.majorTitle}>{title}</Text>
-
-          <View style={styles.breadcrumbRow}>
-            <Text style={styles.breadcrumbText}>ARGUS</Text>
-            <Ionicons name="chevron-forward" size={13} color="#8A98AD" />
-            <Text style={styles.breadcrumbCurrent}>{title}</Text>
-          </View>
         </View>
 
         <TouchableOpacity
@@ -171,6 +167,13 @@ export default function TabLayout() {
           />
 
           <Tabs.Screen
+            name="MyUser_RepPostView_Edit"
+            options={{
+              title: "Edit Report",
+            }}
+          />
+
+          <Tabs.Screen
             name="User_PostReport"
             options={{
               title: "Post Report",
@@ -222,29 +225,9 @@ const styles = StyleSheet.create({
 
   majorTitle: {
     fontSize: 24,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     color: ARGUS_BLUE,
     letterSpacing: 0.2,
-  },
-
-  breadcrumbRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 4,
-  },
-
-  breadcrumbText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#8A98AD",
-    marginRight: 4,
-  },
-
-  breadcrumbCurrent: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: ARGUS_BLUE,
-    marginLeft: 4,
   },
 
   childHeader: {
@@ -281,9 +264,14 @@ const styles = StyleSheet.create({
 
   childTitle: {
     fontSize: 18,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     color: ARGUS_BLUE,
     textAlign: "center",
+  },
+
+  rightPlaceholder: {
+    width: 42,
+    height: 42,
   },
 
   notificationButton: {

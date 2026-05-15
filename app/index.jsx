@@ -19,7 +19,7 @@ const LoadingScreen = () => {
       <View style={styles.content}>
         <ActivityIndicator size="large" color="#007bff" />
         <ThemedText variant="title" style={styles.title}>
-          Argus
+          CommuniShield
         </ThemedText>
         <ThemedText style={styles.subtitle}>
           Loading your safety companion...

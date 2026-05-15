@@ -9,18 +9,34 @@ import {
   Image,
   SafeAreaView,
   useWindowDimensions,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useFonts } from "expo-font";
+
+const PRIMARY = "#294880";
+
+const FONT = {
+  regular: "Poppins-Regular",
+  medium: "Poppins-Medium",
+  semiBold: "Poppins-SemiBold",
+};
 
 const User_ViewPost = ({ post, onBack }) => {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const isSmallScreen = width < 360;
 
+  const [fontsLoaded] = useFonts({
+    "Poppins-Regular": require("../assets/fonts/Poppins-Regular.ttf"),
+    "Poppins-Medium": require("../assets/fonts/Poppins-Medium.ttf"),
+    "Poppins-SemiBold": require("../assets/fonts/Poppins-SemiBold.ttf"),
+  });
+
   const safePost = post || {
     id: "report_001",
-    userName: "Anonymous User",
+    userName: "ARGUS User",
     userAvatar: null,
     location: "Mabini Street, Manila",
     incidentCategory: "Suspicious Activities",
@@ -37,8 +53,18 @@ const User_ViewPost = ({ post, onBack }) => {
   const [comments, setComments] = useState(safePost.commentList || []);
   const [newComment, setNewComment] = useState("");
 
-  const avatarSize = isSmallScreen ? 46 : 54;
+  const avatarSize = isSmallScreen ? 42 : 46;
   const iconSize = isSmallScreen ? 18 : 20;
+
+  if (!fontsLoaded) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="small" color={PRIMARY} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   const getImageSource = (img) => {
     if (!img) return null;
@@ -63,12 +89,31 @@ const User_ViewPost = ({ post, onBack }) => {
 
     const commentToAdd = {
       id: Date.now().toString(),
-      user: "Anonymous User",
+      user: "ARGUS User",
       text: newComment.trim(),
     };
 
     setComments((prev) => [...prev, commentToAdd]);
     setNewComment("");
+  };
+
+  const renderImages = () => {
+    const images = safePost.images || [];
+    const firstImage = getImageSource(images[0]);
+    const secondImage = getImageSource(images[1]);
+
+    if (!firstImage && !secondImage) return null;
+
+    if (firstImage && !secondImage) {
+      return <Image source={firstImage} style={styles.singleImage} />;
+    }
+
+    return (
+      <View style={styles.imageRow}>
+        {firstImage ? <Image source={firstImage} style={styles.doubleImage} /> : null}
+        {secondImage ? <Image source={secondImage} style={styles.doubleImage} /> : null}
+      </View>
+    );
   };
 
   return (
@@ -80,7 +125,7 @@ const User_ViewPost = ({ post, onBack }) => {
             style={styles.headerIconButton}
             onPress={handleBack}
           >
-            <Ionicons name="arrow-back" size={23} color="#294880" />
+            <Ionicons name="arrow-back" size={23} color={PRIMARY} />
           </TouchableOpacity>
 
           <Text style={styles.topBarTitle}>View Post</Text>
@@ -90,7 +135,7 @@ const User_ViewPost = ({ post, onBack }) => {
             style={styles.headerIconButton}
             onPress={handleNotification}
           >
-            <Ionicons name="notifications-outline" size={22} color="#294880" />
+            <Ionicons name="notifications-outline" size={22} color={PRIMARY} />
           </TouchableOpacity>
         </View>
 
@@ -100,101 +145,91 @@ const User_ViewPost = ({ post, onBack }) => {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.postWrapper}>
-            <View style={styles.content}>
-              <View style={styles.headerRow}>
-                <View style={styles.userSection}>
-                  {safePost.userAvatar ? (
-                    <Image
-                      source={getImageSource(safePost.userAvatar)}
-                      style={[
-                        styles.avatar,
-                        {
-                          width: avatarSize,
-                          height: avatarSize,
-                          borderRadius: avatarSize / 2,
-                        },
-                      ]}
+            <View style={styles.headerRow}>
+              <View style={styles.userSection}>
+                {safePost.userAvatar ? (
+                  <Image
+                    source={getImageSource(safePost.userAvatar)}
+                    style={[
+                      styles.avatar,
+                      {
+                        width: avatarSize,
+                        height: avatarSize,
+                        borderRadius: avatarSize / 2,
+                      },
+                    ]}
+                  />
+                ) : (
+                  <View
+                    style={[
+                      styles.avatarPlaceholder,
+                      {
+                        width: avatarSize,
+                        height: avatarSize,
+                        borderRadius: avatarSize / 2,
+                      },
+                    ]}
+                  >
+                    <Ionicons
+                      name="person-outline"
+                      size={avatarSize * 0.5}
+                      color={PRIMARY}
                     />
-                  ) : (
-                    <View
-                      style={[
-                        styles.avatarPlaceholder,
-                        {
-                          width: avatarSize,
-                          height: avatarSize,
-                          borderRadius: avatarSize / 2,
-                        },
-                      ]}
-                    >
-                      <Ionicons
-                        name="person"
-                        size={avatarSize * 0.5}
-                        color="#294880"
-                      />
-                    </View>
-                  )}
+                  </View>
+                )}
 
-                  <View style={styles.userTextWrap}>
-                    <Text style={styles.userName} numberOfLines={1}>
-                      {safePost.userName || "Anonymous User"}
-                    </Text>
+                <View style={styles.userTextWrap}>
+                  <Text style={styles.userName} numberOfLines={1}>
+                    {safePost.userName || "ARGUS User"}
+                  </Text>
 
+                  <View style={styles.locationRow}>
+                    <Ionicons name="location-outline" size={13} color="#7B8794" />
                     <Text style={styles.locationText} numberOfLines={1}>
                       {safePost.location}
                     </Text>
                   </View>
                 </View>
+              </View>
 
-                <View
-                  style={[
-                    styles.badge,
+              <View style={styles.statusWrap}>
+                <Ionicons
+                  name={
                     safePost.verified
-                      ? styles.verifiedBadge
-                      : styles.unverifiedBadge,
+                      ? "shield-checkmark-outline"
+                      : "time-outline"
+                  }
+                  size={14}
+                  color={safePost.verified ? "#237A4B" : "#9A6A00"}
+                />
+
+                <Text
+                  style={[
+                    styles.statusText,
+                    {
+                      color: safePost.verified ? "#237A4B" : "#9A6A00",
+                    },
                   ]}
                 >
-                  <Ionicons
-                    name={
-                      safePost.verified ? "shield-checkmark" : "alert-circle"
-                    }
-                    size={14}
-                    color={safePost.verified ? "#237A4B" : "#9A6A00"}
-                  />
-
-                  <Text
-                    style={[
-                      styles.badgeText,
-                      {
-                        color: safePost.verified ? "#237A4B" : "#9A6A00",
-                      },
-                    ]}
-                  >
-                    {safePost.verified ? "VERIFIED" : "UNVERIFIED"}
-                  </Text>
-                </View>
+                  {safePost.verified ? "Verified" : "Pending"}
+                </Text>
               </View>
+            </View>
 
-              <View style={styles.bodyCard}>
-                <View style={styles.incidentInfoWrap}>
-                  <View style={styles.incidentInfoItem}>
-                    <Text style={styles.incidentInfoLabel}>
-                      Incident Category
-                    </Text>
-                    <Text style={styles.incidentInfoValue}>
-                      {safePost.incidentCategory}
-                    </Text>
-                  </View>
+            <View style={styles.postContent}>
+              <Text style={styles.categoryText}>
+                {safePost.incidentCategory}
+              </Text>
 
-                  <View style={styles.incidentInfoItem}>
-                    <Text style={styles.incidentInfoLabel}>Incident Type</Text>
-                    <Text style={styles.incidentInfoValue}>
-                      {safePost.incidentType}
-                    </Text>
-                  </View>
-                </View>
+              <Text style={styles.typeText}>
+                {safePost.incidentType}
+              </Text>
 
-                <Text style={styles.detailsText}>{safePost.details}</Text>
-              </View>
+              <Text style={styles.detailsText}>
+                {safePost.details}
+              </Text>
+
+              {renderImages()}
             </View>
 
             <View style={styles.actionBar}>
@@ -202,7 +237,7 @@ const User_ViewPost = ({ post, onBack }) => {
                 <Ionicons
                   name="thumbs-up-outline"
                   size={iconSize}
-                  color="#294880"
+                  color={PRIMARY}
                 />
                 <Text style={styles.actionText}>Like</Text>
                 <Text style={styles.actionCount}>{safePost.likes}</Text>
@@ -212,7 +247,7 @@ const User_ViewPost = ({ post, onBack }) => {
                 <Ionicons
                   name="chatbubble-ellipses-outline"
                   size={iconSize}
-                  color="#294880"
+                  color={PRIMARY}
                 />
                 <Text style={styles.actionText}>Comment</Text>
                 <Text style={styles.actionCount}>{comments.length}</Text>
@@ -228,10 +263,12 @@ const User_ViewPost = ({ post, onBack }) => {
                 <View key={comment.id} style={styles.commentCard}>
                   <View style={styles.commentHeader}>
                     <View style={styles.commentAvatar}>
-                      <Ionicons name="person" size={16} color="#294880" />
+                      <Ionicons name="person-outline" size={16} color={PRIMARY} />
                     </View>
 
-                    <Text style={styles.commentUser}>{comment.user}</Text>
+                    <Text style={styles.commentUser}>
+                      {comment.user || "ARGUS User"}
+                    </Text>
                   </View>
 
                   <Text style={styles.commentText}>{comment.text}</Text>
@@ -284,6 +321,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#F3F6FB",
   },
 
+  loadingContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
   container: {
     flex: 1,
     backgroundColor: "#F3F6FB",
@@ -316,9 +359,9 @@ const styles = StyleSheet.create({
     left: 70,
     right: 70,
     textAlign: "center",
+    fontFamily: FONT.semiBold,
     fontSize: 18,
-    fontWeight: "800",
-    color: "#294880",
+    color: PRIMARY,
   },
 
   scrollContainer: {
@@ -334,29 +377,22 @@ const styles = StyleSheet.create({
   postWrapper: {
     backgroundColor: "#FFFFFF",
     borderRadius: 22,
-    overflow: "hidden",
+    padding: 14,
     marginVertical: 8,
-    shadowColor: "#000000",
+    shadowColor: PRIMARY,
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.12,
+    shadowOpacity: 0.08,
     shadowRadius: 10,
-    elevation: 5,
+    elevation: 4,
     borderWidth: 1,
-    borderColor: "#E6ECF5",
-  },
-
-  content: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 14,
-    backgroundColor: "#FAFCFF",
+    borderColor: "#E4EBF7",
   },
 
   headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 14,
+    alignItems: "center",
+    marginBottom: 12,
   },
 
   userSection: {
@@ -367,98 +403,104 @@ const styles = StyleSheet.create({
   },
 
   avatar: {
-    borderWidth: 1.5,
-    borderColor: "#D7E0F0",
+    backgroundColor: "#E8EEF9",
   },
 
   avatarPlaceholder: {
-    backgroundColor: "#EAF0FA",
+    backgroundColor: "#E8EEF9",
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 1.5,
-    borderColor: "#D7E0F0",
   },
 
   userTextWrap: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: 11,
   },
 
   userName: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: "#294880",
+    fontFamily: FONT.semiBold,
+    fontSize: 15,
+    color: "#1F2A37",
+  },
+
+  locationRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 2,
   },
 
   locationText: {
-    marginTop: 3,
-    fontSize: 13,
-    color: "#6C7A96",
-    fontWeight: "500",
+    flex: 1,
+    fontFamily: FONT.regular,
+    marginLeft: 4,
+    fontSize: 11.5,
+    color: "#7B8794",
   },
 
-  badge: {
+  statusWrap: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 12,
   },
 
-  verifiedBadge: {
-    backgroundColor: "#E8F7EE",
-  },
-
-  unverifiedBadge: {
-    backgroundColor: "#FFF4D6",
-  },
-
-  badgeText: {
-    marginLeft: 5,
+  statusText: {
+    fontFamily: FONT.medium,
+    marginLeft: 4,
     fontSize: 11,
-    fontWeight: "800",
   },
 
-  bodyCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: "#E2E8F2",
-    padding: 14,
+  postContent: {
+    paddingTop: 2,
   },
 
-  incidentInfoWrap: {
-    marginBottom: 12,
-  },
-
-  incidentInfoItem: {
-    marginBottom: 10,
-  },
-
-  incidentInfoLabel: {
+  categoryText: {
+    fontFamily: FONT.regular,
     fontSize: 12,
-    fontWeight: "700",
-    color: "#294880",
-    marginBottom: 4,
+    color: "#7B8794",
+    marginBottom: 2,
   },
 
-  incidentInfoValue: {
-    fontSize: 14,
-    color: "#3E4B61",
-    fontWeight: "500",
+  typeText: {
+    fontFamily: FONT.semiBold,
+    fontSize: 16,
+    color: "#1F2A37",
+    marginBottom: 8,
   },
 
   detailsText: {
-    fontSize: 14,
-    lineHeight: 22,
+    fontFamily: FONT.regular,
+    fontSize: 13,
+    lineHeight: 21,
     color: "#3E4B61",
+    marginBottom: 13,
+  },
+
+  singleImage: {
+    width: "100%",
+    height: 180,
+    borderRadius: 16,
+    resizeMode: "cover",
+    backgroundColor: "#E4EBF7",
+  },
+
+  imageRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+
+  doubleImage: {
+    width: "48.5%",
+    height: 160,
+    borderRadius: 16,
+    resizeMode: "cover",
+    backgroundColor: "#E4EBF7",
   },
 
   actionBar: {
     flexDirection: "row",
     borderTopWidth: 1,
-    borderTopColor: "#E2E8F2",
-    backgroundColor: "#FFFFFF",
+    borderTopColor: "#E4EBF7",
+    marginTop: 13,
+    paddingTop: 4,
   },
 
   actionButton: {
@@ -466,20 +508,20 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: 14,
+    paddingVertical: 11,
   },
 
   actionText: {
+    fontFamily: FONT.medium,
     marginLeft: 6,
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#294880",
+    fontSize: 13,
+    color: PRIMARY,
   },
 
   actionCount: {
+    fontFamily: FONT.regular,
     marginLeft: 6,
-    fontSize: 14,
-    fontWeight: "700",
+    fontSize: 13,
     color: "#6C7A96",
   },
 
@@ -489,9 +531,9 @@ const styles = StyleSheet.create({
   },
 
   commentSectionTitle: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: "#294880",
+    fontFamily: FONT.semiBold,
+    fontSize: 17,
+    color: PRIMARY,
     marginBottom: 12,
     paddingHorizontal: 4,
   },
@@ -501,7 +543,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     padding: 14,
     borderWidth: 1,
-    borderColor: "#E2E8F2",
+    borderColor: "#E4EBF7",
     marginBottom: 10,
   },
 
@@ -515,22 +557,21 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: "#EAF0FA",
+    backgroundColor: "#E8EEF9",
     justifyContent: "center",
     alignItems: "center",
     marginRight: 8,
-    borderWidth: 1,
-    borderColor: "#D7E0F0",
   },
 
   commentUser: {
+    fontFamily: FONT.semiBold,
     fontSize: 13,
-    fontWeight: "800",
-    color: "#294880",
+    color: PRIMARY,
   },
 
   commentText: {
-    fontSize: 14,
+    fontFamily: FONT.regular,
+    fontSize: 13,
     lineHeight: 20,
     color: "#3E4B61",
   },
@@ -540,11 +581,12 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     padding: 22,
     borderWidth: 1,
-    borderColor: "#E2E8F2",
+    borderColor: "#E4EBF7",
     alignItems: "center",
   },
 
   emptyStateText: {
+    fontFamily: FONT.regular,
     marginTop: 10,
     fontSize: 13,
     color: "#7D8CA6",
@@ -573,6 +615,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingHorizontal: 14,
     paddingVertical: 12,
+    fontFamily: FONT.regular,
     fontSize: 14,
     color: "#1F2A37",
     marginRight: 10,
@@ -582,7 +625,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 16,
-    backgroundColor: "#294880",
+    backgroundColor: PRIMARY,
     justifyContent: "center",
     alignItems: "center",
   },

@@ -8,14 +8,28 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useFonts } from "expo-font";
+
 import ThemedView from "../../components/ThemedView";
 import ThemedText from "../../components/ThemedText";
+
+const ARGUS_BLUE = "#294880";
 
 const UserSettings = () => {
   const router = useRouter();
 
+  const [fontsLoaded] = useFonts({
+    PoppinsRegular: require("../../assets/fonts/Poppins-Regular.ttf"),
+    PoppinsMedium: require("../../assets/fonts/Poppins-Medium.ttf"),
+    PoppinsSemiBold: require("../../assets/fonts/Poppins-SemiBold.ttf"),
+  });
+
   const [notifications, setNotifications] = useState(true);
   const [crimeAlerts, setCrimeAlerts] = useState(true);
+
+  if (!fontsLoaded) {
+    return null;
+  }
 
   const handleLogout = () => {
     router.push("../(auth)/User_Login");
@@ -62,7 +76,7 @@ const UserSettings = () => {
       >
         <View style={styles.profileCard}>
           <View style={styles.avatarCircle}>
-            <Ionicons name="person" size={24} color="#294880" />
+            <Ionicons name="person" size={24} color={ARGUS_BLUE} />
           </View>
 
           <View style={styles.profileInfo}>
@@ -79,7 +93,7 @@ const UserSettings = () => {
           <SettingItem
             icon="shield-checkmark-outline"
             iconBg="#EEF3FF"
-            iconColor="#294880"
+            iconColor={ARGUS_BLUE}
             title="Account Settings"
             subtitle="Manage personal information, password, and security"
             onPress={() => router.push("/User_ProfileSettings")}
@@ -102,7 +116,7 @@ const UserSettings = () => {
             rightComponent={
               <Switch
                 trackColor={{ false: "#D1D5DB", true: "#BFD2FF" }}
-                thumbColor={notifications ? "#294880" : "#F9FAFB"}
+                thumbColor={notifications ? ARGUS_BLUE : "#F9FAFB"}
                 onValueChange={setNotifications}
                 value={notifications}
               />
@@ -209,13 +223,14 @@ const styles = StyleSheet.create({
 
   profileName: {
     fontSize: 16,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     color: "#1F2A37",
-    marginBottom: 4,
+    marginBottom: 3,
   },
 
   profileEmail: {
     fontSize: 12,
+    fontFamily: "PoppinsRegular",
     color: "#6B7280",
   },
 
@@ -232,7 +247,7 @@ const styles = StyleSheet.create({
 
   sectionTitle: {
     fontSize: 18,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     color: "#1F2A37",
     marginBottom: 8,
   },
@@ -265,7 +280,7 @@ const styles = StyleSheet.create({
 
   settingTitle: {
     fontSize: 14,
-    fontWeight: "700",
+    fontFamily: "PoppinsMedium",
     color: "#1F2A37",
     marginBottom: 3,
   },
@@ -273,6 +288,7 @@ const styles = StyleSheet.create({
   settingSubtitle: {
     fontSize: 12,
     lineHeight: 18,
+    fontFamily: "PoppinsRegular",
     color: "#6B7280",
   },
 
@@ -305,7 +321,7 @@ const styles = StyleSheet.create({
 
   dangerTitle: {
     fontSize: 17,
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
     color: "#C0392B",
     marginBottom: 4,
   },
@@ -313,6 +329,7 @@ const styles = StyleSheet.create({
   dangerSubtitle: {
     fontSize: 13,
     lineHeight: 19,
+    fontFamily: "PoppinsRegular",
     color: "#5F6B7A",
   },
 
@@ -327,7 +344,7 @@ const styles = StyleSheet.create({
   logoutText: {
     fontSize: 13,
     color: "#FFFFFF",
-    fontWeight: "800",
+    fontFamily: "PoppinsSemiBold",
   },
 });
 

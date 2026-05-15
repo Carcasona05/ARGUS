@@ -1,20 +1,35 @@
 import React, { useMemo, useState } from "react";
-import { View, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+} from "react-native";
 import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import ThemedView from "../../components/ThemedView";
 import ThemedText from "../../components/ThemedText";
 import ReportPost_Layout from "../../components/ReportPost_Layout";
+import ReportByAdmin from "../../components/ReportByAdmin";
 
-const markers = [
-  { id: 1, top: 62, left: 62, color: "#F4A62A" },
-  { id: 2, top: 105, left: 198, color: "#D64545" },
-  { id: 3, top: 152, left: 118, color: "#D64545" },
-  { id: 4, top: 178, left: 248, color: "#F4A62A" },
-];
+const PRIMARY = "#294880";
+
+const FONT = {
+  regular: "Poppins-Regular",
+  medium: "Poppins-Medium",
+  semiBold: "Poppins-SemiBold",
+};
+
+const getDateHoursAgo = (hours) => {
+  const date = new Date();
+  date.setHours(date.getHours() - hours);
+  return date.toISOString();
+};
 
 const initialReports = [
   {
     id: "report_001",
+    postSource: "User",
     userName: "Anonymous User",
     userAvatar: null,
     location: "Mabini Street, Manila",
@@ -22,7 +37,9 @@ const initialReports = [
     incidentType: "Loitering / Suspicious Presence",
     details:
       "A suspicious person was seen loitering near the gate around 9:30 PM.",
+    status: "Resolved",
     verified: true,
+    datePosted: getDateHoursAgo(3),
     likes: 12,
     comments: 2,
     images: [],
@@ -41,6 +58,7 @@ const initialReports = [
   },
   {
     id: "report_002",
+    postSource: "User",
     userName: "Anonymous User",
     userAvatar: null,
     location: "Rizal Avenue, Manila",
@@ -48,7 +66,9 @@ const initialReports = [
     incidentType: "Public Disturbance",
     details:
       "A loud commotion and shouting were reported near the park entrance. Nearby residents were advised to stay alert while the situation was being checked.",
+    status: "Under Verification",
     verified: true,
+    datePosted: getDateHoursAgo(18),
     likes: 41,
     comments: 1,
     images: [],
@@ -62,14 +82,17 @@ const initialReports = [
   },
   {
     id: "report_003",
+    postSource: "User",
     userName: "Anonymous User",
     userAvatar: null,
     location: "Taft Avenue, Manila",
-    incidentCategory: "Infrastructure Issues",
-    incidentType: "Broken Street Light",
+    incidentCategory: "Community and Environmental Concerns",
+    incidentType: "Streetlight Outage",
     details:
       "The street light near the pedestrian lane is not working, causing poor visibility at night.",
+    status: "Pending Review",
     verified: false,
+    datePosted: getDateHoursAgo(48),
     likes: 8,
     comments: 0,
     images: [],
@@ -77,86 +100,228 @@ const initialReports = [
   },
   {
     id: "report_004",
+    postSource: "User",
     userName: "Anonymous User",
     userAvatar: null,
     location: "España Boulevard, Manila",
-    incidentCategory: "Traffic and Road Concerns",
+    incidentCategory: "Traffic and Road Incidents",
     incidentType: "Road Obstruction",
     details:
       "A stalled vehicle has been blocking one lane for over 20 minutes, causing traffic buildup.",
+    status: "Rejected",
     verified: false,
+    datePosted: getDateHoursAgo(72),
     likes: 17,
     comments: 0,
     images: [],
     commentList: [],
   },
+  {
+    id: "admin_001",
+    postSource: "Admin",
+    adminName: "ARGUS Admin",
+    type: "Seminar",
+    location: "Argao Municipal Hall",
+    details:
+      "A community safety awareness seminar will be conducted for residents. Everyone is encouraged to attend and learn basic incident reporting and emergency response reminders.",
+    datePosted: getDateHoursAgo(5),
+    status: "Admin Report",
+    pic: null,
+  },
+  {
+    id: "admin_002",
+    postSource: "Admin",
+    adminName: "ARGUS Admin",
+    type: "Safety/Tips",
+    location: "Poblacion, Argao",
+    details:
+      "Reminder: Avoid walking alone in poorly lit areas at night. Report suspicious activities immediately through the ARGUS app.",
+    datePosted: getDateHoursAgo(22),
+    status: "Admin Report",
+    pic: null,
+  },
+  {
+    id: "admin_003",
+    postSource: "Admin",
+    adminName: "ARGUS Admin",
+    type: "Curfew",
+    location: "Argao, Cebu",
+    details:
+      "Curfew reminder for minors will be observed from 10:00 PM onwards. Parents and guardians are advised to monitor outdoor activities.",
+    datePosted: getDateHoursAgo(120),
+    status: "Admin Report",
+    pic: null,
+  },
 ];
+
+const timeRangeOptions = ["Past 24 Hours", "Past 7 Days"];
+
+const statusOptions = [
+  "All Status",
+  "Pending Review",
+  "Under Verification",
+  "Resolved",
+  "Rejected",
+  "Archived",
+];
+
+const sourceOptions = ["All", "User", "Admin"];
+
+const isWithinPastHours = (dateValue, hours) => {
+  const date = new Date(dateValue);
+  const limit = new Date();
+  limit.setHours(limit.getHours() - hours);
+
+  return date >= limit;
+};
+
+const isWithinPastWeek = (dateValue) => {
+  const date = new Date(dateValue);
+  const limit = new Date();
+  limit.setDate(limit.getDate() - 7);
+
+  return date >= limit;
+};
+
+const formatDatePosted = (dateValue) => {
+  const date = new Date(dateValue);
+
+  return date.toLocaleDateString("en-PH", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+  });
+};
 
 const MapPreview = ({ style }) => {
   return (
     <View style={[styles.mapCard, style]}>
-      <View style={styles.lowZone} />
-      <View style={styles.moderateZone} />
-      <View style={styles.highZone} />
+      <View style={styles.mapGlowOne} />
+      <View style={styles.mapGlowTwo} />
 
       <View style={styles.roadLineOne} />
       <View style={styles.roadLineTwo} />
       <View style={styles.roadLineThree} />
       <View style={styles.roadLineFour} />
 
-      <View style={styles.legendWrap}>
-        <View style={styles.legendChip}>
-          <View style={[styles.legendDot, { backgroundColor: "#76C16E" }]} />
-          <ThemedText style={styles.legendText}>Low</ThemedText>
-        </View>
-
-        <View style={styles.legendChip}>
-          <View style={[styles.legendDot, { backgroundColor: "#F4A62A" }]} />
-          <ThemedText style={styles.legendText}>Moderate</ThemedText>
-        </View>
-
-        <View style={styles.legendChip}>
-          <View style={[styles.legendDot, { backgroundColor: "#D64545" }]} />
-          <ThemedText style={styles.legendText}>High</ThemedText>
-        </View>
-      </View>
-
-      {markers.map((marker) => (
-        <View
-          key={marker.id}
-          style={[
-            styles.mapMarker,
-            {
-              top: marker.top,
-              left: marker.left,
-              backgroundColor: marker.color,
-            },
-          ]}
-        >
-          <ThemedText style={styles.markerText}>!</ThemedText>
-        </View>
-      ))}
+      <View style={styles.pinPulse} />
 
       <View style={styles.userPin}>
-        <View style={styles.userPinDot} />
+        <Ionicons name="location" size={18} color="#FFFFFF" />
       </View>
 
       <View style={styles.userLabel}>
-        <ThemedText style={styles.userLabelText}>You</ThemedText>
+        <ThemedText style={styles.userLabelText}>You are here</ThemedText>
       </View>
 
-      <View style={styles.mapInfoCard}>
-        <View style={styles.mapInfoTop}>
-          <View style={styles.mapInfoTitleRow}>
-            <View style={styles.mapAlertDot} />
-            <ThemedText style={styles.mapInfoTitle}>Area Status</ThemedText>
+      <View style={styles.mapReminderCard}>
+        <View style={styles.reminderIcon}>
+          <Ionicons name="shield-checkmark-outline" size={17} color={PRIMARY} />
+        </View>
+
+        <View style={styles.reminderTextWrap}>
+          <ThemedText style={styles.reminderTitle}>Area Reminder</ThemedText>
+          <ThemedText style={styles.reminderText}>
+            Stay aware of nearby reports and admin safety updates before going
+            around the area.
+          </ThemedText>
+        </View>
+      </View>
+    </View>
+  );
+};
+
+const DropdownFilter = ({
+  label,
+  value,
+  options,
+  isOpen,
+  onToggle,
+  onSelect,
+  icon,
+}) => {
+  return (
+    <View style={styles.dropdownBlock}>
+      <TouchableOpacity
+        activeOpacity={0.85}
+        style={[styles.dropdownButton, isOpen && styles.activeDropdownButton]}
+        onPress={onToggle}
+      >
+        <View style={styles.dropdownLeft}>
+          <View
+            style={[
+              styles.dropdownIconWrap,
+              isOpen && styles.activeDropdownIconWrap,
+            ]}
+          >
+            <Ionicons
+              name={icon}
+              size={15}
+              color={isOpen ? "#FFFFFF" : PRIMARY}
+            />
+          </View>
+
+          <View style={styles.dropdownTextWrap}>
+            <ThemedText
+              style={[
+                styles.dropdownLabel,
+                isOpen && styles.activeDropdownLabel,
+              ]}
+            >
+              {label}
+            </ThemedText>
+
+            <ThemedText
+              style={[
+                styles.dropdownValue,
+                isOpen && styles.activeDropdownValue,
+              ]}
+              numberOfLines={1}
+            >
+              {value}
+            </ThemedText>
           </View>
         </View>
 
-        <ThemedText style={styles.mapInfoSubtitle}>
-          3 high-risk spots detected near your location.
-        </ThemedText>
-      </View>
+        <Ionicons
+          name={isOpen ? "chevron-up" : "chevron-down"}
+          size={16}
+          color={isOpen ? "#FFFFFF" : PRIMARY}
+        />
+      </TouchableOpacity>
+
+      {isOpen ? (
+        <View style={styles.dropdownMenu}>
+          {options.map((option) => {
+            const isActive = option === value;
+
+            return (
+              <TouchableOpacity
+                key={option}
+                activeOpacity={0.85}
+                style={[
+                  styles.dropdownOption,
+                  isActive && styles.activeDropdownOption,
+                ]}
+                onPress={() => onSelect(option)}
+              >
+                <ThemedText
+                  style={[
+                    styles.dropdownOptionText,
+                    isActive && styles.activeDropdownOptionText,
+                  ]}
+                >
+                  {option}
+                </ThemedText>
+
+                {isActive ? (
+                  <Ionicons name="checkmark-circle" size={16} color={PRIMARY} />
+                ) : null}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      ) : null}
     </View>
   );
 };
@@ -164,29 +329,54 @@ const MapPreview = ({ style }) => {
 const User_Home = () => {
   const router = useRouter();
 
-  const [selectedFilter, setSelectedFilter] = useState("All");
+  const [selectedTimeRange, setSelectedTimeRange] = useState("Past 24 Hours");
+  const [selectedStatus, setSelectedStatus] = useState("All Status");
+  const [selectedSource, setSelectedSource] = useState("All");
+  const [openDropdown, setOpenDropdown] = useState(null);
   const [reports, setReports] = useState(initialReports);
 
   const filteredReports = useMemo(() => {
-    if (selectedFilter === "Verified") {
-      return reports.filter((report) => report.verified);
-    }
+    return reports.filter((report) => {
+      const matchesTimeRange =
+        selectedTimeRange === "Past 24 Hours"
+          ? isWithinPastHours(report.datePosted, 24)
+          : isWithinPastWeek(report.datePosted);
 
-    if (selectedFilter === "Unverified") {
-      return reports.filter((report) => !report.verified);
-    }
+      const matchesSource =
+        selectedSource === "All" || report.postSource === selectedSource;
 
-    return reports;
-  }, [selectedFilter, reports]);
+      const matchesStatus =
+        selectedStatus === "All Status" ||
+        (report.postSource === "User" && report.status === selectedStatus);
 
-  const totalIncidents = reports.length;
-  const totalVerified = reports.filter((report) => report.verified).length;
-  const totalUnverified = reports.filter((report) => !report.verified).length;
+      return matchesTimeRange && matchesSource && matchesStatus;
+    });
+  }, [reports, selectedTimeRange, selectedStatus, selectedSource]);
+
+  const totalUserReports = reports.filter(
+    (report) =>
+      report.postSource === "User" && isWithinPastWeek(report.datePosted)
+  ).length;
+
+  const totalAdminReports = reports.filter(
+    (report) =>
+      report.postSource === "Admin" && isWithinPastWeek(report.datePosted)
+  ).length;
+
+  const totalPast24Hours = reports.filter((report) =>
+    isWithinPastHours(report.datePosted, 24)
+  ).length;
+
+  const handleDropdownToggle = (dropdownName) => {
+    setOpenDropdown((current) =>
+      current === dropdownName ? null : dropdownName
+    );
+  };
 
   const handleLike = (reportId) => {
     setReports((prevReports) =>
       prevReports.map((report) =>
-        report.id === reportId
+        report.id === reportId && report.postSource === "User"
           ? { ...report, likes: report.likes + 1 }
           : report
       )
@@ -209,116 +399,169 @@ const User_Home = () => {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.heroSection}>
-          <MapPreview style={styles.mapSpacing} />
-
-          <View style={styles.statsRow}>
-            <View style={styles.statCard}>
-              <ThemedText style={styles.statNumber}>
-                {totalIncidents}
-              </ThemedText>
-              <ThemedText style={styles.statLabel}>Total Incidents</ThemedText>
-            </View>
-
-            <View style={styles.statCard}>
-              <ThemedText style={styles.statNumber}>{totalVerified}</ThemedText>
-              <ThemedText style={styles.statLabel}>Verified</ThemedText>
-            </View>
-
-            <View style={styles.statCard}>
-              <ThemedText style={styles.statNumber}>
-                {totalUnverified}
-              </ThemedText>
-              <ThemedText style={styles.statLabel}>Unverified</ThemedText>
-            </View>
+        <View style={styles.topHeader}>
+          <View>
+            <ThemedText style={styles.headerTitle}>Community Feed</ThemedText>
+            <ThemedText style={styles.headerSubtitle}>
+              Recent safety reports and official admin updates.
+            </ThemedText>
           </View>
         </View>
 
-        <View style={styles.sectionBlock}>
-          <View style={styles.sectionHeaderRow}>
-            <ThemedText style={styles.sectionTitle}>Latest Reports</ThemedText>
+        <MapPreview style={styles.mapSpacing} />
+
+        <View style={styles.summaryRow}>
+          <View style={styles.summaryCard}>
+            <View style={styles.summaryIcon}>
+              <Ionicons name="document-text-outline" size={17} color={PRIMARY} />
+            </View>
+            <ThemedText style={styles.summaryNumber}>
+              {totalUserReports}
+            </ThemedText>
+            <ThemedText style={styles.summaryLabel}>User Reports</ThemedText>
           </View>
 
-          <View style={styles.filterRow}>
-            <TouchableOpacity
-              activeOpacity={0.85}
-              style={[
-                styles.filterChip,
-                selectedFilter === "All" && styles.activeFilterChip,
-              ]}
-              onPress={() => setSelectedFilter("All")}
-            >
-              <ThemedText
-                style={[
-                  styles.filterChipText,
-                  selectedFilter === "All" && styles.activeFilterChipText,
-                ]}
-              >
-                All
-              </ThemedText>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              activeOpacity={0.85}
-              style={[
-                styles.filterChip,
-                selectedFilter === "Verified" && styles.activeFilterChip,
-              ]}
-              onPress={() => setSelectedFilter("Verified")}
-            >
-              <ThemedText
-                style={[
-                  styles.filterChipText,
-                  selectedFilter === "Verified" && styles.activeFilterChipText,
-                ]}
-              >
-                Verified
-              </ThemedText>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              activeOpacity={0.85}
-              style={[
-                styles.filterChip,
-                selectedFilter === "Unverified" && styles.activeFilterChip,
-              ]}
-              onPress={() => setSelectedFilter("Unverified")}
-            >
-              <ThemedText
-                style={[
-                  styles.filterChipText,
-                  selectedFilter === "Unverified" &&
-                    styles.activeFilterChipText,
-                ]}
-              >
-                Unverified
-              </ThemedText>
-            </TouchableOpacity>
+          <View style={styles.summaryCard}>
+            <View style={styles.summaryIcon}>
+              <Ionicons name="megaphone-outline" size={17} color={PRIMARY} />
+            </View>
+            <ThemedText style={styles.summaryNumber}>
+              {totalAdminReports}
+            </ThemedText>
+            <ThemedText style={styles.summaryLabel}>Admin Posts</ThemedText>
           </View>
 
-          {filteredReports.map((report, index) => (
-            <ReportPost_Layout
-              key={report.id}
-              userName={report.userName}
-              userAvatar={report.userAvatar}
-              location={report.location}
-              incidentCategory={report.incidentCategory}
-              incidentType={report.incidentType}
-              details={report.details}
-              verified={report.verified}
-              likes={report.likes}
-              comments={report.comments}
-              images={report.images}
-              onLike={() => handleLike(report.id)}
-              onComment={() => handleOpenPost(report)}
-              onAddMedia={() => console.log(`Add media ${report.id}`)}
-              style={
-                index !== filteredReports.length - 1
-                  ? styles.reportCardSpacing
-                  : null
+          <View style={styles.summaryCard}>
+            <View style={styles.summaryIcon}>
+              <Ionicons name="time-outline" size={17} color={PRIMARY} />
+            </View>
+            <ThemedText style={styles.summaryNumber}>
+              {totalPast24Hours}
+            </ThemedText>
+            <ThemedText style={styles.summaryLabel}>Past 24H</ThemedText>
+          </View>
+        </View>
+
+        <View style={styles.feedHeader}>
+          <View>
+            <ThemedText style={styles.feedTitle}>Latest Updates</ThemedText>
+            <ThemedText style={styles.feedSubtitle}>
+              Showing posts within the selected time range.
+            </ThemedText>
+          </View>
+
+          <View style={styles.resultPill}>
+            <ThemedText style={styles.resultPillText}>
+              {filteredReports.length} result
+              {filteredReports.length === 1 ? "" : "s"}
+            </ThemedText>
+          </View>
+        </View>
+
+        <View style={styles.filterCard}>
+          <DropdownFilter
+            label="Time Range"
+            value={selectedTimeRange}
+            options={timeRangeOptions}
+            icon="calendar-outline"
+            isOpen={openDropdown === "timeRange"}
+            onToggle={() => handleDropdownToggle("timeRange")}
+            onSelect={(option) => {
+              setSelectedTimeRange(option);
+              setOpenDropdown(null);
+            }}
+          />
+
+          <DropdownFilter
+            label="Status"
+            value={selectedStatus}
+            options={statusOptions}
+            icon="filter-outline"
+            isOpen={openDropdown === "status"}
+            onToggle={() => handleDropdownToggle("status")}
+            onSelect={(option) => {
+              setSelectedStatus(option);
+              setOpenDropdown(null);
+            }}
+          />
+
+          <DropdownFilter
+            label="By"
+            value={selectedSource}
+            options={sourceOptions}
+            icon="people-outline"
+            isOpen={openDropdown === "source"}
+            onToggle={() => handleDropdownToggle("source")}
+            onSelect={(option) => {
+              setSelectedSource(option);
+              setOpenDropdown(null);
+
+              if (option === "Admin") {
+                setSelectedStatus("All Status");
               }
-            />
-          ))}
+            }}
+          />
+        </View>
+
+        <View style={styles.feedList}>
+          {filteredReports.map((report, index) => {
+            const cardSpacing =
+              index !== filteredReports.length - 1
+                ? styles.reportCardSpacing
+                : null;
+
+            if (report.postSource === "Admin") {
+              return (
+                <ReportByAdmin
+                  key={report.id}
+                  report={report}
+                  type={report.type}
+                  location={report.location}
+                  details={report.details}
+                  datePosted={report.datePosted}
+                  postedDate={report.datePosted}
+                  pic={report.pic}
+                  image={report.pic}
+                  adminName={report.adminName}
+                  style={cardSpacing}
+                />
+              );
+            }
+
+            return (
+              <ReportPost_Layout
+                key={report.id}
+                userName={report.userName}
+                userAvatar={report.userAvatar}
+                location={report.location}
+                incidentCategory={report.incidentCategory}
+                incidentType={report.incidentType}
+                details={report.details}
+                verified={report.verified}
+                likes={report.likes}
+                comments={report.comments}
+                images={report.images}
+                onLike={() => handleLike(report.id)}
+                onComment={() => handleOpenPost(report)}
+                onAddMedia={() => console.log(`Add media ${report.id}`)}
+                style={cardSpacing}
+              />
+            );
+          })}
+
+          {filteredReports.length === 0 ? (
+            <View style={styles.emptyCard}>
+              <View style={styles.emptyIcon}>
+                <Ionicons name="search-outline" size={24} color="#9CA3AF" />
+              </View>
+
+              <ThemedText style={styles.emptyTitle}>No reports found</ThemedText>
+
+              <ThemedText style={styles.emptyText}>
+                Try changing the time range, status, or source filter.
+              </ThemedText>
+            </View>
+          ) : null}
         </View>
       </ScrollView>
     </ThemedView>
@@ -337,12 +580,26 @@ const styles = StyleSheet.create({
 
   scrollContent: {
     paddingHorizontal: 14,
-    paddingTop: 14,
+    paddingTop: 16,
     paddingBottom: 110,
   },
 
-  heroSection: {
+  topHeader: {
     marginBottom: 14,
+  },
+
+  headerTitle: {
+    fontFamily: FONT.semiBold,
+    fontSize: 24,
+    color: "#1F2A37",
+  },
+
+  headerSubtitle: {
+    fontFamily: FONT.regular,
+    marginTop: 4,
+    fontSize: 13,
+    color: "#6B7280",
+    lineHeight: 19,
   },
 
   mapSpacing: {
@@ -350,284 +607,394 @@ const styles = StyleSheet.create({
   },
 
   mapCard: {
-    height: 250,
-    borderRadius: 24,
-    backgroundColor: "#EEF2F7",
+    height: 260,
+    borderRadius: 28,
+    backgroundColor: "#EAF0F8",
     overflow: "hidden",
     position: "relative",
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: "#DDE7F5",
   },
 
-  lowZone: {
+  mapGlowOne: {
     position: "absolute",
-    width: 110,
-    height: 180,
-    borderRadius: 26,
-    opacity: 0.28,
-    backgroundColor: "#76C16E",
-    top: 44,
-    left: 18,
-    transform: [{ rotate: "-24deg" }],
-  },
-
-  moderateZone: {
-    position: "absolute",
-    width: 110,
+    width: 170,
     height: 170,
-    borderRadius: 26,
-    opacity: 0.28,
-    backgroundColor: "#F4A62A",
-    top: 66,
-    left: 104,
-    transform: [{ rotate: "-23deg" }],
+    borderRadius: 85,
+    backgroundColor: "rgba(255,255,255,0.35)",
+    top: -50,
+    right: -40,
   },
 
-  highZone: {
+  mapGlowTwo: {
     position: "absolute",
-    width: 145,
-    height: 280,
-    borderRadius: 26,
-    opacity: 0.28,
-    backgroundColor: "#D64545",
-    top: 12,
-    right: 20,
-    transform: [{ rotate: "-24deg" }],
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    backgroundColor: "rgba(255,255,255,0.28)",
+    bottom: 34,
+    left: -48,
   },
 
   roadLineOne: {
     position: "absolute",
-    width: 420,
+    width: 440,
     height: 12,
-    backgroundColor: "rgba(255,255,255,0.7)",
-    top: 58,
-    left: -20,
+    backgroundColor: "rgba(255,255,255,0.76)",
+    top: 62,
+    left: -30,
     transform: [{ rotate: "-20deg" }],
   },
 
   roadLineTwo: {
     position: "absolute",
-    width: 420,
+    width: 440,
     height: 12,
-    backgroundColor: "rgba(255,255,255,0.7)",
-    top: 116,
-    left: -30,
+    backgroundColor: "rgba(255,255,255,0.76)",
+    top: 125,
+    left: -34,
     transform: [{ rotate: "-18deg" }],
   },
 
   roadLineThree: {
     position: "absolute",
     width: 12,
-    height: 260,
-    backgroundColor: "rgba(255,255,255,0.7)",
-    top: -10,
-    left: 92,
+    height: 280,
+    backgroundColor: "rgba(255,255,255,0.76)",
+    top: -12,
+    left: 96,
     transform: [{ rotate: "22deg" }],
   },
 
   roadLineFour: {
     position: "absolute",
     width: 12,
-    height: 280,
-    backgroundColor: "rgba(255,255,255,0.7)",
-    top: -10,
-    right: 72,
+    height: 300,
+    backgroundColor: "rgba(255,255,255,0.76)",
+    top: -16,
+    right: 76,
     transform: [{ rotate: "18deg" }],
   },
 
-  legendWrap: {
+  pinPulse: {
     position: "absolute",
-    top: 14,
-    left: 12,
-    flexDirection: "row",
-  },
-
-  legendChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.94)",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-    marginRight: 8,
-  },
-
-  legendDot: {
-    width: 9,
-    height: 9,
-    borderRadius: 5,
-    marginRight: 6,
-  },
-
-  legendText: {
-    fontSize: 11,
-    color: "#4A5568",
-  },
-
-  mapMarker: {
-    position: "absolute",
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 3,
-    borderColor: "#FFFFFF",
-  },
-
-  markerText: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    marginTop: -1,
+    bottom: 118,
+    left: "50%",
+    marginLeft: -24,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "rgba(41,72,128,0.14)",
   },
 
   userPin: {
     position: "absolute",
-    bottom: 70,
-    left: 160,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: "#FFFFFF",
+    bottom: 128,
+    left: "50%",
+    marginLeft: -17,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: PRIMARY,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 2,
-    borderColor: "#DCE6F8",
-  },
-
-  userPinDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#2D8CFF",
+    borderWidth: 3,
+    borderColor: "#FFFFFF",
+    shadowColor: PRIMARY,
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 5,
   },
 
   userLabel: {
     position: "absolute",
-    bottom: 44,
-    left: 146,
+    bottom: 96,
+    left: "50%",
+    marginLeft: -43,
     backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderWidth: 1,
+    borderColor: "#E4EBF7",
   },
 
   userLabelText: {
+    fontFamily: FONT.medium,
     fontSize: 11,
-    color: "#6B7280",
+    color: "#4B5563",
   },
 
-  mapInfoCard: {
+  mapReminderCard: {
     position: "absolute",
     left: 12,
     right: 12,
     bottom: 12,
-    backgroundColor: "rgba(255,255,255,0.96)",
-    borderRadius: 18,
-    padding: 12,
-  },
-
-  mapInfoTop: {
+    backgroundColor: "rgba(255,255,255,0.97)",
+    borderRadius: 20,
+    padding: 13,
+    borderWidth: 1,
+    borderColor: "rgba(226,232,240,0.9)",
     flexDirection: "row",
-    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
+
+  reminderIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: "#E8EEF9",
     alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
   },
 
-  mapInfoTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
+  reminderTextWrap: {
+    flex: 1,
   },
 
-  mapAlertDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: "#D64545",
-    marginRight: 8,
-  },
-
-  mapInfoTitle: {
-    fontSize: 15,
+  reminderTitle: {
+    fontFamily: FONT.semiBold,
+    fontSize: 14,
     color: "#1F2937",
   },
 
-  mapInfoSubtitle: {
-    marginTop: 6,
+  reminderText: {
+    fontFamily: FONT.regular,
+    marginTop: 4,
     fontSize: 12,
     lineHeight: 18,
     color: "#6B7280",
   },
 
-  statsRow: {
+  summaryRow: {
     flexDirection: "row",
     justifyContent: "space-between",
+    marginBottom: 14,
   },
 
-  statCard: {
+  summaryCard: {
     flex: 1,
     backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    paddingVertical: 14,
-    paddingHorizontal: 10,
+    borderRadius: 20,
+    paddingVertical: 13,
+    paddingHorizontal: 8,
     marginHorizontal: 4,
     alignItems: "center",
     borderWidth: 1,
     borderColor: "#E7ECF3",
   },
 
-  statNumber: {
-    fontSize: 22,
-    color: "#294880",
-    marginBottom: 4,
+  summaryIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#E8EEF9",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
   },
 
-  statLabel: {
-    fontSize: 11,
+  summaryNumber: {
+    fontFamily: FONT.semiBold,
+    fontSize: 20,
+    color: PRIMARY,
+  },
+
+  summaryLabel: {
+    fontFamily: FONT.regular,
+    marginTop: 3,
+    fontSize: 10.5,
     textAlign: "center",
     color: "#6B7280",
     lineHeight: 15,
   },
 
-  sectionBlock: {
-    marginBottom: 14,
-  },
-
-  sectionHeaderRow: {
+  feedHeader: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    padding: 14,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "#E7ECF3",
     flexDirection: "row",
-    justifyContent: "flex-start",
+    justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 12,
   },
 
-  sectionTitle: {
+  feedTitle: {
+    fontFamily: FONT.semiBold,
     fontSize: 18,
     color: "#1F2A37",
   },
 
-  filterRow: {
-    flexDirection: "row",
-    marginBottom: 12,
+  feedSubtitle: {
+    fontFamily: FONT.regular,
+    fontSize: 11,
+    color: "#7B8794",
+    marginTop: 3,
   },
 
-  filterChip: {
-    paddingVertical: 8,
-    paddingHorizontal: 14,
+  resultPill: {
+    backgroundColor: "#E8EEF9",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: "#E4EBF7",
-    marginRight: 8,
   },
 
-  activeFilterChip: {
-    backgroundColor: "#294880",
+  resultPillText: {
+    fontFamily: FONT.medium,
+    fontSize: 11,
+    color: PRIMARY,
   },
 
-  filterChipText: {
-    fontSize: 12,
-    color: "#294880",
+  filterCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#E7ECF3",
+    zIndex: 50,
   },
 
-  activeFilterChipText: {
+  dropdownBlock: {
+    marginBottom: 10,
+    position: "relative",
+  },
+
+  dropdownButton: {
+    minHeight: 56,
+    borderRadius: 18,
+    backgroundColor: "#F8FAFE",
+    borderWidth: 1,
+    borderColor: "#DDE7F5",
+    paddingHorizontal: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+
+  activeDropdownButton: {
+    backgroundColor: PRIMARY,
+    borderColor: PRIMARY,
+  },
+
+  dropdownLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+
+  dropdownIconWrap: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: "#E8EEF9",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  activeDropdownIconWrap: {
+    backgroundColor: "rgba(255,255,255,0.18)",
+  },
+
+  dropdownTextWrap: {
+    marginLeft: 10,
+    flex: 1,
+  },
+
+  dropdownLabel: {
+    fontFamily: FONT.regular,
+    fontSize: 10,
+    color: "#7B8794",
+  },
+
+  activeDropdownLabel: {
+    color: "rgba(255,255,255,0.76)",
+  },
+
+  dropdownValue: {
+    fontFamily: FONT.medium,
+    marginTop: 2,
+    fontSize: 13,
+    color: PRIMARY,
+  },
+
+  activeDropdownValue: {
     color: "#FFFFFF",
+  },
+
+  dropdownMenu: {
+    marginTop: 7,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#E4EBF7",
+    overflow: "hidden",
+  },
+
+  dropdownOption: {
+    minHeight: 44,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#EEF2F7",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+
+  activeDropdownOption: {
+    backgroundColor: "#F3F6FB",
+  },
+
+  dropdownOptionText: {
+    fontFamily: FONT.regular,
+    fontSize: 13,
+    color: "#374151",
+  },
+
+  activeDropdownOptionText: {
+    fontFamily: FONT.medium,
+    color: PRIMARY,
+  },
+
+  feedList: {
+    marginTop: 2,
+  },
+
+  emptyCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    padding: 22,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#E4EBF7",
+  },
+
+  emptyIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: "#F3F6FB",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  emptyTitle: {
+    fontFamily: FONT.semiBold,
+    marginTop: 8,
+    color: "#1F2A37",
+    fontSize: 15,
+  },
+
+  emptyText: {
+    fontFamily: FONT.regular,
+    marginTop: 4,
+    color: "#6B7280",
+    fontSize: 12,
+    textAlign: "center",
+    lineHeight: 18,
   },
 
   reportCardSpacing: {

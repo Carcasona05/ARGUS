@@ -6,8 +6,12 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useFonts } from "expo-font";
+
 import ThemedView from "../../components/ThemedView";
 import ThemedText from "../../components/ThemedText";
+
+const ARGUS_BLUE = "#294880";
 
 const userReports = [
   {
@@ -249,6 +253,16 @@ const SectionHeader = ({ title, action }) => {
 };
 
 const User_Notification = () => {
+  const [fontsLoaded] = useFonts({
+    PoppinsRegular: require("../../assets/fonts/Poppins-Regular.ttf"),
+    PoppinsMedium: require("../../assets/fonts/Poppins-Medium.ttf"),
+    PoppinsSemiBold: require("../../assets/fonts/Poppins-SemiBold.ttf"),
+  });
+
+  if (!fontsLoaded) {
+    return null;
+  }
+
   return (
     <ThemedView style={styles.container}>
       <ScrollView
@@ -316,14 +330,14 @@ const styles = StyleSheet.create({
 
   sectionTitle: {
     fontSize: 18,
-    fontWeight: "700",
+    fontFamily: "PoppinsSemiBold",
     color: "#1F2A37",
   },
 
   sectionAction: {
     fontSize: 13,
-    fontWeight: "600",
-    color: "#294880",
+    fontFamily: "PoppinsMedium",
+    color: ARGUS_BLUE,
   },
 
   card: {
@@ -363,13 +377,14 @@ const styles = StyleSheet.create({
 
   cardTitle: {
     fontSize: 15,
-    fontWeight: "700",
+    fontFamily: "PoppinsSemiBold",
     color: "#1F2937",
     marginBottom: 4,
   },
 
   cardTime: {
     fontSize: 11,
+    fontFamily: "PoppinsRegular",
     color: "#6B7280",
   },
 
@@ -381,12 +396,13 @@ const styles = StyleSheet.create({
 
   statusPillText: {
     fontSize: 11,
-    fontWeight: "700",
+    fontFamily: "PoppinsSemiBold",
   },
 
   cardMessage: {
     fontSize: 13,
     lineHeight: 20,
+    fontFamily: "PoppinsRegular",
     color: "#5F6B7A",
     marginTop: 12,
     marginBottom: 12,
@@ -406,12 +422,13 @@ const styles = StyleSheet.create({
   metaText: {
     marginLeft: 6,
     fontSize: 12,
+    fontFamily: "PoppinsRegular",
     color: "#667085",
   },
 
   linkText: {
     fontSize: 12,
-    fontWeight: "600",
+    fontFamily: "PoppinsMedium",
     color: "#1E5EFF",
   },
 });

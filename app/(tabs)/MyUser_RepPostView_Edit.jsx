@@ -7,41 +7,44 @@ import {
   ScrollView,
   Alert,
   Image,
+  ActivityIndicator,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
-import * as Location from "expo-location";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useFonts } from "expo-font";
 
 import ThemedView from "../../components/ThemedView";
 import ThemedText from "../../components/ThemedText";
 
-const ARGUS_BLUE = "#294880";
+const PRIMARY = "#294880";
 
-const incidentCategories = {
+const FONT = {
+  regular: "Poppins-Regular",
+  medium: "Poppins-Medium",
+  semiBold: "Poppins-SemiBold",
+};
+
+const incidentOptions = {
   "Public Safety Incidents": [
     "Public Disturbance",
     "Harassment",
     "Loitering / Suspicious Presence",
     "Trespassing",
   ],
-
   "Property-Related Incidents": [
     "Theft",
     "Lost Property",
     "Vandalism / Property Damage",
     "Shoplifting",
   ],
-
   "Traffic and Road Incidents": [
     "Vehicular Accident",
     "Reckless Driving",
     "Illegal Parking",
     "Road Obstruction",
   ],
-
   "Community and Environmental Concerns": [
     "Fire Incident",
     "Flooding",
@@ -49,91 +52,71 @@ const incidentCategories = {
     "Garbage / Sanitation Issues",
     "Streetlight Outage",
   ],
-
   "Suspicious Activities": [
     "Suspicious Person",
     "Suspicious Vehicle",
     "Unattended / Abandoned Object",
     "Unusual Behavior",
+    "Loitering / Suspicious Presence",
   ],
-
   "Public Assistance / Community Reports": [
     "Missing Pet",
     "Lost Item",
     "Request for Assistance",
     "General Safety Concern",
   ],
+  "Cyber and Online Incidents (Non-sensitive)": [
+    "Online Scam / Suspicious Message",
+    "Cyberbullying",
+    "Fake Information / Misinformation",
+  ],
 };
 
-export default function User_PostReport() {
+export default function MyUser_RepPostView_Edit() {
   const router = useRouter();
+  const params = useLocalSearchParams();
 
   const [fontsLoaded] = useFonts({
-    PoppinsRegular: require("../../assets/fonts/Poppins-Regular.ttf"),
-    PoppinsMedium: require("../../assets/fonts/Poppins-Medium.ttf"),
-    PoppinsSemiBold: require("../../assets/fonts/Poppins-SemiBold.ttf"),
+    "Poppins-Regular": require("../../assets/fonts/Poppins-Regular.ttf"),
+    "Poppins-Medium": require("../../assets/fonts/Poppins-Medium.ttf"),
+    "Poppins-SemiBold": require("../../assets/fonts/Poppins-SemiBold.ttf"),
   });
 
-  const [fullName] = useState("Juan Dela Cruz");
-  const [username, setUsername] = useState("Juan");
-  const [displayNameType, setDisplayNameType] = useState("Fullname");
-
+  const [report, setReport] = useState(null);
+  const [userName, setUserName] = useState("You");
   const [location, setLocation] = useState("");
-  const [latitude, setLatitude] = useState("");
-  const [longitude, setLongitude] = useState("");
-
   const [incidentCategory, setIncidentCategory] = useState("");
   const [incidentType, setIncidentType] = useState("");
   const [details, setDetails] = useState("");
   const [photos, setPhotos] = useState([]);
-  const [loadingLocation, setLoadingLocation] = useState(true);
 
   const incidentTypes = useMemo(() => {
-    return incidentCategories[incidentCategory] || [];
+    return incidentOptions[incidentCategory] || [];
   }, [incidentCategory]);
 
   useEffect(() => {
-    getCurrentLocation();
-  }, []);
+    try {
+      const parsedReport = params?.report ? JSON.parse(params.report) : null;
+
+      if (parsedReport) {
+        setReport(parsedReport);
+        setUserName(parsedReport.userName || "You");
+        setLocation(parsedReport.location || "");
+        setIncidentCategory(parsedReport.incidentCategory || "");
+        setIncidentType(parsedReport.incidentType || "");
+        setDetails(parsedReport.details || "");
+        setPhotos(Array.isArray(parsedReport.images) ? parsedReport.images : []);
+      }
+    } catch (error) {
+      setReport(null);
+    }
+  }, [params?.report]);
 
   useEffect(() => {
-    if (!incidentTypes.includes(incidentType)) {
+    if (incidentCategory && !incidentTypes.includes(incidentType)) {
       setIncidentType("");
     }
   }, [incidentCategory, incidentType, incidentTypes]);
-
-  const getCurrentLocation = async () => {
-    try {
-      setLoadingLocation(true);
-
-      const { status } = await Location.requestForegroundPermissionsAsync();
-
-      if (status !== "granted") {
-        setLocation("Location permission denied");
-        setLatitude("");
-        setLongitude("");
-        setLoadingLocation(false);
-        return;
-      }
-
-      const currentLocation = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
-      });
-
-      const fetchedLatitude = currentLocation.coords.latitude.toFixed(6);
-      const fetchedLongitude = currentLocation.coords.longitude.toFixed(6);
-
-      setLatitude(fetchedLatitude);
-      setLongitude(fetchedLongitude);
-      setLocation(`${fetchedLatitude}, ${fetchedLongitude}`);
-    } catch (error) {
-      setLocation("Unable to fetch current location");
-      setLatitude("");
-      setLongitude("");
-    } finally {
-      setLoadingLocation(false);
-    }
-  };
 
   const handlePickPhoto = async () => {
     if (photos.length >= 3) {
@@ -152,7 +135,7 @@ export default function User_PostReport() {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ["images"],
       allowsEditing: true,
       quality: 0.8,
     });
@@ -167,51 +150,41 @@ export default function User_PostReport() {
     setPhotos((prev) => prev.filter((_, index) => index !== indexToRemove));
   };
 
-  const handlePostReport = () => {
-    const selectedDisplayName =
-      displayNameType === "Fullname" ? fullName : username.trim();
-
-    if (
-      !selectedDisplayName ||
-      !latitude ||
-      !longitude ||
-      !incidentCategory ||
-      !incidentType ||
-      !details.trim()
-    ) {
+  const handleSaveChanges = () => {
+    if (!incidentCategory || !incidentType || !details.trim()) {
       Alert.alert(
         "Incomplete Report",
-        "Please complete the display name, location, category, incident type, and details."
+        "Please complete the category, incident type, and details."
       );
       return;
     }
 
-    const reportData = {
-      submittedBy: selectedDisplayName,
-      displayNameType,
+    const updatedReport = {
+      ...report,
+      userName,
       location,
-      latitude,
-      longitude,
       incidentCategory,
       incidentType,
-      details,
-      photos,
-      status: "Pending Review",
-      submittedAt: new Date().toISOString(),
+      details: details.trim(),
+      images: photos,
     };
 
-    console.log("Submitted Report:", reportData);
+    console.log("Updated Report:", updatedReport);
 
-    Alert.alert("Report Posted", "Your report has been submitted successfully.", [
+    Alert.alert("Report Updated", "Your report has been updated successfully.", [
       {
         text: "OK",
-        onPress: () => router.push("/User_Home"),
+        onPress: () => router.back(),
       },
     ]);
   };
 
   if (!fontsLoaded) {
-    return null;
+    return (
+      <ThemedView style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={PRIMARY} />
+      </ThemedView>
+    );
   }
 
   return (
@@ -222,142 +195,50 @@ export default function User_PostReport() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.formCard}>
-          <View style={styles.fieldContainer}>
-            <ThemedText style={styles.label}>Display Name</ThemedText>
+          <View style={styles.topRow}>
+            <TouchableOpacity
+              style={styles.backButton}
+              activeOpacity={0.85}
+              onPress={() => router.back()}
+            >
+              <Ionicons name="chevron-back" size={22} color={PRIMARY} />
+            </TouchableOpacity>
 
-            <View style={styles.nameChoiceRow}>
-              <TouchableOpacity
-                style={[
-                  styles.nameChoiceButton,
-                  displayNameType === "Fullname" &&
-                    styles.nameChoiceButtonActive,
-                ]}
-                activeOpacity={0.85}
-                onPress={() => setDisplayNameType("Fullname")}
-              >
-                <Ionicons
-                  name={
-                    displayNameType === "Fullname"
-                      ? "radio-button-on"
-                      : "radio-button-off"
-                  }
-                  size={16}
-                  color={
-                    displayNameType === "Fullname" ? ARGUS_BLUE : "#8A94A6"
-                  }
-                />
-
-                <ThemedText
-                  style={[
-                    styles.nameChoiceText,
-                    displayNameType === "Fullname" &&
-                      styles.nameChoiceTextActive,
-                  ]}
-                >
-                  Fullname
-                </ThemedText>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.nameChoiceButton,
-                  displayNameType === "Username" &&
-                    styles.nameChoiceButtonActive,
-                ]}
-                activeOpacity={0.85}
-                onPress={() => setDisplayNameType("Username")}
-              >
-                <Ionicons
-                  name={
-                    displayNameType === "Username"
-                      ? "radio-button-on"
-                      : "radio-button-off"
-                  }
-                  size={16}
-                  color={
-                    displayNameType === "Username" ? ARGUS_BLUE : "#8A94A6"
-                  }
-                />
-
-                <ThemedText
-                  style={[
-                    styles.nameChoiceText,
-                    displayNameType === "Username" &&
-                      styles.nameChoiceTextActive,
-                  ]}
-                >
-                  Username / Nickname
-                </ThemedText>
-              </TouchableOpacity>
-            </View>
-
-            {displayNameType === "Fullname" ? (
-              <TextInput
-                style={[styles.input, styles.disabledInput]}
-                value={fullName}
-                editable={false}
-                placeholderTextColor="#8A94A6"
-              />
-            ) : (
-              <TextInput
-                style={styles.input}
-                value={username}
-                onChangeText={setUsername}
-                placeholder="Enter username or nickname"
-                placeholderTextColor="#8A94A6"
-              />
-            )}
-
-            <ThemedText style={styles.helperText}>
-              This name will appear as the reporter name on your submitted
-              report.
-            </ThemedText>
+            <ThemedText style={styles.pageTitle}>Edit My Report</ThemedText>
           </View>
 
           <View style={styles.fieldContainer}>
-            <View style={styles.locationHeaderRow}>
-              <ThemedText style={styles.label}>Current Location</ThemedText>
+            <ThemedText style={styles.label}>Username</ThemedText>
+            <TextInput
+              style={[styles.input, styles.disabledInput]}
+              value={userName}
+              editable={false}
+              placeholderTextColor="#8A94A6"
+            />
+          </View>
 
-              <TouchableOpacity
-                style={styles.refreshButton}
-                activeOpacity={0.85}
-                onPress={getCurrentLocation}
-                disabled={loadingLocation}
-              >
-                <Ionicons
-                  name="refresh-outline"
-                  size={14}
-                  color={ARGUS_BLUE}
-                />
-                <ThemedText style={styles.refreshText}>
-                  {loadingLocation ? "Fetching" : "Refresh"}
-                </ThemedText>
-              </TouchableOpacity>
-            </View>
+          <View style={styles.fieldContainer}>
+            <ThemedText style={styles.label}>Current Location</ThemedText>
 
-            <View style={styles.locationInputWrap}>
-              <Ionicons
-                name="location-outline"
-                size={18}
-                color={ARGUS_BLUE}
-              />
-
+            <View style={styles.lockedInputWrap}>
               <TextInput
-                style={styles.locationInput}
+                style={[styles.input, styles.lockedInput]}
                 value={location}
                 editable={false}
-                pointerEvents="none"
-                placeholder={
-                  loadingLocation
-                    ? "Fetching current location..."
-                    : "Location will be fetched automatically"
-                }
+                placeholder="Current location"
                 placeholderTextColor="#8A94A6"
+              />
+
+              <Ionicons
+                name="lock-closed"
+                size={17}
+                color="#98A2B3"
+                style={styles.lockIconInside}
               />
             </View>
 
             <ThemedText style={styles.helperText}>
-              Location is automatically fetched and cannot be edited manually.
+              Location cannot be changed after posting.
             </ThemedText>
           </View>
 
@@ -372,7 +253,7 @@ export default function User_PostReport() {
               >
                 <Picker.Item label="Select Incident Category" value="" />
 
-                {Object.keys(incidentCategories).map((category) => (
+                {Object.keys(incidentOptions).map((category) => (
                   <Picker.Item
                     key={category}
                     label={category}
@@ -391,7 +272,6 @@ export default function User_PostReport() {
                 selectedValue={incidentType}
                 onValueChange={(itemValue) => setIncidentType(itemValue)}
                 style={styles.picker}
-                enabled={!!incidentCategory}
               >
                 <Picker.Item
                   label={
@@ -438,7 +318,7 @@ export default function User_PostReport() {
               activeOpacity={0.88}
               onPress={handlePickPhoto}
             >
-              <Ionicons name="images-outline" size={18} color={ARGUS_BLUE} />
+              <Ionicons name="images-outline" size={18} color={PRIMARY} />
 
               <ThemedText style={styles.uploadButtonText}>
                 Choose from Album
@@ -449,7 +329,7 @@ export default function User_PostReport() {
               Optional. You can upload up to 3 photos.
             </ThemedText>
 
-            {photos.length > 0 ? (
+            {photos.length > 0 && (
               <View style={styles.photoGrid}>
                 {photos.map((uri, index) => (
                   <View key={`${uri}-${index}`} style={styles.photoCard}>
@@ -465,16 +345,28 @@ export default function User_PostReport() {
                   </View>
                 ))}
               </View>
-            ) : null}
+            )}
           </View>
 
-          <TouchableOpacity
-            style={styles.postButton}
-            onPress={handlePostReport}
-            activeOpacity={0.88}
-          >
-            <ThemedText style={styles.postButtonText}>Post Report</ThemedText>
-          </TouchableOpacity>
+          <View style={styles.buttonRow}>
+            <TouchableOpacity
+              style={styles.cancelButton}
+              activeOpacity={0.85}
+              onPress={() => router.back()}
+            >
+              <ThemedText style={styles.cancelButtonText}>Cancel</ThemedText>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.saveButton}
+              activeOpacity={0.88}
+              onPress={handleSaveChanges}
+            >
+              <ThemedText style={styles.saveButtonText}>
+                Save Changes
+              </ThemedText>
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
     </ThemedView>
@@ -482,6 +374,13 @@ export default function User_PostReport() {
 }
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: "#F3F6FB",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
   container: {
     flex: 1,
     backgroundColor: "#F3F6FB",
@@ -502,14 +401,36 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
 
+  topRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 18,
+  },
+
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#E8EEF9",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
+  },
+
+  pageTitle: {
+    fontFamily: FONT.semiBold,
+    fontSize: 19,
+    color: PRIMARY,
+  },
+
   fieldContainer: {
     marginBottom: 16,
   },
 
   label: {
+    fontFamily: FONT.semiBold,
     fontSize: 14,
-    fontFamily: "PoppinsSemiBold",
-    color: ARGUS_BLUE,
+    color: PRIMARY,
     marginBottom: 8,
   },
 
@@ -520,8 +441,8 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     paddingHorizontal: 14,
     paddingVertical: 12,
+    fontFamily: FONT.regular,
     fontSize: 15,
-    fontFamily: "PoppinsRegular",
     color: "#1F2A37",
   },
 
@@ -530,81 +451,28 @@ const styles = StyleSheet.create({
     color: "#68758A",
   },
 
-  nameChoiceRow: {
-    flexDirection: "row",
-    gap: 10,
-    marginBottom: 10,
+  lockedInputWrap: {
+    position: "relative",
   },
 
-  nameChoiceButton: {
-    flex: 1,
-    minHeight: 46,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#D8E0EB",
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 12,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-
-  nameChoiceButtonActive: {
-    backgroundColor: "#EEF3FF",
-    borderColor: ARGUS_BLUE,
-  },
-
-  nameChoiceText: {
-    marginLeft: 7,
-    fontSize: 12,
-    fontFamily: "PoppinsMedium",
-    color: "#68758A",
-  },
-
-  nameChoiceTextActive: {
-    color: ARGUS_BLUE,
-    fontFamily: "PoppinsSemiBold",
-  },
-
-  locationHeaderRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-
-  refreshButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#EEF3FF",
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    marginBottom: 8,
-  },
-
-  refreshText: {
-    marginLeft: 4,
-    fontSize: 11,
-    fontFamily: "PoppinsMedium",
-    color: ARGUS_BLUE,
-  },
-
-  locationInputWrap: {
-    minHeight: 50,
+  lockedInput: {
     backgroundColor: "#F8FAFD",
-    borderWidth: 1,
-    borderColor: "#D8E0EB",
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    flexDirection: "row",
-    alignItems: "center",
+    color: "#1F2A37",
+    paddingRight: 42,
   },
 
-  locationInput: {
-    flex: 1,
-    marginLeft: 8,
-    fontSize: 15,
-    fontFamily: "PoppinsRegular",
-    color: "#1F2A37",
+  lockIconInside: {
+    position: "absolute",
+    right: 14,
+    top: 15,
+  },
+
+  helperText: {
+    marginTop: 8,
+    fontFamily: FONT.regular,
+    fontSize: 12,
+    lineHeight: 18,
+    color: "#68758A",
   },
 
   pickerContainer: {
@@ -618,7 +486,7 @@ const styles = StyleSheet.create({
   picker: {
     height: 52,
     color: "#1F2A37",
-    fontFamily: "PoppinsRegular",
+    fontFamily: FONT.regular,
   },
 
   textArea: {
@@ -630,8 +498,8 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 12,
     minHeight: 140,
+    fontFamily: FONT.regular,
     fontSize: 15,
-    fontFamily: "PoppinsRegular",
     color: "#1F2A37",
   },
 
@@ -642,8 +510,8 @@ const styles = StyleSheet.create({
   },
 
   photoCount: {
+    fontFamily: FONT.medium,
     fontSize: 12,
-    fontFamily: "PoppinsMedium",
     color: "#68758A",
   },
 
@@ -660,17 +528,9 @@ const styles = StyleSheet.create({
 
   uploadButtonText: {
     marginLeft: 8,
+    fontFamily: FONT.semiBold,
     fontSize: 14,
-    fontFamily: "PoppinsSemiBold",
-    color: ARGUS_BLUE,
-  },
-
-  helperText: {
-    marginTop: 8,
-    fontSize: 12,
-    lineHeight: 18,
-    fontFamily: "PoppinsRegular",
-    color: "#68758A",
+    color: PRIMARY,
   },
 
   photoGrid: {
@@ -710,18 +570,41 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
-  postButton: {
-    backgroundColor: ARGUS_BLUE,
-    borderRadius: 14,
-    paddingVertical: 15,
-    justifyContent: "center",
-    alignItems: "center",
+  buttonRow: {
+    flexDirection: "row",
+    gap: 10,
     marginTop: 8,
   },
 
-  postButtonText: {
-    fontSize: 16,
-    fontFamily: "PoppinsSemiBold",
+  cancelButton: {
+    flex: 1,
+    height: 50,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#D8E0EB",
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  cancelButtonText: {
+    fontFamily: FONT.medium,
+    fontSize: 14,
+    color: "#475467",
+  },
+
+  saveButton: {
+    flex: 1.4,
+    height: 50,
+    borderRadius: 14,
+    backgroundColor: PRIMARY,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  saveButtonText: {
+    fontFamily: FONT.semiBold,
+    fontSize: 14,
     color: "#FFFFFF",
   },
 });

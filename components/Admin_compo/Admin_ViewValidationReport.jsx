@@ -3,102 +3,327 @@ import {
   Modal,
   View,
   Text,
-  TouchableOpacity,
   ScrollView,
+  TouchableOpacity,
   StyleSheet,
-  Platform,
+  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 const ARGUS_BLUE = "#294880";
 
-export default function Admin_ViewValidationReport({
+export default function Admin_ViewSimilarReportsModal({
   visible,
-  report,
   compiledGroup,
   onClose,
   onVerify,
   onReject,
   onMapAndVerify,
 }) {
-  const isCompiled = !!compiledGroup;
-  const activeReport = report || compiledGroup?.reports?.[0];
-
-  if (!activeReport && !compiledGroup) {
-    return null;
-  }
+  if (!compiledGroup) return null;
 
   const getStatusStyle = (status) => {
     if (status === "Resolved") {
       return {
-        bg: "#EAF8F1",
         color: "#22A06B",
+        bg: "#EAF8F1",
+        icon: "checkmark-circle-outline",
       };
     }
 
     if (status === "Rejected") {
       return {
-        bg: "#FFF5F5",
         color: "#E45757",
+        bg: "#FFF5F5",
+        icon: "close-circle-outline",
       };
     }
 
     if (status === "Under Verification") {
       return {
-        bg: "#EAF2FF",
         color: ARGUS_BLUE,
+        bg: "#EAF2FF",
+        icon: "sync-outline",
       };
     }
 
     if (status === "Archived") {
       return {
-        bg: "#EEF1F5",
         color: "#6B7280",
+        bg: "#EEF1F5",
+        icon: "archive-outline",
       };
     }
 
     return {
-      bg: "#FFF4E5",
       color: "#C98A2E",
+      bg: "#FFF4E5",
+      icon: "time-outline",
     };
   };
 
-  const getCompiledStatusText = () => {
-    if (!compiledGroup?.statusSummary) return "No status summary";
-
-    return Object.entries(compiledGroup.statusSummary)
-      .map(([status, count]) => `${status}: ${count}`)
-      .join(" • ");
-  };
-
-  const statusStyle = getStatusStyle(activeReport?.status);
-
-  const handleVerify = () => {
-    if (isCompiled) {
-      onVerify?.(compiledGroup);
-      return;
+  const getSeverityStyle = (severity) => {
+    if (severity === "High" || severity === "Critical") {
+      return {
+        color: "#E45757",
+        bg: "#FFF5F5",
+      };
     }
 
-    onVerify?.(activeReport);
-  };
-
-  const handleReject = () => {
-    if (isCompiled) {
-      onReject?.(compiledGroup);
-      return;
+    if (severity === "Medium") {
+      return {
+        color: "#C98A2E",
+        bg: "#FFF4E5",
+      };
     }
 
-    onReject?.(activeReport);
+    return {
+      color: "#22A06B",
+      bg: "#EAF8F1",
+    };
   };
 
-  const handleMapAndVerify = () => {
-    if (isCompiled) {
-      onMapAndVerify?.(compiledGroup);
-      return;
+  const getSentimentStyle = (sentiment) => {
+    if (sentiment === "Negative") {
+      return {
+        color: "#E45757",
+        bg: "#FFF5F5",
+        icon: "alert-circle-outline",
+      };
     }
 
-    onMapAndVerify?.(activeReport);
+    if (sentiment === "Positive") {
+      return {
+        color: "#22A06B",
+        bg: "#EAF8F1",
+        icon: "happy-outline",
+      };
+    }
+
+    if (sentiment === "Mixed") {
+      return {
+        color: "#7C3AED",
+        bg: "#F3E8FF",
+        icon: "git-compare-outline",
+      };
+    }
+
+    if (sentiment === "No Majority") {
+      return {
+        color: "#6B7280",
+        bg: "#EEF1F5",
+        icon: "remove-circle-outline",
+      };
+    }
+
+    return {
+      color: "#C98A2E",
+      bg: "#FFF4E5",
+      icon: "remove-circle-outline",
+    };
   };
+
+  const getImageSource = (imageValue) => {
+    if (!imageValue) return null;
+
+    if (typeof imageValue === "string") {
+      return { uri: imageValue };
+    }
+
+    return imageValue;
+  };
+
+  const getCommentText = (comment) => {
+    if (!comment) return "";
+
+    if (typeof comment === "string") {
+      return comment;
+    }
+
+    return (
+      comment.text ||
+      comment.comment ||
+      comment.details ||
+      comment.message ||
+      comment.content ||
+      ""
+    );
+  };
+
+  const analyzeSingleComment = (commentText) => {
+    const text = commentText.toLowerCase();
+
+    const negativeWords = [
+      "danger",
+      "dangerous",
+      "unsafe",
+      "scared",
+      "afraid",
+      "panic",
+      "emergency",
+      "urgent",
+      "accident",
+      "injured",
+      "hurt",
+      "damage",
+      "damaged",
+      "blocked",
+      "blocking",
+      "fire",
+      "flood",
+      "theft",
+      "stolen",
+      "harassment",
+      "suspicious",
+      "reckless",
+      "violent",
+      "threat",
+      "problem",
+      "issue",
+      "bad",
+      "worse",
+      "worst",
+      "concern",
+      "delikado",
+      "hadlok",
+      "kuyaw",
+      "guba",
+      "nasamad",
+      "aksidente",
+      "sunog",
+      "baha",
+      "kawat",
+      "haras",
+      "problema",
+    ];
+
+    const positiveWords = [
+      "safe",
+      "resolved",
+      "fixed",
+      "cleared",
+      "helped",
+      "responded",
+      "thank",
+      "thanks",
+      "good",
+      "better",
+      "okay",
+      "ok",
+      "fine",
+      "secured",
+      "assisted",
+      "improved",
+      "solved",
+      "salamat",
+      "maayo",
+      "ayo",
+      "naayo",
+      "okay na",
+      "nasulbad",
+      "tabang",
+      "natabangan",
+      "safe na",
+    ];
+
+    let negativeScore = 0;
+    let positiveScore = 0;
+
+    negativeWords.forEach((word) => {
+      if (text.includes(word)) negativeScore += 1;
+    });
+
+    positiveWords.forEach((word) => {
+      if (text.includes(word)) positiveScore += 1;
+    });
+
+    if (negativeScore > positiveScore) return "Negative";
+    if (positiveScore > negativeScore) return "Positive";
+
+    return "Neutral";
+  };
+
+  const getCommentSentimentAnalysis = (comments = []) => {
+    if (!Array.isArray(comments) || comments.length === 0) {
+      return {
+        overall: "Neutral",
+        majority: "No Majority",
+        total: 0,
+        positive: 0,
+        negative: 0,
+        neutral: 0,
+        positivePercent: 0,
+        negativePercent: 0,
+        neutralPercent: 0,
+      };
+    }
+
+    let positive = 0;
+    let negative = 0;
+    let neutral = 0;
+
+    comments.forEach((comment) => {
+      const commentText = getCommentText(comment);
+      const sentiment = analyzeSingleComment(commentText);
+
+      if (sentiment === "Positive") positive += 1;
+      else if (sentiment === "Negative") negative += 1;
+      else neutral += 1;
+    });
+
+    const total = comments.length;
+
+    const positivePercent = Math.round((positive / total) * 100);
+    const negativePercent = Math.round((negative / total) * 100);
+    const neutralPercent = Math.max(
+      0,
+      100 - positivePercent - negativePercent
+    );
+
+    let overall = "Neutral";
+    let majority = "Neutral";
+
+    if (negative > positive && negative > neutral) {
+      overall = "Negative";
+      majority = "Negative";
+    } else if (positive > negative && positive > neutral) {
+      overall = "Positive";
+      majority = "Positive";
+    } else if (neutral > positive && neutral > negative) {
+      overall = "Neutral";
+      majority = "Neutral";
+    } else {
+      overall = "Mixed";
+      majority = "Mixed";
+    }
+
+    return {
+      overall,
+      majority,
+      total,
+      positive,
+      negative,
+      neutral,
+      positivePercent,
+      negativePercent,
+      neutralPercent,
+    };
+  };
+
+  const groupStatusStyle = getStatusStyle(compiledGroup.status);
+  const groupSeverityStyle = getSeverityStyle(compiledGroup.severity);
+
+  const allGatheredComments =
+    compiledGroup.reports?.flatMap((report) =>
+      report.gatheredComments || report.comments || []
+    ) || [];
+
+  const groupSentimentAnalysis =
+    getCommentSentimentAnalysis(allGatheredComments);
+
+  const groupSentimentStyle = getSentimentStyle(
+    groupSentimentAnalysis.majority
+  );
 
   return (
     <Modal
@@ -112,24 +337,15 @@ export default function Admin_ViewValidationReport({
           <View style={styles.modalHeader}>
             <View style={styles.headerLeft}>
               <View style={styles.headerIconBox}>
-                <Ionicons
-                  name={isCompiled ? "copy-outline" : "document-text-outline"}
-                  size={24}
-                  color={ARGUS_BLUE}
-                />
+                <Ionicons name="copy-outline" size={24} color="#7C3AED" />
               </View>
 
               <View style={styles.headerTextBox}>
-                <Text style={styles.modalTitle}>
-                  {isCompiled
-                    ? "Compiled Incident Report"
-                    : "Validation Report"}
-                </Text>
-
+                <Text style={styles.modalTitle}>Similar Reports</Text>
                 <Text style={styles.modalSubtitle}>
-                  {isCompiled
-                    ? "Multiple reports detected for the same incident"
-                    : "Review report details, AI credibility, and action status"}
+                  {compiledGroup.reportCount} similar post
+                  {compiledGroup.reportCount === 1 ? "" : "s"} found for this
+                  incident.
                 </Text>
               </View>
             </View>
@@ -139,330 +355,335 @@ export default function Admin_ViewValidationReport({
               onPress={onClose}
               activeOpacity={0.8}
             >
-              <Ionicons name="close-outline" size={24} color="#4B5D7A" />
+              <Ionicons name="close" size={22} color="#5D6F92" />
             </TouchableOpacity>
           </View>
 
+          <View style={styles.summaryCard}>
+            <View style={styles.summaryTopRow}>
+              <View style={styles.summaryTitleBox}>
+                <Text style={styles.groupTitle}>{compiledGroup.title}</Text>
+
+                <View style={styles.groupLocationRow}>
+                  <Ionicons
+                    name="location-outline"
+                    size={16}
+                    color="#5D6F92"
+                  />
+                  <Text style={styles.groupLocation}>
+                    {compiledGroup.location}
+                  </Text>
+                </View>
+              </View>
+
+              <View
+                style={[
+                  styles.statusBadge,
+                  { backgroundColor: groupStatusStyle.bg },
+                ]}
+              >
+                <Ionicons
+                  name={groupStatusStyle.icon}
+                  size={14}
+                  color={groupStatusStyle.color}
+                />
+                <Text
+                  style={[
+                    styles.statusBadgeText,
+                    { color: groupStatusStyle.color },
+                  ]}
+                >
+                  {compiledGroup.status}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.summaryGrid}>
+              <View style={styles.summaryItem}>
+                <Text style={styles.summaryLabel}>Category</Text>
+                <Text style={styles.summaryValue}>
+                  {compiledGroup.category}
+                </Text>
+              </View>
+
+              <View style={styles.summaryItem}>
+                <Text style={styles.summaryLabel}>Incident Type</Text>
+                <Text style={styles.summaryValue}>{compiledGroup.type}</Text>
+              </View>
+
+              <View style={styles.summaryItem}>
+                <Text style={styles.summaryLabel}>Highest AI Score</Text>
+                <Text style={styles.summaryValue}>
+                  {compiledGroup.highestAiScore}%
+                </Text>
+              </View>
+
+              <View style={styles.summaryItem}>
+                <Text style={styles.summaryLabel}>Severity</Text>
+                <View
+                  style={[
+                    styles.severityBadge,
+                    { backgroundColor: groupSeverityStyle.bg },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.severityBadgeText,
+                      { color: groupSeverityStyle.color },
+                    ]}
+                  >
+                    {compiledGroup.severity}
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.sentimentBox}>
+              <View style={styles.sentimentTopRow}>
+                <View style={styles.sentimentTitleRow}>
+                  <Ionicons
+                    name="analytics-outline"
+                    size={16}
+                    color={ARGUS_BLUE}
+                  />
+                  <Text style={styles.sentimentTitle}>
+                    Gathered Comments Sentiment Analysis
+                  </Text>
+                </View>
+
+                <View
+                  style={[
+                    styles.sentimentBadge,
+                    { backgroundColor: groupSentimentStyle.bg },
+                  ]}
+                >
+                  <Ionicons
+                    name={groupSentimentStyle.icon}
+                    size={14}
+                    color={groupSentimentStyle.color}
+                  />
+                  <Text
+                    style={[
+                      styles.sentimentBadgeText,
+                      { color: groupSentimentStyle.color },
+                    ]}
+                  >
+                    {groupSentimentAnalysis.overall}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.sentimentBarContainer}>
+                <View
+                  style={[
+                    styles.sentimentBarSegment,
+                    styles.positiveSegment,
+                    {
+                      flex:
+                        groupSentimentAnalysis.positivePercent > 0
+                          ? groupSentimentAnalysis.positivePercent
+                          : 0.01,
+                    },
+                  ]}
+                />
+
+                <View
+                  style={[
+                    styles.sentimentBarSegment,
+                    styles.negativeSegment,
+                    {
+                      flex:
+                        groupSentimentAnalysis.negativePercent > 0
+                          ? groupSentimentAnalysis.negativePercent
+                          : 0.01,
+                    },
+                  ]}
+                />
+
+                <View
+                  style={[
+                    styles.sentimentBarSegment,
+                    styles.neutralSegment,
+                    {
+                      flex:
+                        groupSentimentAnalysis.neutralPercent > 0
+                          ? groupSentimentAnalysis.neutralPercent
+                          : 0.01,
+                    },
+                  ]}
+                />
+              </View>
+
+              <View style={styles.sentimentLegendRow}>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendDot, styles.positiveDot]} />
+                  <Text style={styles.legendText}>
+                    Positive {groupSentimentAnalysis.positivePercent}%
+                  </Text>
+                </View>
+
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendDot, styles.negativeDot]} />
+                  <Text style={styles.legendText}>
+                    Negative {groupSentimentAnalysis.negativePercent}%
+                  </Text>
+                </View>
+
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendDot, styles.neutralDot]} />
+                  <Text style={styles.legendText}>
+                    Neutral {groupSentimentAnalysis.neutralPercent}%
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.listHeader}>
+            <Text style={styles.listTitle}>Reported Similar Posts</Text>
+            <Text style={styles.listCount}>
+              {compiledGroup.reports?.length || 0} report
+              {(compiledGroup.reports?.length || 0) === 1 ? "" : "s"}
+            </Text>
+          </View>
+
           <ScrollView
-            style={styles.bodyScroll}
-            contentContainerStyle={styles.bodyContent}
+            style={styles.reportList}
+            contentContainerStyle={styles.reportListContent}
             showsVerticalScrollIndicator={false}
           >
-            {isCompiled ? (
-              <>
-                <View style={styles.compiledHeroCard}>
-                  <View style={styles.compiledHeroLeft}>
-                    <Text style={styles.incidentTitle}>
-                      {compiledGroup.type} in {compiledGroup.barangay}
-                    </Text>
+            {compiledGroup.reports?.map((report) => {
+              const statusStyle = getStatusStyle(report.status);
+              const severityStyle = getSeverityStyle(report.severity);
 
-                    <Text style={styles.incidentLocation}>
-                      {compiledGroup.location}
-                    </Text>
+              const reportImage = report.image || report.photo;
+              const imageSource = getImageSource(reportImage);
 
-                    <Text style={styles.incidentCategory}>
-                      {compiledGroup.category}
-                    </Text>
-                  </View>
-
-                  <View style={styles.reportCountBadge}>
-                    <Text style={styles.reportCountNumber}>
-                      {compiledGroup.reportCount}
-                    </Text>
-                    <Text style={styles.reportCountLabel}>Reports</Text>
-                  </View>
-                </View>
-
-                <View style={styles.infoGrid}>
-                  <View style={styles.infoBox}>
-                    <Text style={styles.infoLabel}>Reported Same Incident</Text>
-                    <Text style={styles.infoValue}>
-                      {compiledGroup.reportCount} reports
-                    </Text>
-                  </View>
-
-                  <View style={styles.infoBox}>
-                    <Text style={styles.infoLabel}>User Reports</Text>
-                    <Text style={styles.infoValue}>
-                      {compiledGroup.userCount}
-                    </Text>
-                  </View>
-
-                  <View style={styles.infoBox}>
-                    <Text style={styles.infoLabel}>Admin Reports</Text>
-                    <Text style={styles.infoValue}>
-                      {compiledGroup.adminCount}
-                    </Text>
-                  </View>
-
-                  <View style={styles.infoBox}>
-                    <Text style={styles.infoLabel}>Highest AI Score</Text>
-                    <Text style={styles.infoValue}>
-                      {compiledGroup.highestAiScore}%
-                    </Text>
-                  </View>
-                </View>
-
-                <View style={styles.sectionCard}>
-                  <View style={styles.sectionTitleRow}>
-                    <Ionicons
-                      name="git-merge-outline"
-                      size={18}
-                      color={ARGUS_BLUE}
-                    />
-                    <Text style={styles.sectionTitle}>Compiled Summary</Text>
-                  </View>
-
-                  <Text style={styles.paragraphText}>
-                    This compiled incident groups reports with the same incident
-                    category, incident type, and barangay. This prevents
-                    repeated reports of the same incident from being handled as
-                    separate unrelated cases.
-                  </Text>
-
-                  <Text style={styles.paragraphText}>
-                    Example: if 5 users report the same robbery in Cansuje, the
-                    system displays it as 1 compiled incident with 5 related
-                    reports.
-                  </Text>
-
-                  <Text style={styles.compiledStatusText}>
-                    {getCompiledStatusText()}
-                  </Text>
-                </View>
-
-                <View style={styles.sectionCard}>
-                  <View style={styles.sectionTitleRow}>
-                    <Ionicons
-                      name="documents-outline"
-                      size={18}
-                      color={ARGUS_BLUE}
-                    />
-                    <Text style={styles.sectionTitle}>Included Reports</Text>
-                  </View>
-
-                  {compiledGroup.reports?.map((item, index) => {
-                    const itemStatusStyle = getStatusStyle(item.status);
-
-                    return (
-                      <View
-                        key={item.id}
-                        style={[
-                          styles.includedReportRow,
-                          index !== 0 && styles.rowDivider,
-                        ]}
-                      >
-                        <View style={styles.includedReportTop}>
-                          <Text style={styles.includedReportId}>{item.id}</Text>
-
-                          <View
-                            style={[
-                              styles.statusBadge,
-                              { backgroundColor: itemStatusStyle.bg },
-                            ]}
-                          >
-                            <Text
-                              style={[
-                                styles.statusText,
-                                { color: itemStatusStyle.color },
-                              ]}
-                            >
-                              {item.status}
-                            </Text>
-                          </View>
-                        </View>
-
-                        <Text style={styles.includedReportTitle}>
-                          {item.title}
-                        </Text>
-
-                        <Text style={styles.includedReportMeta}>
-                          Submitted by {item.submittedBy} ({item.submittedRole})
-                          {" • "}
-                          {item.submittedAt}
-                        </Text>
-
-                        <Text style={styles.includedReportDetails}>
-                          {item.details}
-                        </Text>
-                      </View>
-                    );
-                  })}
-                </View>
-              </>
-            ) : (
-              <>
-                <View style={styles.singleHeroCard}>
-                  <View style={styles.singleHeroTop}>
-                    <View style={styles.singleHeroTitleBox}>
-                      <Text style={styles.incidentTitle}>
-                        {activeReport.title}
-                      </Text>
-
-                      <Text style={styles.incidentLocation}>
-                        {activeReport.location}
-                      </Text>
+              return (
+                <View key={report.id} style={styles.reportCard}>
+                  <View style={styles.reportTopRow}>
+                    <View style={styles.reportTitleBox}>
+                      <Text style={styles.reportId}>{report.id}</Text>
+                      <Text style={styles.reportTitle}>{report.title}</Text>
                     </View>
 
                     <View
                       style={[
-                        styles.statusBadge,
+                        styles.smallStatusBadge,
                         { backgroundColor: statusStyle.bg },
                       ]}
                     >
                       <Text
                         style={[
-                          styles.statusText,
+                          styles.smallStatusText,
                           { color: statusStyle.color },
                         ]}
                       >
-                        {activeReport.status}
+                        {report.status}
                       </Text>
                     </View>
                   </View>
 
-                  <Text style={styles.incidentCategory}>
-                    {activeReport.category} • {activeReport.type}
-                  </Text>
-                </View>
+                  <Text style={styles.reportDetails}>{report.details}</Text>
 
-                <View style={styles.infoGrid}>
-                  <View style={styles.infoBox}>
-                    <Text style={styles.infoLabel}>Report ID</Text>
-                    <Text style={styles.infoValue}>{activeReport.id}</Text>
+                  {imageSource ? (
+                    <View style={styles.reportImageContainer}>
+                      <Image
+                        source={imageSource}
+                        style={styles.reportImage}
+                        resizeMode="cover"
+                      />
+                    </View>
+                  ) : null}
+
+                  <View style={styles.reportInfoGrid}>
+                    <View style={styles.reportInfoItem}>
+                      <Text style={styles.infoLabel}>Submitted By</Text>
+                      <Text style={styles.infoValue}>{report.submittedBy}</Text>
+                    </View>
+
+                    <View style={styles.reportInfoItem}>
+                      <Text style={styles.infoLabel}>Submitted At</Text>
+                      <Text style={styles.infoValue}>{report.submittedAt}</Text>
+                    </View>
+
+                    <View style={styles.reportInfoItem}>
+                      <Text style={styles.infoLabel}>AI Score</Text>
+                      <Text style={styles.infoValue}>{report.aiScore}%</Text>
+                    </View>
+
+                    <View style={styles.reportInfoItem}>
+                      <Text style={styles.infoLabel}>Severity</Text>
+                      <View
+                        style={[
+                          styles.severityBadge,
+                          { backgroundColor: severityStyle.bg },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.severityBadgeText,
+                            { color: severityStyle.color },
+                          ]}
+                        >
+                          {report.severity}
+                        </Text>
+                      </View>
+                    </View>
                   </View>
 
-                  <View style={styles.infoBox}>
-                    <Text style={styles.infoLabel}>AI Score</Text>
-                    <Text style={styles.infoValue}>
-                      {activeReport.aiScore}%
-                    </Text>
-                  </View>
+                  <View style={styles.aiBox}>
+                    <View style={styles.aiTitleRow}>
+                      <Ionicons
+                        name="sparkles-outline"
+                        size={15}
+                        color={ARGUS_BLUE}
+                      />
+                      <Text style={styles.aiTitle}>AI Credibility Review</Text>
+                    </View>
 
-                  <View style={styles.infoBox}>
-                    <Text style={styles.infoLabel}>Severity</Text>
-                    <Text style={styles.infoValue}>
-                      {activeReport.severity}
-                    </Text>
-                  </View>
-
-                  <View style={styles.infoBox}>
-                    <Text style={styles.infoLabel}>Sentiment</Text>
-                    <Text style={styles.infoValue}>
-                      {activeReport.sentiment}
-                    </Text>
-                  </View>
-                </View>
-
-                <View style={styles.sectionCard}>
-                  <View style={styles.sectionTitleRow}>
-                    <Ionicons
-                      name="information-circle-outline"
-                      size={18}
-                      color={ARGUS_BLUE}
-                    />
-                    <Text style={styles.sectionTitle}>Report Details</Text>
-                  </View>
-
-                  <Text style={styles.paragraphText}>
-                    {activeReport.details}
-                  </Text>
-                </View>
-
-                <View style={styles.sectionCard}>
-                  <View style={styles.sectionTitleRow}>
-                    <Ionicons
-                      name="sparkles-outline"
-                      size={18}
-                      color={ARGUS_BLUE}
-                    />
-                    <Text style={styles.sectionTitle}>AI Credibility Review</Text>
-                  </View>
-
-                  <Text style={styles.paragraphText}>
-                    {activeReport.credibilityReview}
-                  </Text>
-                </View>
-
-                <View style={styles.sectionCard}>
-                  <View style={styles.sectionTitleRow}>
-                    <Ionicons
-                      name="person-circle-outline"
-                      size={18}
-                      color={ARGUS_BLUE}
-                    />
-                    <Text style={styles.sectionTitle}>Submission Info</Text>
-                  </View>
-
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Submitted By</Text>
-                    <Text style={styles.detailValue}>
-                      {activeReport.submittedBy} ({activeReport.submittedRole})
-                    </Text>
-                  </View>
-
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Submitted At</Text>
-                    <Text style={styles.detailValue}>
-                      {activeReport.submittedAt}
-                    </Text>
-                  </View>
-
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Barangay</Text>
-                    <Text style={styles.detailValue}>
-                      {activeReport.barangay}
-                    </Text>
-                  </View>
-
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Verified By</Text>
-                    <Text style={styles.detailValue}>
-                      {activeReport.verifiedBy || "Not yet verified"}
-                    </Text>
-                  </View>
-
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Remarks</Text>
-                    <Text style={styles.detailValue}>
-                      {activeReport.remarks || "No remarks yet"}
+                    <Text style={styles.aiText}>
+                      {report.credibilityReview ||
+                        "No AI credibility review available."}
                     </Text>
                   </View>
                 </View>
-              </>
-            )}
+              );
+            })}
           </ScrollView>
 
           <View style={styles.footerActions}>
             <TouchableOpacity
-              style={styles.rejectButton}
-              onPress={handleReject}
+              style={styles.underVerificationButton}
+              onPress={() => onVerify(compiledGroup)}
               activeOpacity={0.85}
             >
-              <Ionicons name="close-circle-outline" size={18} color="#E45757" />
-              <Text style={styles.rejectButtonText}>Reject</Text>
+              <Ionicons name="sync-outline" size={17} color={ARGUS_BLUE} />
+              <Text style={styles.underVerificationText}>
+                Under Verification
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.verifyButton}
-              onPress={handleVerify}
-              activeOpacity={0.85}
-            >
-              <Ionicons name="sync-outline" size={18} color={ARGUS_BLUE} />
-              <Text style={styles.verifyButtonText}>Under Verification</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.resolveButton}
-              onPress={handleMapAndVerify}
+              style={styles.resolvedButton}
+              onPress={() => onMapAndVerify(compiledGroup)}
               activeOpacity={0.85}
             >
               <Ionicons
                 name="checkmark-circle-outline"
-                size={18}
+                size={17}
                 color="#FFFFFF"
               />
-              <Text style={styles.resolveButtonText}>Resolve / Map</Text>
+              <Text style={styles.resolvedButtonText}>Resolved</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.rejectedButton}
+              onPress={() => onReject(compiledGroup)}
+              activeOpacity={0.85}
+            >
+              <Ionicons name="close-circle-outline" size={17} color="#E45757" />
+              <Text style={styles.rejectedText}>Rejected</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -481,14 +702,12 @@ const styles = StyleSheet.create({
   },
 
   modalCard: {
-    width: Platform.OS === "web" ? "78%" : "96%",
+    width: "100%",
     maxWidth: 980,
-    maxHeight: "90%",
+    maxHeight: "92%",
     backgroundColor: "#FFFFFF",
-    borderRadius: 22,
+    borderRadius: 20,
     overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "#D9E2F0",
   },
 
   modalHeader: {
@@ -496,32 +715,31 @@ const styles = StyleSheet.create({
     paddingVertical: 18,
     borderBottomWidth: 1,
     borderBottomColor: "#E4EAF3",
-    backgroundColor: "#F8FBFF",
+    backgroundColor: "#F7F9FD",
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
+    justifyContent: "space-between",
+    gap: 16,
   },
 
   headerLeft: {
-    flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    minWidth: 0,
+    gap: 12,
+    flex: 1,
   },
 
   headerIconBox: {
     width: 48,
     height: 48,
-    borderRadius: 16,
-    backgroundColor: "#EAF2FF",
+    borderRadius: 15,
+    backgroundColor: "#F3E8FF",
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 14,
   },
 
   headerTextBox: {
     flex: 1,
-    minWidth: 0,
   },
 
   modalTitle: {
@@ -531,7 +749,7 @@ const styles = StyleSheet.create({
   },
 
   modalSubtitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontFamily: "PoppinsRegular",
     color: "#5D6F92",
     marginTop: 3,
@@ -546,307 +764,426 @@ const styles = StyleSheet.create({
     borderColor: "#D9E2F0",
     alignItems: "center",
     justifyContent: "center",
-    marginLeft: 12,
   },
 
-  bodyScroll: {
-    flexGrow: 0,
-  },
-
-  bodyContent: {
-    padding: 22,
-    paddingBottom: 12,
-  },
-
-  compiledHeroCard: {
+  summaryCard: {
+    margin: 18,
+    padding: 16,
+    borderRadius: 16,
     backgroundColor: "#F7F9FD",
     borderWidth: 1,
-    borderColor: "#D9E2F0",
-    borderRadius: 18,
-    padding: 18,
-    marginBottom: 16,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 16,
+    borderColor: "#E4EAF3",
   },
 
-  compiledHeroLeft: {
-    flex: 1,
-    minWidth: 0,
-  },
-
-  singleHeroCard: {
-    backgroundColor: "#F7F9FD",
-    borderWidth: 1,
-    borderColor: "#D9E2F0",
-    borderRadius: 18,
-    padding: 18,
-    marginBottom: 16,
-  },
-
-  singleHeroTop: {
+  summaryTopRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     gap: 12,
-    marginBottom: 8,
+    marginBottom: 14,
   },
 
-  singleHeroTitleBox: {
+  summaryTitleBox: {
     flex: 1,
-    minWidth: 0,
   },
 
-  incidentTitle: {
-    fontSize: 20,
+  groupTitle: {
+    fontSize: 18,
     fontFamily: "PoppinsSemiBold",
     color: "#111827",
   },
 
-  incidentLocation: {
+  groupLocationRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 6,
+    marginTop: 5,
+  },
+
+  groupLocation: {
+    flex: 1,
     fontSize: 14,
     fontFamily: "PoppinsRegular",
     color: "#5D6F92",
-    marginTop: 4,
+    lineHeight: 20,
   },
 
-  incidentCategory: {
-    fontSize: 13,
-    fontFamily: "PoppinsMedium",
-    color: ARGUS_BLUE,
-    marginTop: 8,
-  },
-
-  reportCountBadge: {
-    width: 96,
-    borderRadius: 18,
-    backgroundColor: "#EAF2FF",
-    borderWidth: 1,
-    borderColor: "#D6E0F0",
+  statusBadge: {
+    alignSelf: "flex-start",
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 999,
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 12,
+    gap: 5,
   },
 
-  reportCountNumber: {
-    fontSize: 30,
-    fontFamily: "PoppinsSemiBold",
-    color: ARGUS_BLUE,
-  },
-
-  reportCountLabel: {
+  statusBadgeText: {
     fontSize: 12,
     fontFamily: "PoppinsMedium",
-    color: "#5D6F92",
-    marginTop: -2,
   },
 
-  infoGrid: {
+  summaryGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 12,
-    marginBottom: 16,
+    gap: 10,
   },
 
-  infoBox: {
+  summaryItem: {
     flex: 1,
     minWidth: 180,
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "#D9E2F0",
+    borderColor: "#E4EAF3",
+    borderRadius: 12,
+    padding: 12,
+  },
+
+  summaryLabel: {
+    fontSize: 12,
+    fontFamily: "PoppinsMedium",
+    color: "#7A8BA8",
+    marginBottom: 5,
+  },
+
+  summaryValue: {
+    fontSize: 14,
+    fontFamily: "PoppinsMedium",
+    color: ARGUS_BLUE,
+    lineHeight: 19,
+  },
+
+  listHeader: {
+    paddingHorizontal: 18,
+    paddingBottom: 10,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+
+  listTitle: {
+    fontSize: 16,
+    fontFamily: "PoppinsSemiBold",
+    color: ARGUS_BLUE,
+  },
+
+  listCount: {
+    fontSize: 13,
+    fontFamily: "PoppinsMedium",
+    color: "#5D6F92",
+  },
+
+  reportList: {
+    flex: 1,
+    paddingHorizontal: 18,
+  },
+
+  reportListContent: {
+    paddingBottom: 18,
+  },
+
+  reportCard: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#E4EAF3",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+  },
+
+  reportTopRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 12,
+    marginBottom: 10,
+  },
+
+  reportTitleBox: {
+    flex: 1,
+  },
+
+  reportId: {
+    fontSize: 13,
+    fontFamily: "PoppinsSemiBold",
+    color: ARGUS_BLUE,
+    marginBottom: 3,
+  },
+
+  reportTitle: {
+    fontSize: 16,
+    fontFamily: "PoppinsSemiBold",
+    color: "#111827",
+  },
+
+  smallStatusBadge: {
+    alignSelf: "flex-start",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+  },
+
+  smallStatusText: {
+    fontSize: 11,
+    fontFamily: "PoppinsMedium",
+  },
+
+  reportDetails: {
+    fontSize: 14,
+    fontFamily: "PoppinsRegular",
+    color: "#5D6F92",
+    lineHeight: 21,
+    marginBottom: 12,
+  },
+
+  reportImageContainer: {
+    width: "100%",
+    height: 220,
     borderRadius: 14,
-    padding: 14,
+    overflow: "hidden",
+    backgroundColor: "#F7F9FD",
+    borderWidth: 1,
+    borderColor: "#E4EAF3",
+    marginBottom: 12,
+  },
+
+  reportImage: {
+    width: "100%",
+    height: "100%",
+  },
+
+  reportInfoGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    marginBottom: 12,
+  },
+
+  reportInfoItem: {
+    flex: 1,
+    minWidth: 160,
+    backgroundColor: "#F7F9FD",
+    borderRadius: 12,
+    padding: 10,
   },
 
   infoLabel: {
     fontSize: 12,
     fontFamily: "PoppinsMedium",
     color: "#7A8BA8",
-    marginBottom: 5,
-  },
-
-  infoValue: {
-    fontSize: 16,
-    fontFamily: "PoppinsSemiBold",
-    color: ARGUS_BLUE,
-  },
-
-  sectionCard: {
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#D9E2F0",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 14,
-  },
-
-  sectionTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 10,
-  },
-
-  sectionTitle: {
-    fontSize: 15,
-    fontFamily: "PoppinsSemiBold",
-    color: ARGUS_BLUE,
-  },
-
-  paragraphText: {
-    fontSize: 13,
-    fontFamily: "PoppinsRegular",
-    color: "#5D6F92",
-    lineHeight: 21,
-    marginBottom: 8,
-  },
-
-  compiledStatusText: {
-    fontSize: 12,
-    fontFamily: "PoppinsMedium",
-    color: "#6B7280",
-    marginTop: 8,
-  },
-
-  includedReportRow: {
-    paddingVertical: 12,
-  },
-
-  rowDivider: {
-    borderTopWidth: 1,
-    borderTopColor: "#E4EAF3",
-  },
-
-  includedReportTop: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: 10,
-    marginBottom: 6,
-  },
-
-  includedReportId: {
-    fontSize: 14,
-    fontFamily: "PoppinsSemiBold",
-    color: ARGUS_BLUE,
-  },
-
-  includedReportTitle: {
-    fontSize: 14,
-    fontFamily: "PoppinsSemiBold",
-    color: "#111827",
     marginBottom: 4,
   },
 
-  includedReportMeta: {
-    fontSize: 12,
-    fontFamily: "PoppinsRegular",
-    color: "#7A8BA8",
-    marginBottom: 5,
-  },
-
-  includedReportDetails: {
-    fontSize: 13,
-    fontFamily: "PoppinsRegular",
-    color: "#5D6F92",
-    lineHeight: 19,
-  },
-
-  detailRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 14,
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "#EEF3FA",
-  },
-
-  detailLabel: {
+  infoValue: {
     fontSize: 13,
     fontFamily: "PoppinsMedium",
-    color: "#7A8BA8",
+    color: ARGUS_BLUE,
   },
 
-  detailValue: {
-    flex: 1,
-    textAlign: "right",
-    fontSize: 13,
-    fontFamily: "PoppinsSemiBold",
-    color: "#294880",
-  },
-
-  statusBadge: {
+  severityBadge: {
+    alignSelf: "flex-start",
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 999,
-    alignSelf: "flex-start",
   },
 
-  statusText: {
+  severityBadgeText: {
+    fontSize: 12,
+    fontFamily: "PoppinsMedium",
+  },
+
+  aiBox: {
+    backgroundColor: "#F7F9FD",
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#E4EAF3",
+  },
+
+  aiTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 5,
+  },
+
+  aiTitle: {
+    fontSize: 13,
+    fontFamily: "PoppinsSemiBold",
+    color: ARGUS_BLUE,
+  },
+
+  aiText: {
+    fontSize: 13,
+    fontFamily: "PoppinsRegular",
+    color: "#5D6F92",
+    lineHeight: 20,
+  },
+
+  sentimentBox: {
+    marginTop: 12,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#D9E2F0",
+  },
+
+  sentimentTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+    marginBottom: 10,
+  },
+
+  sentimentTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    flex: 1,
+  },
+
+  sentimentTitle: {
+    fontSize: 13,
+    fontFamily: "PoppinsSemiBold",
+    color: ARGUS_BLUE,
+  },
+
+  sentimentBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
+
+  sentimentBadgeText: {
     fontSize: 11,
     fontFamily: "PoppinsSemiBold",
   },
 
+  sentimentBarContainer: {
+    height: 12,
+    width: "100%",
+    borderRadius: 999,
+    overflow: "hidden",
+    backgroundColor: "#E4EAF3",
+    flexDirection: "row",
+    marginBottom: 10,
+  },
+
+  sentimentBarSegment: {
+    height: "100%",
+  },
+
+  positiveSegment: {
+    backgroundColor: "#22A06B",
+  },
+
+  negativeSegment: {
+    backgroundColor: "#E45757",
+  },
+
+  neutralSegment: {
+    backgroundColor: "#C98A2E",
+  },
+
+  sentimentLegendRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+  },
+
+  legendItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
+
+  legendDot: {
+    width: 9,
+    height: 9,
+    borderRadius: 999,
+  },
+
+  positiveDot: {
+    backgroundColor: "#22A06B",
+  },
+
+  negativeDot: {
+    backgroundColor: "#E45757",
+  },
+
+  neutralDot: {
+    backgroundColor: "#C98A2E",
+  },
+
+  legendText: {
+    fontSize: 11,
+    fontFamily: "PoppinsMedium",
+    color: "#5D6F92",
+  },
+
   footerActions: {
-    paddingHorizontal: 22,
-    paddingVertical: 16,
+    padding: 18,
     borderTopWidth: 1,
     borderTopColor: "#E4EAF3",
-    backgroundColor: "#F8FBFF",
+    backgroundColor: "#F7F9FD",
     flexDirection: "row",
     justifyContent: "flex-end",
     gap: 10,
     flexWrap: "wrap",
   },
 
-  rejectButton: {
+  underVerificationButton: {
     height: 42,
-    paddingHorizontal: 16,
+    paddingHorizontal: 15,
     borderRadius: 12,
-    backgroundColor: "#FFF5F5",
     borderWidth: 1,
-    borderColor: "#FFD6D6",
+    borderColor: "#D9E2F0",
+    backgroundColor: "#FFFFFF",
     flexDirection: "row",
     alignItems: "center",
     gap: 7,
   },
 
-  rejectButtonText: {
-    fontSize: 13,
-    fontFamily: "PoppinsSemiBold",
-    color: "#E45757",
-  },
-
-  verifyButton: {
-    height: 42,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    backgroundColor: "#EAF2FF",
-    borderWidth: 1,
-    borderColor: "#D6E0F0",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 7,
-  },
-
-  verifyButtonText: {
+  underVerificationText: {
     fontSize: 13,
     fontFamily: "PoppinsSemiBold",
     color: ARGUS_BLUE,
   },
 
-  resolveButton: {
+  resolvedButton: {
     height: 42,
-    paddingHorizontal: 16,
+    paddingHorizontal: 15,
     borderRadius: 12,
-    backgroundColor: ARGUS_BLUE,
+    backgroundColor: "#22A06B",
     flexDirection: "row",
     alignItems: "center",
     gap: 7,
   },
 
-  resolveButtonText: {
+  resolvedButtonText: {
     fontSize: 13,
     fontFamily: "PoppinsSemiBold",
     color: "#FFFFFF",
+  },
+
+  rejectedButton: {
+    height: 42,
+    paddingHorizontal: 15,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#F2C6C6",
+    backgroundColor: "#FFFFFF",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+  },
+
+  rejectedText: {
+    fontSize: 13,
+    fontFamily: "PoppinsSemiBold",
+    color: "#E45757",
   },
 });

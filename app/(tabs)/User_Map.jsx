@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   View,
   StyleSheet,
@@ -7,444 +7,331 @@ import {
   Modal,
   Pressable,
   ScrollView,
+  Dimensions,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import ThemedView from "../../components/ThemedView";
 import ThemedText from "../../components/ThemedText";
 import MapView from "../../components/MapView";
 
-const INCIDENT_CATEGORY_MAP = {
-  Crime: ["Robbery", "Mugging", "Burglary", "Assault", "Car Theft"],
-  Traffic: ["Vehicular Accident", "Road Obstruction", "Drunk Driving"],
-  Hazard: ["Fire", "Flood", "Fallen Tree"],
-  "Public Safety": [
-    "Suspicious Activity",
-    "Medical Emergency",
-    "Missing Person",
-  ],
-};
+const ARGUS_BLUE = "#294880";
 
-const TIME_RANGE_OPTIONS = [
-  "Past 24 hours",
-  "Past 3 days",
-  "Past 7 days",
-  "Past 30 days",
-];
+const { width } = Dimensions.get("window");
 
-const INCIDENTS = [
+const FACILITY_TYPES = ["All", "Police Station", "Fire Department"];
+
+const EMERGENCY_FACILITIES = [
   {
     id: 1,
-    category: "Crime",
-    type: "Robbery",
-    street: "Mabini St.",
-    description: "Victim attacked by armed suspect.",
-    hoursAgo: 2,
+    type: "Police Station",
+    name: "Argao Municipal Police Station",
+    location: "Poblacion, Argao",
+    distance: "1.2 km away",
+    contact: "911 / Local Police Hotline",
+    responseNote: "Nearest police assistance for public safety concerns.",
     top: 165,
-    left: "58%",
-    risk: "High",
+    left: "42%",
   },
   {
     id: 2,
-    category: "Crime",
-    type: "Mugging",
-    street: "Rizal Ave.",
-    description: "Phone snatching reported by pedestrian.",
-    hoursAgo: 4,
-    top: 110,
-    left: "22%",
-    risk: "Moderate",
+    type: "Fire Department",
+    name: "Argao Fire Station",
+    location: "Poblacion, Argao",
+    distance: "1.8 km away",
+    contact: "911 / Local Fire Hotline",
+    responseNote: "Nearest fire response for fire and emergency incidents.",
+    top: 250,
+    left: "58%",
   },
   {
     id: 3,
-    category: "Crime",
-    type: "Burglary",
-    street: "Aguinaldo St.",
-    description: "Forced entry reported at residence.",
-    hoursAgo: 7,
-    top: 285,
-    left: "28%",
-    risk: "High",
+    type: "Police Station",
+    name: "Nearby Police Assistance Point",
+    location: "South Road Area, Argao",
+    distance: "2.4 km away",
+    contact: "911",
+    responseNote: "Available for patrol assistance and incident reporting.",
+    top: 340,
+    left: "34%",
   },
   {
     id: 4,
-    category: "Crime",
-    type: "Car Theft",
-    street: "Luna St.",
-    description: "Vehicle stolen from roadside parking.",
-    hoursAgo: 10,
-    top: 420,
-    left: "72%",
-    risk: "Moderate",
-  },
-  {
-    id: 5,
-    category: "Crime",
-    type: "Assault",
-    street: "Bonifacio Rd.",
-    description: "Fight incident reported near intersection.",
-    hoursAgo: 14,
-    top: 500,
-    left: "38%",
-    risk: "High",
-  },
-  {
-    id: 6,
-    category: "Traffic",
-    type: "Vehicular Accident",
-    street: "Osmeña Blvd.",
-    description: "Two motorcycles collided near the crossing.",
-    hoursAgo: 5,
-    top: 235,
-    left: "62%",
-    risk: "Moderate",
-  },
-  {
-    id: 7,
-    category: "Traffic",
-    type: "Road Obstruction",
-    street: "Quezon Ave.",
-    description: "Broken-down truck blocking one lane.",
-    hoursAgo: 18,
-    top: 355,
-    left: "20%",
-    risk: "Low",
-  },
-  {
-    id: 8,
-    category: "Hazard",
-    type: "Flood",
-    street: "San Jose Ext.",
-    description: "Street partially flooded after heavy rain.",
-    hoursAgo: 8,
-    top: 470,
-    left: "57%",
-    risk: "Moderate",
-  },
-  {
-    id: 9,
-    category: "Hazard",
-    type: "Fire",
-    street: "P. Gomez St.",
-    description: "Small residential fire already reported.",
-    hoursAgo: 3,
-    top: 210,
-    left: "44%",
-    risk: "High",
-  },
-  {
-    id: 10,
-    category: "Public Safety",
-    type: "Suspicious Activity",
-    street: "Del Pilar St.",
-    description: "Unidentified person loitering near closed stores.",
-    hoursAgo: 9,
-    top: 560,
-    left: "65%",
-    risk: "Moderate",
-  },
-  {
-    id: 11,
-    category: "Public Safety",
-    type: "Medical Emergency",
-    street: "Burgos St.",
-    description: "Resident requested urgent medical assistance.",
-    hoursAgo: 1,
-    top: 300,
-    left: "50%",
-    risk: "High",
+    type: "Fire Department",
+    name: "Nearby Fire Response Unit",
+    location: "Argao Emergency Response Area",
+    distance: "3.1 km away",
+    contact: "911",
+    responseNote: "Available for fire, rescue, and emergency response.",
+    top: 410,
+    left: "64%",
   },
 ];
 
-const getHoursLimit = (range) => {
-  switch (range) {
-    case "Past 24 hours":
-      return 24;
-    case "Past 3 days":
-      return 72;
-    case "Past 7 days":
-      return 168;
-    case "Past 30 days":
-      return 720;
-    default:
-      return 24;
-  }
-};
-
-const getRiskStyle = (risk, styles) => {
-  switch (risk) {
-    case "Low":
-      return styles.lowMarker;
-    case "Moderate":
-      return styles.moderateMarker;
-    default:
-      return styles.highMarker;
-  }
-};
-
 const UserMap = () => {
-  const categoryOptions = Object.keys(INCIDENT_CATEGORY_MAP);
-
   const [searchText, setSearchText] = useState("");
+  const [selectedType, setSelectedType] = useState("All");
   const [showFilters, setShowFilters] = useState(false);
-
-  const [selectedCategory, setSelectedCategory] = useState("Crime");
-  const [selectedTypes, setSelectedTypes] = useState(
-    INCIDENT_CATEGORY_MAP["Crime"]
+  const [selectedFacility, setSelectedFacility] = useState(
+    EMERGENCY_FACILITIES[0]
   );
-  const [timeRange, setTimeRange] = useState("Past 24 hours");
 
-  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
-  const [showTimeDropdown, setShowTimeDropdown] = useState(false);
-
-  const [selectedIncident, setSelectedIncident] = useState(null);
-
-  const availableTypes = useMemo(() => {
-    return INCIDENT_CATEGORY_MAP[selectedCategory] ?? [];
-  }, [selectedCategory]);
-
-  useEffect(() => {
-    setSelectedTypes(INCIDENT_CATEGORY_MAP[selectedCategory] ?? []);
-  }, [selectedCategory]);
-
-  const filteredIncidents = useMemo(() => {
-    const maxHours = getHoursLimit(timeRange);
+  const filteredFacilities = useMemo(() => {
     const normalizedSearch = searchText.trim().toLowerCase();
 
-    return INCIDENTS.filter((incident) => {
-      const matchesCategory = incident.category === selectedCategory;
-      const matchesType = selectedTypes.includes(incident.type);
-      const matchesTime = incident.hoursAgo <= maxHours;
+    return EMERGENCY_FACILITIES.filter((facility) => {
+      const matchesType =
+        selectedType === "All" || facility.type === selectedType;
+
       const matchesSearch =
         normalizedSearch === "" ||
-        incident.street.toLowerCase().includes(normalizedSearch) ||
-        incident.type.toLowerCase().includes(normalizedSearch) ||
-        incident.category.toLowerCase().includes(normalizedSearch) ||
-        incident.description.toLowerCase().includes(normalizedSearch);
+        facility.name.toLowerCase().includes(normalizedSearch) ||
+        facility.type.toLowerCase().includes(normalizedSearch) ||
+        facility.location.toLowerCase().includes(normalizedSearch);
 
-      return matchesCategory && matchesType && matchesTime && matchesSearch;
+      return matchesType && matchesSearch;
     });
-  }, [searchText, selectedCategory, selectedTypes, timeRange]);
+  }, [searchText, selectedType]);
 
-  useEffect(() => {
-    if (filteredIncidents.length === 0) {
-      setSelectedIncident(null);
-      return;
+  const nearestPolice = EMERGENCY_FACILITIES.find(
+    (facility) => facility.type === "Police Station"
+  );
+
+  const nearestFire = EMERGENCY_FACILITIES.find(
+    (facility) => facility.type === "Fire Department"
+  );
+
+  const handleSelectType = (type) => {
+    setSelectedType(type);
+    setShowFilters(false);
+
+    const firstMatch = EMERGENCY_FACILITIES.find((facility) => {
+      return type === "All" || facility.type === type;
+    });
+
+    if (firstMatch) {
+      setSelectedFacility(firstMatch);
     }
-
-    setSelectedIncident((prev) => {
-      if (prev && filteredIncidents.some((item) => item.id === prev.id)) {
-        return (
-          filteredIncidents.find((item) => item.id === prev.id) ??
-          filteredIncidents[0]
-        );
-      }
-
-      return filteredIncidents[0];
-    });
-  }, [filteredIncidents]);
-
-  const typeBreakdown = useMemo(() => {
-    return filteredIncidents.reduce((acc, incident) => {
-      acc[incident.type] = (acc[incident.type] || 0) + 1;
-      return acc;
-    }, {});
-  }, [filteredIncidents]);
-
-  const breakdownEntries = Object.entries(typeBreakdown).slice(0, 3);
-
-  const toggleIncidentType = (type) => {
-    setSelectedTypes((prev) => {
-      if (prev.includes(type)) {
-        if (prev.length === 1) return prev;
-        return prev.filter((item) => item !== type);
-      }
-
-      return [...prev, type];
-    });
-  };
-
-  const handleSelectCategory = (category) => {
-    setSelectedCategory(category);
-    setShowCategoryDropdown(false);
-  };
-
-  const handleSelectTimeRange = (range) => {
-    setTimeRange(range);
-    setShowTimeDropdown(false);
   };
 
   const resetFilters = () => {
-    setSelectedCategory("Crime");
-    setSelectedTypes(INCIDENT_CATEGORY_MAP["Crime"]);
-    setTimeRange("Past 24 hours");
+    setSelectedType("All");
     setSearchText("");
-    setShowCategoryDropdown(false);
-    setShowTimeDropdown(false);
+    setSelectedFacility(EMERGENCY_FACILITIES[0]);
+  };
+
+  const getFacilityIcon = (type) => {
+    if (type === "Police Station") return "shield-checkmark";
+    if (type === "Fire Department") return "flame";
+    return "location";
+  };
+
+  const getFacilityPinStyle = (type) => {
+    if (type === "Police Station") return styles.policePin;
+    if (type === "Fire Department") return styles.firePin;
+    return styles.defaultPin;
   };
 
   return (
     <ThemedView style={styles.container}>
-      <View style={styles.mapWrapper}>
-        <MapView style={styles.map} />
+      <ScrollView
+        style={styles.screenScroll}
+        contentContainerStyle={styles.screenContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.mapWrapper}>
+          <MapView style={styles.map} />
 
-        <View style={[styles.riskZone, styles.lowZone]} />
-        <View style={[styles.riskZone, styles.moderateZone]} />
-        <View style={[styles.riskZone, styles.highZone]} />
+          <View style={styles.topBar}>
+            <TextInput
+              style={styles.searchBar}
+              placeholder="Search police or fire station..."
+              placeholderTextColor="#8E8E93"
+              value={searchText}
+              onChangeText={setSearchText}
+            />
 
-        <View style={styles.topBar}>
-          <TextInput
-            style={styles.searchBar}
-            placeholder="Search area or incident..."
-            placeholderTextColor="#8E8E93"
-            value={searchText}
-            onChangeText={setSearchText}
-          />
+            <TouchableOpacity
+              style={styles.filterIconButton}
+              activeOpacity={0.8}
+              onPress={() => setShowFilters(true)}
+            >
+              <Ionicons name="options-outline" size={22} color={ARGUS_BLUE} />
+            </TouchableOpacity>
+          </View>
 
-          <TouchableOpacity
-            style={styles.filterIconButton}
-            onPress={() => setShowFilters(true)}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.legendRow}
+            contentContainerStyle={styles.legendContent}
           >
-            <ThemedText style={styles.filterIconText}>☰</ThemedText>
-          </TouchableOpacity>
-        </View>
+            <View style={styles.legendChip}>
+              <View style={[styles.legendDot, styles.policeDot]} />
+              <ThemedText style={styles.legendText}>Police Station</ThemedText>
+            </View>
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.legendRow}
-          contentContainerStyle={styles.legendContent}
-        >
-          <View style={styles.legendChip}>
-            <View style={[styles.legendDot, { backgroundColor: "#84C865" }]} />
-            <ThemedText style={styles.legendText}>Low Risk</ThemedText>
+            <View style={styles.legendChip}>
+              <View style={[styles.legendDot, styles.fireDot]} />
+              <ThemedText style={styles.legendText}>Fire Department</ThemedText>
+            </View>
+
+            <View style={styles.legendChip}>
+              <View style={[styles.legendDot, styles.userDotSmall]} />
+              <ThemedText style={styles.legendText}>Your Location</ThemedText>
+            </View>
+          </ScrollView>
+
+          <View style={styles.userLocation}>
+            <View style={styles.userLocationDot} />
           </View>
 
-          <View style={styles.legendChip}>
-            <View style={[styles.legendDot, { backgroundColor: "#F5B041" }]} />
-            <ThemedText style={styles.legendText}>Moderate Risk</ThemedText>
+          <View style={styles.userBadge}>
+            <ThemedText style={styles.userBadgeText}>You</ThemedText>
           </View>
 
-          <View style={styles.legendChip}>
-            <View style={[styles.legendDot, { backgroundColor: "#D9534F" }]} />
-            <ThemedText style={styles.legendText}>High Risk</ThemedText>
-          </View>
-        </ScrollView>
-
-        <View style={styles.userLocation}>
-          <View style={styles.userLocationDot} />
+          {filteredFacilities.map((facility) => (
+            <TouchableOpacity
+              key={facility.id}
+              activeOpacity={0.85}
+              style={[
+                styles.facilityMarker,
+                getFacilityPinStyle(facility.type),
+                {
+                  top: facility.top,
+                  left: facility.left,
+                },
+              ]}
+              onPress={() => setSelectedFacility(facility)}
+            >
+              <Ionicons
+                name={getFacilityIcon(facility.type)}
+                size={18}
+                color="#FFFFFF"
+              />
+            </TouchableOpacity>
+          ))}
         </View>
 
-        <View style={styles.userBadge}>
-          <ThemedText style={styles.userBadgeText}>You</ThemedText>
-        </View>
-
-        {filteredIncidents.map((incident) => (
-          <TouchableOpacity
-            key={incident.id}
-            style={[
-              styles.marker,
-              getRiskStyle(incident.risk, styles),
-              {
-                top: incident.top,
-                left: incident.left,
-              },
-            ]}
-            onPress={() => setSelectedIncident(incident)}
-          >
-            <ThemedText style={styles.markerText}>!</ThemedText>
-          </TouchableOpacity>
-        ))}
-
-        {selectedIncident && (
-          <View style={styles.incidentCard}>
-            <View style={styles.incidentCardHeader}>
-              <View style={styles.incidentTypeRow}>
+        {selectedFacility && (
+          <View style={styles.facilityCard}>
+            <View style={styles.facilityHeader}>
+              <View style={styles.facilityTitleRow}>
                 <View
                   style={[
-                    styles.smallDangerDot,
-                    selectedIncident.risk === "Low"
-                      ? styles.lowMarker
-                      : selectedIncident.risk === "Moderate"
-                        ? styles.moderateMarker
-                        : styles.highMarker,
+                    styles.facilityIconBox,
+                    selectedFacility.type === "Police Station"
+                      ? styles.policeIconBox
+                      : styles.fireIconBox,
                   ]}
-                />
-                <ThemedText style={styles.incidentTypeText}>
-                  {selectedIncident.type}
-                </ThemedText>
+                >
+                  <Ionicons
+                    name={getFacilityIcon(selectedFacility.type)}
+                    size={18}
+                    color="#FFFFFF"
+                  />
+                </View>
+
+                <View style={styles.facilityTitleWrap}>
+                  <ThemedText style={styles.facilityName}>
+                    {selectedFacility.name}
+                  </ThemedText>
+
+                  <ThemedText style={styles.facilityType}>
+                    {selectedFacility.type}
+                  </ThemedText>
+                </View>
               </View>
 
-              <ThemedText style={styles.timeText}>
-                {selectedIncident.hoursAgo} hrs ago
+              <ThemedText style={styles.distanceText}>
+                {selectedFacility.distance}
               </ThemedText>
             </View>
 
-            <ThemedText style={styles.streetText}>
-              {selectedIncident.street}
+            <View style={styles.infoRow}>
+              <Ionicons name="location-outline" size={16} color="#6B7280" />
+              <ThemedText style={styles.infoText}>
+                {selectedFacility.location}
+              </ThemedText>
+            </View>
+
+            <View style={styles.infoRow}>
+              <Ionicons name="call-outline" size={16} color="#6B7280" />
+              <ThemedText style={styles.infoText}>
+                {selectedFacility.contact}
+              </ThemedText>
+            </View>
+
+            <ThemedText style={styles.responseNote}>
+              {selectedFacility.responseNote}
             </ThemedText>
 
-            <ThemedText style={styles.descriptionText}>
-              {selectedIncident.description}
-            </ThemedText>
-
-            <View style={styles.metaRow}>
-              <View style={styles.metaChip}>
-                <ThemedText style={styles.metaChipText}>
-                  {selectedIncident.category}
+            <View style={styles.cardButtons}>
+              <TouchableOpacity style={styles.primaryButton} activeOpacity={0.8}>
+                <Ionicons name="navigate-outline" size={16} color="#FFFFFF" />
+                <ThemedText style={styles.primaryButtonText}>
+                  Get Directions
                 </ThemedText>
-              </View>
+              </TouchableOpacity>
 
-              <View style={styles.metaChip}>
-                <ThemedText style={styles.metaChipText}>
-                  {selectedIncident.risk} Risk
+              <TouchableOpacity
+                style={styles.secondaryButton}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="call-outline" size={16} color={ARGUS_BLUE} />
+                <ThemedText style={styles.secondaryButtonText}>
+                  Call
                 </ThemedText>
-              </View>
+              </TouchableOpacity>
             </View>
           </View>
         )}
 
-        <View style={styles.bottomSafeSpace} />
-
         <View style={styles.bottomPanel}>
           <View style={styles.filtersTag}>
             <ThemedText style={styles.filtersTagText}>
-              {selectedCategory} • {selectedTypes.length} type
-              {selectedTypes.length > 1 ? "s" : ""}
+              Showing: {selectedType}
             </ThemedText>
           </View>
 
-          <View style={styles.statsRow}>
-            <ThemedText style={styles.totalLabel}>
-              Total Incidents: {filteredIncidents.length}
-            </ThemedText>
+          <View style={styles.summaryRow}>
+            <View style={styles.summaryCard}>
+              <View style={[styles.summaryIcon, styles.policeIconBox]}>
+                <Ionicons name="shield-checkmark" size={17} color="#FFFFFF" />
+              </View>
 
-            {breakdownEntries.length > 0 ? (
-              breakdownEntries.map(([type, count]) => (
-                <ThemedText key={type} style={styles.breakdownText}>
-                  {type} {count}
+              <View style={styles.summaryTextWrap}>
+                <ThemedText style={styles.summaryLabel}>
+                  Nearest Police
                 </ThemedText>
-              ))
-            ) : (
-              <ThemedText style={styles.breakdownText}>
-                No incidents found
-              </ThemedText>
-            )}
+
+                <ThemedText numberOfLines={1} style={styles.summaryValue}>
+                  {nearestPolice?.distance}
+                </ThemedText>
+              </View>
+            </View>
+
+            <View style={styles.summaryCard}>
+              <View style={[styles.summaryIcon, styles.fireIconBox]}>
+                <Ionicons name="flame" size={17} color="#FFFFFF" />
+              </View>
+
+              <View style={styles.summaryTextWrap}>
+                <ThemedText style={styles.summaryLabel}>
+                  Nearest Fire Dept.
+                </ThemedText>
+
+                <ThemedText numberOfLines={1} style={styles.summaryValue}>
+                  {nearestFire?.distance}
+                </ThemedText>
+              </View>
+            </View>
           </View>
 
-          <ThemedText style={styles.rangeText}>{timeRange}</ThemedText>
-
-          <View style={styles.actionButtons}>
-            <TouchableOpacity style={styles.actionButton}>
-              <ThemedText style={styles.actionButtonText}>Locate Me</ThemedText>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.actionButton}>
-              <ThemedText style={styles.actionButtonText}>
-                Directions
-              </ThemedText>
-            </TouchableOpacity>
-          </View>
+          <ThemedText style={styles.bottomNote}>
+            Pins show nearby emergency response locations for faster assistance.
+          </ThemedText>
         </View>
-      </View>
+      </ScrollView>
 
       <Modal
         visible={showFilters}
@@ -458,125 +345,62 @@ const UserMap = () => {
         >
           <Pressable style={styles.filterModal} onPress={() => {}}>
             <View style={styles.modalHeader}>
-              <ThemedText style={styles.modalTitle}>Apply Filters</ThemedText>
+              <ThemedText style={styles.modalTitle}>Map Filter</ThemedText>
+
               <TouchableOpacity onPress={() => setShowFilters(false)}>
-                <ThemedText style={styles.closeText}>✕</ThemedText>
+                <Ionicons name="close" size={22} color="#6B7280" />
               </TouchableOpacity>
             </View>
 
             <ThemedText style={styles.sectionTitle}>
-              Incident Category
+              Emergency Location Type
             </ThemedText>
-            <TouchableOpacity
-              style={styles.dropdown}
-              onPress={() => {
-                setShowCategoryDropdown((prev) => !prev);
-                setShowTimeDropdown(false);
-              }}
-            >
-              <ThemedText style={styles.dropdownText}>
-                {selectedCategory}
-              </ThemedText>
-              <ThemedText style={styles.dropdownArrow}>
-                {showCategoryDropdown ? "⌃" : "⌄"}
-              </ThemedText>
-            </TouchableOpacity>
 
-            {showCategoryDropdown && (
-              <View style={styles.dropdownList}>
-                {categoryOptions.map((category) => (
-                  <TouchableOpacity
-                    key={category}
-                    style={[
-                      styles.dropdownItem,
-                      selectedCategory === category &&
-                        styles.dropdownItemActive,
-                    ]}
-                    onPress={() => handleSelectCategory(category)}
-                  >
-                    <ThemedText
-                      style={[
-                        styles.dropdownItemText,
-                        selectedCategory === category &&
-                          styles.dropdownItemTextActive,
-                      ]}
-                    >
-                      {category}
-                    </ThemedText>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
+            {FACILITY_TYPES.map((type) => {
+              const active = selectedType === type;
 
-            <ThemedText style={styles.sectionTitle}>Incident Type</ThemedText>
-            <View style={styles.checkboxGrid}>
-              {availableTypes.map((type) => {
-                const checked = selectedTypes.includes(type);
-
-                return (
-                  <TouchableOpacity
-                    key={type}
-                    style={styles.checkboxItem}
-                    onPress={() => toggleIncidentType(type)}
-                  >
+              return (
+                <TouchableOpacity
+                  key={type}
+                  activeOpacity={0.8}
+                  style={[styles.filterOption, active && styles.activeOption]}
+                  onPress={() => handleSelectType(type)}
+                >
+                  <View style={styles.filterOptionLeft}>
                     <View
                       style={[
-                        styles.checkbox,
-                        checked && styles.checkboxChecked,
+                        styles.radioCircle,
+                        active && styles.radioCircleActive,
                       ]}
                     >
-                      <ThemedText style={styles.checkboxTick}>
-                        {checked ? "✓" : ""}
-                      </ThemedText>
+                      {active && <View style={styles.radioInner} />}
                     </View>
 
-                    <ThemedText style={styles.checkboxLabel}>{type}</ThemedText>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-
-            <ThemedText style={styles.sectionTitle}>Time Range</ThemedText>
-            <TouchableOpacity
-              style={styles.dropdown}
-              onPress={() => {
-                setShowTimeDropdown((prev) => !prev);
-                setShowCategoryDropdown(false);
-              }}
-            >
-              <ThemedText style={styles.dropdownText}>{timeRange}</ThemedText>
-              <ThemedText style={styles.dropdownArrow}>
-                {showTimeDropdown ? "⌃" : "⌄"}
-              </ThemedText>
-            </TouchableOpacity>
-
-            {showTimeDropdown && (
-              <View style={styles.dropdownList}>
-                {TIME_RANGE_OPTIONS.map((range) => (
-                  <TouchableOpacity
-                    key={range}
-                    style={[
-                      styles.dropdownItem,
-                      timeRange === range && styles.dropdownItemActive,
-                    ]}
-                    onPress={() => handleSelectTimeRange(range)}
-                  >
                     <ThemedText
                       style={[
-                        styles.dropdownItemText,
-                        timeRange === range && styles.dropdownItemTextActive,
+                        styles.filterOptionText,
+                        active && styles.filterOptionTextActive,
                       ]}
                     >
-                      {range}
+                      {type}
                     </ThemedText>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
+                  </View>
+
+                  {type !== "All" && (
+                    <Ionicons
+                      name={getFacilityIcon(type)}
+                      size={18}
+                      color={active ? ARGUS_BLUE : "#9CA3AF"}
+                    />
+                  )}
+                </TouchableOpacity>
+              );
+            })}
 
             <View style={styles.modalButtonsRow}>
               <TouchableOpacity
                 style={styles.resetButton}
+                activeOpacity={0.8}
                 onPress={resetFilters}
               >
                 <ThemedText style={styles.resetButtonText}>Reset</ThemedText>
@@ -584,11 +408,10 @@ const UserMap = () => {
 
               <TouchableOpacity
                 style={styles.applyButton}
+                activeOpacity={0.8}
                 onPress={() => setShowFilters(false)}
               >
-                <ThemedText style={styles.applyButtonText}>
-                  Apply Filters
-                </ThemedText>
+                <ThemedText style={styles.applyButtonText}>Apply</ThemedText>
               </TouchableOpacity>
             </View>
           </Pressable>
@@ -604,9 +427,20 @@ const styles = StyleSheet.create({
     backgroundColor: "#F4F6FA",
   },
 
-  mapWrapper: {
+  screenScroll: {
     flex: 1,
+  },
+
+  screenContent: {
+    paddingBottom: 120,
+  },
+
+  mapWrapper: {
+    width: "100%",
+    height: 560,
     position: "relative",
+    backgroundColor: "#DCE7F3",
+    overflow: "hidden",
   },
 
   map: {
@@ -621,6 +455,7 @@ const styles = StyleSheet.create({
     right: 12,
     flexDirection: "row",
     alignItems: "center",
+    zIndex: 10,
   },
 
   searchBar: {
@@ -630,15 +465,13 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     paddingHorizontal: 14,
     fontSize: 14,
+    fontFamily: "PoppinsRegular",
     color: "#1E1E1E",
     elevation: 4,
     shadowColor: "#000",
     shadowOpacity: 0.08,
     shadowRadius: 8,
-    shadowOffset: {
-      width: 0,
-      height: 3,
-    },
+    shadowOffset: { width: 0, height: 3 },
   },
 
   filterIconButton: {
@@ -653,16 +486,7 @@ const styles = StyleSheet.create({
     shadowColor: "#000",
     shadowOpacity: 0.08,
     shadowRadius: 8,
-    shadowOffset: {
-      width: 0,
-      height: 3,
-    },
-  },
-
-  filterIconText: {
-    fontSize: 18,
-    color: "#294880",
-    fontWeight: "700",
+    shadowOffset: { width: 0, height: 3 },
   },
 
   legendRow: {
@@ -670,7 +494,8 @@ const styles = StyleSheet.create({
     top: 70,
     left: 12,
     right: 12,
-    maxHeight: 40,
+    maxHeight: 42,
+    zIndex: 10,
   },
 
   legendContent: {
@@ -682,7 +507,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#FFFFFF",
     borderRadius: 999,
-    paddingVertical: 6,
+    paddingVertical: 7,
     paddingHorizontal: 10,
     marginRight: 8,
     elevation: 2,
@@ -695,78 +520,27 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
 
+  policeDot: {
+    backgroundColor: ARGUS_BLUE,
+  },
+
+  fireDot: {
+    backgroundColor: "#D9534F",
+  },
+
+  userDotSmall: {
+    backgroundColor: "#2F80ED",
+  },
+
   legendText: {
     fontSize: 11,
-    fontWeight: "600",
+    fontFamily: "PoppinsMedium",
     color: "#4A4A4A",
-  },
-
-  riskZone: {
-    position: "absolute",
-    opacity: 0.22,
-    borderRadius: 24,
-  },
-
-  lowZone: {
-    width: 110,
-    height: 210,
-    top: 140,
-    left: 24,
-    backgroundColor: "#84C865",
-    transform: [{ rotate: "-20deg" }],
-  },
-
-  moderateZone: {
-    width: 130,
-    height: 240,
-    top: 210,
-    left: 90,
-    backgroundColor: "#F5B041",
-    transform: [{ rotate: "-18deg" }],
-  },
-
-  highZone: {
-    width: 150,
-    height: 350,
-    top: 120,
-    left: 150,
-    backgroundColor: "#D9534F",
-    transform: [{ rotate: "-16deg" }],
-  },
-
-  marker: {
-    position: "absolute",
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 3,
-    borderColor: "#FFFFFF",
-  },
-
-  lowMarker: {
-    backgroundColor: "#84C865",
-  },
-
-  moderateMarker: {
-    backgroundColor: "#F5B041",
-  },
-
-  highMarker: {
-    backgroundColor: "#D9534F",
-  },
-
-  markerText: {
-    color: "#FFFFFF",
-    fontWeight: "800",
-    fontSize: 16,
-    marginTop: -1,
   },
 
   userLocation: {
     position: "absolute",
-    top: 305,
+    top: 300,
     left: "47%",
     width: 18,
     height: 18,
@@ -774,6 +548,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
+    zIndex: 9,
   },
 
   userLocationDot: {
@@ -785,121 +560,183 @@ const styles = StyleSheet.create({
 
   userBadge: {
     position: "absolute",
-    top: 328,
+    top: 323,
     left: "44.5%",
     backgroundColor: "#FFFFFF",
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 10,
     elevation: 2,
+    zIndex: 9,
   },
 
   userBadgeText: {
     fontSize: 11,
-    fontWeight: "700",
+    fontFamily: "PoppinsMedium",
     color: "#6B6B6B",
   },
 
-  incidentCard: {
+  facilityMarker: {
     position: "absolute",
-    left: 18,
-    right: 18,
-    bottom: 250,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    padding: 14,
-    elevation: 4,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 3,
+    borderColor: "#FFFFFF",
+    elevation: 5,
     shadowColor: "#000",
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.14,
     shadowRadius: 8,
-    shadowOffset: {
-      width: 0,
-      height: 3,
-    },
+    shadowOffset: { width: 0, height: 3 },
+    zIndex: 8,
   },
 
-  incidentCardHeader: {
+  policePin: {
+    backgroundColor: ARGUS_BLUE,
+  },
+
+  firePin: {
+    backgroundColor: "#D9534F",
+  },
+
+  defaultPin: {
+    backgroundColor: "#6B7280",
+  },
+
+  facilityCard: {
+    marginHorizontal: 14,
+    marginTop: -78,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    padding: 14,
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 9,
+    shadowOffset: { width: 0, height: 3 },
+    zIndex: 20,
+  },
+
+  facilityHeader: {
     flexDirection: "row",
+    alignItems: "flex-start",
     justifyContent: "space-between",
-    alignItems: "center",
   },
 
-  incidentTypeRow: {
-    flexDirection: "row",
-    alignItems: "center",
+  facilityTitleRow: {
     flex: 1,
-    marginRight: 8,
-  },
-
-  smallDangerDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 10,
-    marginRight: 6,
-  },
-
-  incidentTypeText: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#1E1E1E",
-    flexShrink: 1,
-  },
-
-  timeText: {
-    fontSize: 12,
-    color: "#8E8E93",
-  },
-
-  streetText: {
-    marginTop: 6,
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#5E5E5E",
-  },
-
-  descriptionText: {
-    marginTop: 6,
-    fontSize: 13,
-    color: "#6C6C6C",
-    lineHeight: 18,
-  },
-
-  metaRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
+    alignItems: "center",
+    marginRight: 10,
+  },
+
+  facilityIconBox: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
+  },
+
+  policeIconBox: {
+    backgroundColor: ARGUS_BLUE,
+  },
+
+  fireIconBox: {
+    backgroundColor: "#D9534F",
+  },
+
+  facilityTitleWrap: {
+    flex: 1,
+  },
+
+  facilityName: {
+    fontSize: 15,
+    fontFamily: "PoppinsSemiBold",
+    color: "#1F2937",
+  },
+
+  facilityType: {
+    marginTop: 2,
+    fontSize: 12,
+    fontFamily: "PoppinsRegular",
+    color: "#6B7280",
+  },
+
+  distanceText: {
+    fontSize: 12,
+    fontFamily: "PoppinsMedium",
+    color: ARGUS_BLUE,
+  },
+
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "center",
     marginTop: 10,
   },
 
-  metaChip: {
-    backgroundColor: "#EEF2FF",
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    marginRight: 8,
-    marginBottom: 6,
+  infoText: {
+    flex: 1,
+    marginLeft: 7,
+    fontSize: 13,
+    fontFamily: "PoppinsRegular",
+    color: "#4B5563",
   },
 
-  metaChipText: {
+  responseNote: {
+    marginTop: 10,
     fontSize: 12,
-    fontWeight: "700",
-    color: "#294880",
+    fontFamily: "PoppinsRegular",
+    color: "#6B7280",
+    lineHeight: 18,
   },
 
-  bottomSafeSpace: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 110,
-    backgroundColor: "#000000",
-    opacity: 0.05,
+  cardButtons: {
+    flexDirection: "row",
+    marginTop: 13,
+  },
+
+  primaryButton: {
+    flex: 1.3,
+    height: 40,
+    borderRadius: 999,
+    backgroundColor: ARGUS_BLUE,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    marginRight: 8,
+  },
+
+  primaryButtonText: {
+    marginLeft: 6,
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontFamily: "PoppinsMedium",
+  },
+
+  secondaryButton: {
+    flex: 0.8,
+    height: 40,
+    borderRadius: 999,
+    backgroundColor: "#EEF2FF",
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+  },
+
+  secondaryButtonText: {
+    marginLeft: 6,
+    color: ARGUS_BLUE,
+    fontSize: 12,
+    fontFamily: "PoppinsMedium",
   },
 
   bottomPanel: {
-    position: "absolute",
-    left: 10,
-    right: 10,
-    bottom: 110,
+    marginHorizontal: 10,
+    marginTop: 12,
     backgroundColor: "rgba(255,255,255,0.96)",
     borderRadius: 20,
     padding: 12,
@@ -907,10 +744,7 @@ const styles = StyleSheet.create({
     shadowColor: "#000",
     shadowOpacity: 0.08,
     shadowRadius: 8,
-    shadowOffset: {
-      width: 0,
-      height: 3,
-    },
+    shadowOffset: { width: 0, height: 3 },
   },
 
   filtersTag: {
@@ -924,55 +758,59 @@ const styles = StyleSheet.create({
 
   filtersTagText: {
     fontSize: 12,
-    fontWeight: "700",
-    color: "#294880",
+    fontFamily: "PoppinsMedium",
+    color: ARGUS_BLUE,
   },
 
-  statsRow: {
+  summaryRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    marginBottom: 6,
+    gap: 8,
   },
 
-  totalLabel: {
-    width: "100%",
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#3A3A3A",
-    marginBottom: 4,
-  },
-
-  breakdownText: {
-    fontSize: 12,
-    color: "#5E5E5E",
-    marginRight: 12,
-    marginBottom: 4,
-  },
-
-  rangeText: {
-    fontSize: 12,
-    color: "#8E8E93",
-    marginBottom: 10,
-  },
-
-  actionButtons: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-
-  actionButton: {
+  summaryCard: {
     flex: 1,
-    backgroundColor: "#294880",
-    paddingVertical: 9,
-    borderRadius: 999,
+    minHeight: 66,
+    borderRadius: 16,
+    backgroundColor: "#F8FAFC",
+    borderWidth: 1,
+    borderColor: "#E5EAF3",
+    padding: 10,
+    flexDirection: "row",
     alignItems: "center",
-    marginHorizontal: 4,
   },
 
-  actionButtonText: {
-    color: "#FFFFFF",
+  summaryIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 11,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 8,
+  },
+
+  summaryTextWrap: {
+    flex: 1,
+  },
+
+  summaryLabel: {
     fontSize: 11,
-    fontWeight: "700",
+    fontFamily: "PoppinsRegular",
+    color: "#6B7280",
+  },
+
+  summaryValue: {
+    marginTop: 3,
+    fontSize: 13,
+    fontFamily: "PoppinsMedium",
+    color: "#1F2937",
+  },
+
+  bottomNote: {
+    marginTop: 10,
+    fontSize: 12,
+    fontFamily: "PoppinsRegular",
+    color: "#6B7280",
+    lineHeight: 17,
   },
 
   modalOverlay: {
@@ -985,8 +823,7 @@ const styles = StyleSheet.create({
   },
 
   filterModal: {
-    width: 290,
-    maxHeight: "78%",
+    width: Math.min(width - 28, 320),
     backgroundColor: "#FFFFFF",
     borderRadius: 18,
     padding: 16,
@@ -1001,122 +838,77 @@ const styles = StyleSheet.create({
 
   modalTitle: {
     fontSize: 20,
-    fontWeight: "700",
+    fontFamily: "PoppinsSemiBold",
     color: "#222222",
-  },
-
-  closeText: {
-    fontSize: 18,
-    color: "#6C6C6C",
-    fontWeight: "700",
   },
 
   sectionTitle: {
     marginTop: 16,
     marginBottom: 10,
     fontSize: 14,
-    fontWeight: "700",
+    fontFamily: "PoppinsMedium",
     color: "#3A3A3A",
   },
 
-  dropdown: {
-    minHeight: 44,
+  filterOption: {
+    minHeight: 48,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#D9E1F2",
-    borderRadius: 12,
+    borderColor: "#E5EAF3",
+    backgroundColor: "#FAFBFF",
     paddingHorizontal: 12,
+    marginBottom: 8,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#FAFBFF",
   },
 
-  dropdownText: {
-    fontSize: 13,
-    color: "#444444",
-    fontWeight: "600",
-  },
-
-  dropdownArrow: {
-    fontSize: 16,
-    color: "#666666",
-  },
-
-  dropdownList: {
-    marginTop: 8,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    borderRadius: 12,
-    overflow: "hidden",
-    backgroundColor: "#FFFFFF",
-  },
-
-  dropdownItem: {
-    paddingHorizontal: 12,
-    paddingVertical: 11,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F1F3F5",
-  },
-
-  dropdownItemActive: {
+  activeOption: {
     backgroundColor: "#EEF2FF",
+    borderColor: "#C9D8F5",
   },
 
-  dropdownItemText: {
-    fontSize: 13,
-    color: "#444444",
-  },
-
-  dropdownItemTextActive: {
-    color: "#294880",
-    fontWeight: "700",
-  },
-
-  checkboxGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-  },
-
-  checkboxItem: {
-    width: "50%",
+  filterOptionLeft: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 12,
-    paddingRight: 8,
   },
 
-  checkbox: {
+  radioCircle: {
     width: 18,
     height: 18,
-    borderRadius: 4,
+    borderRadius: 9,
     borderWidth: 1.5,
-    borderColor: "#C7C7CC",
-    marginRight: 8,
+    borderColor: "#CBD5E1",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FFFFFF",
+    marginRight: 9,
   },
 
-  checkboxChecked: {
-    backgroundColor: "#294880",
-    borderColor: "#294880",
+  radioCircleActive: {
+    borderColor: ARGUS_BLUE,
   },
 
-  checkboxTick: {
-    color: "#FFFFFF",
-    fontSize: 12,
-    fontWeight: "800",
+  radioInner: {
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+    backgroundColor: ARGUS_BLUE,
   },
 
-  checkboxLabel: {
-    flex: 1,
+  filterOptionText: {
     fontSize: 13,
-    color: "#444444",
+    fontFamily: "PoppinsRegular",
+    color: "#4B5563",
+  },
+
+  filterOptionTextActive: {
+    fontFamily: "PoppinsMedium",
+    color: ARGUS_BLUE,
   },
 
   modalButtonsRow: {
     flexDirection: "row",
-    marginTop: 20,
+    marginTop: 16,
   },
 
   resetButton: {
@@ -1129,14 +921,14 @@ const styles = StyleSheet.create({
   },
 
   resetButtonText: {
-    color: "#294880",
-    fontWeight: "700",
+    color: ARGUS_BLUE,
     fontSize: 14,
+    fontFamily: "PoppinsMedium",
   },
 
   applyButton: {
     flex: 1.3,
-    backgroundColor: "#294880",
+    backgroundColor: ARGUS_BLUE,
     borderRadius: 999,
     paddingVertical: 12,
     alignItems: "center",
@@ -1144,8 +936,8 @@ const styles = StyleSheet.create({
 
   applyButtonText: {
     color: "#FFFFFF",
-    fontWeight: "700",
     fontSize: 14,
+    fontFamily: "PoppinsMedium",
   },
 });
 
