@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === "ios" ? 58 : 40,
     paddingHorizontal: 18,
     paddingBottom: 14,
-    backgroundColor: "#F3F6FB",
+    backgroundColor: "#ffffff",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
