@@ -68,7 +68,7 @@ export default function Admin_Register() {
     globalThis.adminAccount = {
       fullName: cleanName,
       email: cleanEmail,
-      password: password,
+      password,
     };
 
     Alert.alert(
