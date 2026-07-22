@@ -11,6 +11,7 @@ import { useFonts } from "expo-font";
 
 import Admin_Layout from "../../components/Admin_compo/Admin_Layout";
 import Admin_ViewSimilarReportsModal from "../../components/Admin_compo/Admin_ViewSimilarReportsModal";
+import Admin_AddReportModal from "../../components/Admin_compo/Admin_AddReportModal";
 
 const ARGUS_BLUE = "#294880";
 
@@ -19,12 +20,19 @@ export default function Admin_Validation() {
   const [selectedWeekRange, setSelectedWeekRange] = useState("All Weeks");
   const [selectedCompiledGroup, setSelectedCompiledGroup] = useState(null);
   const [viewVisible, setViewVisible] = useState(false);
+  const [addReportVisible, setAddReportVisible] = useState(false);
 
   const [fontsLoaded] = useFonts({
     PoppinsRegular: require("../../assets/fonts/Poppins-Regular.ttf"),
     PoppinsMedium: require("../../assets/fonts/Poppins-Medium.ttf"),
     PoppinsSemiBold: require("../../assets/fonts/Poppins-SemiBold.ttf"),
   });
+
+  const handleAddReport = () => {
+    setAddReportVisible(true);
+};
+
+
 
   const [reports, setReports] = useState([
     {
@@ -557,11 +565,20 @@ export default function Admin_Validation() {
       "Resolved",
       "Report has been verified, resolved, and prepared for mapping."
     );
+
+ 
   };
 
-  const handleAddReport = () => {
-    console.log("Add Report clicked");
-  };
+  const handleAnnouncementSubmit = (announcement) => {
+  console.log("New Announcement:", announcement);
+
+  // Close the modal
+  setAddReportVisible(false);
+
+  // TODO: Later we will save this to Firebase/MySQL/Supabase
+  // For now it only prints the data.
+};
+
 
   const StatCard = ({ icon, title, value, color, bg }) => (
     <View style={styles.statCard}>
@@ -907,7 +924,7 @@ export default function Admin_Validation() {
                             color="#FFFFFF"
                           />
                           <Text style={styles.viewButtonText}>
-                            {isCompiled ? "View Similar Posts" : "View Report"}
+                            {isCompiled ? "View Posts" : "View Posts"}
                           </Text>
                         </TouchableOpacity>
                       </View>
@@ -927,6 +944,13 @@ export default function Admin_Validation() {
           onReject={handleReject}
           onMapAndVerify={handleMapAndVerify}
         />
+
+        <Admin_AddReportModal
+        visible={addReportVisible}
+        onClose={() => setAddReportVisible(false)}
+        onSubmit={handleAnnouncementSubmit}
+    />
+            
       </View>
     </Admin_Layout>
   );
