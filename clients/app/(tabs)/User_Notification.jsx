@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   StyleSheet,
@@ -7,68 +7,57 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFonts } from "expo-font";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import ThemedView from "../../components/ThemedView";
 import ThemedText from "../../components/ThemedText";
+import apiClient from "../../services/apiClient";
 
 const ARGUS_BLUE = "#294880";
 
-const userReports = [
-  {
-    id: "1",
-    title: "Robbery Report Approved",
-    message:
-      "Your report about the incident on Mabin St. was reviewed and marked as VERIFIED by the admin.",
-    time: "12 min ago",
-    location: "Mabin St.",
-    verified: true,
-  },
-  {
-    id: "2",
-    title: "Assault Report Reviewed",
-    message:
-      "Your report near Rizal Ave. was checked by the admin and is currently marked as UNVERIFIED.",
-    time: "1 hr ago",
-    location: "Rizal Ave.",
-    verified: false,
-  },
-];
+const formatRelativeTime = (iso) => {
+  if (!iso) return "";
 
-const nearbyIncidents = [
-  {
-    id: "1",
-    type: "Suspicious Activity",
-    message: "A suspicious person was reported near the public park entrance.",
-    time: "18 min ago",
-    distance: "350 m away",
-    level: "Moderate",
-  },
-  {
-    id: "2",
-    type: "Theft Alert",
-    message: "A mobile phone theft was reported near the transport terminal.",
-    time: "42 min ago",
-    distance: "700 m away",
-    level: "High",
-  },
-];
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
 
-const loginActivity = [
-  {
-    id: "1",
-    device: "Samsung Galaxy A15",
-    location: "Cavite, Philippines",
-    time: "Today, 8:24 AM",
-    current: true,
-  },
-  {
-    id: "2",
-    device: "Windows Chrome Browser",
-    location: "Manila, Philippines",
-    time: "Yesterday, 9:41 PM",
-    current: false,
-  },
-];
+  const diffMs = Date.now() - date.getTime();
+  const minutes = Math.floor(diffMs / 60000);
+
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes} min ago`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} hr ago`;
+
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days} day${days === 1 ? "" : "s"} ago`;
+
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+};
+
+const formatLoginTime = (iso) => {
+  if (!iso) return "";
+
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+
+  const now = new Date();
+  const sameDay =
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate();
+
+  return `${sameDay ? "Today" : "Yesterday"}, ${date.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  })}`;
+};
 
 const ReportStatusCard = ({ item }) => {
   return (
@@ -258,6 +247,52 @@ const User_Notification = () => {
     PoppinsMedium: require("../../assets/fonts/Poppins-Medium.ttf"),
     PoppinsSemiBold: require("../../assets/fonts/Poppins-SemiBold.ttf"),
   });
+
+  const [userReports, setUserReports] = useState([]);
+  const [nearbyIncidents, setNearbyIncidents] = useState([]);
+  const [loginActivity, setLoginActivity] = useState([]);
+
+  useEffect(() => {
+    const loadNotifications = async () => {
+      try {
+        const token = await AsyncStorage.getItem("access_token");
+        if (!token) return;
+
+        const [notifRes, loginRes] = await Promise.all([
+          apiClient.get("/notifications", {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          apiClient.get("/notifications/login-activity", {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]);
+
+        const data = notifRes.data ?? {};
+        setUserReports(
+          (data.reportStatuses || []).map((item) => ({
+            ...item,
+            time: formatRelativeTime(item.time),
+          }))
+        );
+        setNearbyIncidents(
+          (data.nearbyIncidents || []).map((item) => ({
+            ...item,
+            time: formatRelativeTime(item.time),
+          }))
+        );
+        setLoginActivity(
+          (loginRes.data?.activities || []).map((item) => ({
+            ...item,
+            time: formatLoginTime(item.time),
+          }))
+        );
+      } catch {
+        // leave lists empty on failure
+      }
+    };
+
+    loadNotifications();
+  }, []);
 
   if (!fontsLoaded) {
     return null;

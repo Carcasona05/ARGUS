@@ -2,6 +2,9 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import authRoutes from "./src/routes/authRoute.ts";
+import reportRoutes from "./src/routes/reportRoute.ts";
+import notificationRoutes from "./src/routes/notificationRoute.ts";
+import uploadRoutes from "./src/routes/uploadRoute.ts";
 
 dotenv.config();
 
@@ -9,9 +12,12 @@ const app = express();
 const PORT = process.env.PORT || 30000;
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "25mb" }));
 
 app.use("/api", authRoutes);
+app.use("/api", reportRoutes);
+app.use("/api", notificationRoutes);
+app.use("/api", uploadRoutes);
 
 app.get ("/", (req, res) => {
     res.send("It is working");

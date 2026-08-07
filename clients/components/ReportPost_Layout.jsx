@@ -32,6 +32,7 @@ const ReportPost_Layout = ({
   verified = false,
   likes = 0,
   comments = 0,
+  isLiked = false,
   onLike = () => {},
   onComment = () => {},
   onAddMedia = () => {},
@@ -264,7 +265,11 @@ const ReportPost_Layout = ({
           activeOpacity={0.8}
           onPress={onLike}
         >
-          <Ionicons name="thumbs-up-outline" size={iconSize} color={PRIMARY} />
+          <Ionicons
+            name={isLiked ? "thumbs-up" : "thumbs-up-outline"}
+            size={iconSize}
+            color={PRIMARY}
+          />
           <Text style={styles.actionText}>Like</Text>
           <Text style={styles.actionCount}>{likes}</Text>
         </TouchableOpacity>

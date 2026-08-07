@@ -171,6 +171,7 @@ const UserProfileSettings = () => {
 
   const [userDetails, setUserDetails] = useState({
     firstName: "",
+    middleName: "",
     lastName: "",
     username: "",
     birthdate: new Date(2000, 0, 1),
@@ -202,6 +203,7 @@ const UserProfileSettings = () => {
 
         const loaded = {
           firstName: profile.first_name ?? "",
+          middleName: profile.middle_name ?? "",
           lastName: profile.last_name ?? "",
           username: profile.user_name ?? profile.name ?? "",
           contactNumber: profile.phone ?? "",
@@ -246,6 +248,7 @@ const UserProfileSettings = () => {
         "/profile",
         {
           first_name: tempDetails.firstName,
+          middle_name: tempDetails.middleName,
           last_name: tempDetails.lastName,
           user_name: tempDetails.username,
           phone: tempDetails.contactNumber,
@@ -266,6 +269,7 @@ const UserProfileSettings = () => {
       const synced = {
         ...tempDetails,
         firstName: profile.first_name ?? tempDetails.firstName,
+        middleName: profile.middle_name ?? tempDetails.middleName,
         lastName: profile.last_name ?? tempDetails.lastName,
         username: profile.user_name ?? tempDetails.username,
         contactNumber: profile.phone ?? tempDetails.contactNumber,
@@ -430,6 +434,15 @@ const UserProfileSettings = () => {
                 editValue={tempDetails.lastName}
                 placeholder="Enter lastname"
                 fieldKey="lastName"
+              />
+
+              <DetailRow
+                icon="person-outline"
+                label="Middlename"
+                value={userDetails.middleName}
+                editValue={tempDetails.middleName}
+                placeholder="Enter middlename"
+                fieldKey="middleName"
               />
 
               <DetailRow

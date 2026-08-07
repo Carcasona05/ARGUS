@@ -1,0 +1,170 @@
+import type { Response } from "express";
+import { reportService } from "../services/reportService.ts";
+import { profileService } from "../services/authService.ts";
+import { notificationService } from "../services/notificationService.ts";
+
+type AuthRequest = import("express").Request & { user?: { id: string }; token?: string };
+
+export const validateReport = async (req: AuthRequest, res: Response) => {
+  const user = req.user;
+  if (!user?.id) return res.status(401).json({ error: "Unauthorized" });
+
+  const { data: profile } = await profileService.getProfile(user.id);
+  if (!profile || !["admin", "super_admin"].includes(profile.role)) {
+    return res.status(403).json({ error: "Admin access only" });
+  }
+
+  const { id } = req.params;
+  if (!id) return res.status(400).json({ error: "Report id required" });
+
+  const { status, is_verified, remarks } = req.body ?? {};
+
+  const result = await reportService.validateReport(String(id), {
+    status,
+    is_verified,
+  });
+
+  if (result.error) return res.status(400).json({ error: result.error });
+
+  if (result.data?.ownerId) {
+    const prev = result.data;
+    const newStatus = status ?? prev.previousStatus ?? "Pending Review";
+    const verified = is_verified ?? prev.previousVerified ?? false;
+
+    await notificationService.createNotification({
+      userId: result.data.ownerId,
+      type: "report_status",
+      title: verified ? "Your report was verified" : `Your report is now "${newStatus}"`,
+      message: verified
+        ? "Your report has been reviewed and marked as VERIFIED by the admin."
+        : `The admin updated your report. Current status: "${newStatus}".`,
+      reportId: result.data.id,
+      location: result.data.location,
+      isVerified: verified,
+    });
+  }
+
+  res.json({
+    message: "Report validated",
+    status,
+    is_verified: is_verified ?? false,
+  });
+};
+
+export const createReport = async (req: AuthRequest, res: Response) => {
+  const user = req.user;
+  if (!user?.id) return res.status(401).json({ error: "Unauthorized" });
+
+  const result = await reportService.createReport(user.id, req.body ?? {});
+
+  if (result.error) return res.status(400).json({ error: result.error });
+
+  res.status(201).json({
+    message: "Report submitted successfully",
+    report_id: result.data,
+  });
+};
+
+export const getReports = async (req: AuthRequest, res: Response) => {
+  try {
+    const { data, error } = await reportService.listReports(req.user?.id);
+
+    if (error) return res.status(500).json({ error });
+
+    res.json({ reports: data });
+  } catch {
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const getMyReports = async (req: AuthRequest, res: Response) => {
+  const user = req.user;
+  if (!user?.id) return res.status(401).json({ error: "Unauthorized" });
+
+  const { data, error } = await reportService.listMyReports(user.id);
+
+  if (error) return res.status(500).json({ error });
+
+  res.json({ reports: data });
+};
+
+export const updateReport = async (req: AuthRequest, res: Response) => {
+  const user = req.user;
+  if (!user?.id) return res.status(401).json({ error: "Unauthorized" });
+
+  const { id } = req.params;
+  if (!id) return res.status(400).json({ error: "Report id required" });
+
+  const result = await reportService.updateReport(user.id, String(id), req.body ?? {});
+
+  if (result.error) return res.status(400).json({ error: result.error });
+
+  res.json({ message: "Report updated successfully", report_id: result.data });
+};
+
+export const deleteReport = async (req: AuthRequest, res: Response) => {
+  const user = req.user;
+  if (!user?.id) return res.status(401).json({ error: "Unauthorized" });
+
+  const { id } = req.params;
+  if (!id) return res.status(400).json({ error: "Report id required" });
+
+  const result = await reportService.deleteReport(user.id, String(id));
+
+  if (result.error) return res.status(400).json({ error: result.error });
+
+  res.json({ message: "Report deleted successfully" });
+};
+
+export const addComment = async (req: AuthRequest, res: Response) => {
+  const user = req.user;
+  if (!user?.id) return res.status(401).json({ error: "Unauthorized" });
+
+  const { id } = req.params;
+  const { content } = req.body ?? {};
+
+  const result = await reportService.addComment(user.id, String(id), content);
+
+  if (result.error) return res.status(400).json({ error: result.error });
+
+  res.status(201).json({ message: "Comment added" });
+};
+
+export const getComments = async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+
+  const { data, error } = await reportService.listComments(String(id));
+
+  if (error) return res.status(500).json({ error });
+
+  res.json({ comments: data });
+};
+
+export const toggleLike = async (req: AuthRequest, res: Response) => {
+  const user = req.user;
+  if (!user?.id) return res.status(401).json({ error: "Unauthorized" });
+
+  const { id } = req.params;
+
+  const result = await reportService.toggleLike(user.id, String(id));
+
+  if (result.error) return res.status(400).json({ error: result.error });
+
+  res.json({ liked: result.data?.liked });
+};
+
+export const getIncidentOptions = async (req: AuthRequest, res: Response) => {
+  const { data, error } = await reportService.listIncidentOptions();
+
+  if (error) return res.status(500).json({ error });
+
+  res.json({ categories: data });
+};
+
+export const getAdminPosts = async (req: AuthRequest, res: Response) => {
+  const { data, error } = await reportService.listAdminPosts();
+
+  if (error) return res.status(500).json({ error });
+
+  res.json({ posts: data });
+};

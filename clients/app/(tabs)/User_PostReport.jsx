@@ -14,56 +14,65 @@ import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useFonts } from "expo-font";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import ThemedView from "../../components/ThemedView";
 import ThemedText from "../../components/ThemedText";
+import apiClient from "../../services/apiClient";
+import { uploadImages } from "../../services/imageUpload";
 
 const ARGUS_BLUE = "#294880";
 
-const incidentCategories = {
-  "Public Safety Incidents": [
-    "Public Disturbance",
-    "Harassment",
-    "Loitering / Suspicious Presence",
-    "Trespassing",
-  ],
-
-  "Property-Related Incidents": [
-    "Theft",
-    "Lost Property",
-    "Vandalism / Property Damage",
-    "Shoplifting",
-  ],
-
-  "Traffic and Road Incidents": [
-    "Vehicular Accident",
-    "Reckless Driving",
-    "Illegal Parking",
-    "Road Obstruction",
-  ],
-
-  "Community and Environmental Concerns": [
-    "Fire Incident",
-    "Flooding",
-    "Blocked Drainage",
-    "Garbage / Sanitation Issues",
-    "Streetlight Outage",
-  ],
-
-  "Suspicious Activities": [
-    "Suspicious Person",
-    "Suspicious Vehicle",
-    "Unattended / Abandoned Object",
-    "Unusual Behavior",
-  ],
-
-  "Public Assistance / Community Reports": [
-    "Missing Pet",
-    "Lost Item",
-    "Request for Assistance",
-    "General Safety Concern",
-  ],
-};
+const FALLBACK_CATEGORIES = [
+  {
+    category: "Public Safety Incidents",
+    types: [
+      "Public Disturbance",
+      "Harassment",
+      "Loitering / Suspicious Presence",
+      "Trespassing",
+    ],
+  },
+  {
+    category: "Property-Related Incidents",
+    types: ["Theft", "Lost Property", "Vandalism / Property Damage", "Shoplifting"],
+  },
+  {
+    category: "Traffic and Road Incidents",
+    types: ["Vehicular Accident", "Reckless Driving", "Illegal Parking", "Road Obstruction"],
+  },
+  {
+    category: "Community and Environmental Concerns",
+    types: [
+      "Fire Incident",
+      "Flooding",
+      "Blocked Drainage",
+      "Garbage / Sanitation Issues",
+      "Streetlight Outage",
+    ],
+  },
+  {
+    category: "Suspicious Activities",
+    types: [
+      "Suspicious Person",
+      "Suspicious Vehicle",
+      "Unattended / Abandoned Object",
+      "Unusual Behavior",
+    ],
+  },
+  {
+    category: "Public Assistance / Community Reports",
+    types: ["Missing Pet", "Lost Item", "Request for Assistance", "General Safety Concern"],
+  },
+  {
+    category: "Cyber and Online Incidents (Non-sensitive)",
+    types: [
+      "Online Scam / Suspicious Message",
+      "Cyberbullying",
+      "Fake Information / Misinformation",
+    ],
+  },
+];
 
 export default function User_PostReport() {
   const router = useRouter();
@@ -74,8 +83,8 @@ export default function User_PostReport() {
     PoppinsSemiBold: require("../../assets/fonts/Poppins-SemiBold.ttf"),
   });
 
-  const [fullName] = useState("Juan Dela Cruz");
-  const [username, setUsername] = useState("Juan");
+  const [fullName, setFullName] = useState("");
+  const [username, setUsername] = useState("");
   const [displayNameType, setDisplayNameType] = useState("Fullname");
 
   const [location, setLocation] = useState("");
@@ -84,13 +93,63 @@ export default function User_PostReport() {
 
   const [incidentCategory, setIncidentCategory] = useState("");
   const [incidentType, setIncidentType] = useState("");
+  const [categoryOptions, setCategoryOptions] = useState(FALLBACK_CATEGORIES);
   const [details, setDetails] = useState("");
   const [photos, setPhotos] = useState([]);
   const [loadingLocation, setLoadingLocation] = useState(true);
 
+  const incidentOptions = categoryOptions.length
+    ? categoryOptions
+    : FALLBACK_CATEGORIES;
   const incidentTypes = useMemo(() => {
-    return incidentCategories[incidentCategory] || [];
-  }, [incidentCategory]);
+    const found = incidentOptions.find(
+      (o) => o.category === incidentCategory
+    );
+    return found?.types || [];
+  }, [incidentOptions, incidentCategory]);
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const token = await AsyncStorage.getItem("access_token");
+        if (!token) return;
+
+        const res = await apiClient.get("/profile", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const profile = res.data ?? {};
+        const full =
+          profile.name ||
+          `${profile.first_name || ""} ${profile.last_name || ""}`.trim();
+
+        if (full) setFullName(full);
+        if (profile.user_name) setUsername(profile.user_name);
+      } catch {
+        // leave defaults empty
+      }
+    };
+
+    loadProfile();
+
+    const loadCategories = async () => {
+      try {
+        const token = await AsyncStorage.getItem("access_token");
+        if (!token) return;
+
+        const res = await apiClient.get("/incidents/options", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const options = res.data?.categories || [];
+        setCategoryOptions(options);
+      } catch {
+        // keep defaults
+      }
+    };
+
+    loadCategories();
+  }, []);
 
   useEffect(() => {
     getCurrentLocation();
@@ -167,7 +226,7 @@ export default function User_PostReport() {
     setPhotos((prev) => prev.filter((_, index) => index !== indexToRemove));
   };
 
-  const handlePostReport = () => {
+  const handlePostReport = async () => {
     const selectedDisplayName =
       displayNameType === "Fullname" ? fullName : username.trim();
 
@@ -186,28 +245,50 @@ export default function User_PostReport() {
       return;
     }
 
-    const reportData = {
-      submittedBy: selectedDisplayName,
-      displayNameType,
-      location,
-      latitude,
-      longitude,
-      incidentCategory,
-      incidentType,
-      details,
-      photos,
-      status: "Pending Review",
-      submittedAt: new Date().toISOString(),
-    };
+    try {
+      const token = await AsyncStorage.getItem("access_token");
+      if (!token) {
+        Alert.alert("Not Signed In", "Please sign in to post a report.");
+        return;
+      }
 
-    console.log("Submitted Report:", reportData);
+      const photoUrls = await uploadImages(photos);
 
-    Alert.alert("Report Posted", "Your report has been submitted successfully.", [
-      {
-        text: "OK",
-        onPress: () => router.push("/User_Home"),
-      },
-    ]);
+      const res = await apiClient.post(
+        "/reports",
+        {
+          poster_name: selectedDisplayName,
+          display_name_type: displayNameType,
+          location,
+          latitude,
+          longitude,
+          incident_category: incidentCategory,
+          incident_type: incidentType,
+          details,
+          photos: photoUrls,
+          status: "Pending Review",
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      Alert.alert(
+        "Report Posted",
+        "Your report has been submitted successfully. It is now pending review.",
+        [
+          {
+            text: "OK",
+            onPress: () => router.replace("/User_Home"),
+          },
+        ]
+      );
+    } catch (error) {
+      Alert.alert(
+        "Submission Failed",
+        error.response?.data?.error || "Could not submit your report. Please try again."
+      );
+    }
   };
 
   if (!fontsLoaded) {
@@ -372,11 +453,11 @@ export default function User_PostReport() {
               >
                 <Picker.Item label="Select Incident Category" value="" />
 
-                {Object.keys(incidentCategories).map((category) => (
+                {incidentOptions.map((option) => (
                   <Picker.Item
-                    key={category}
-                    label={category}
-                    value={category}
+                    key={option.category}
+                    label={option.category}
+                    value={option.category}
                   />
                 ))}
               </Picker>
@@ -391,7 +472,6 @@ export default function User_PostReport() {
                 selectedValue={incidentType}
                 onValueChange={(itemValue) => setIncidentType(itemValue)}
                 style={styles.picker}
-                enabled={!!incidentCategory}
               >
                 <Picker.Item
                   label={

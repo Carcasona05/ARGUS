@@ -1,9 +1,9 @@
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
-  full_name text not null,
   first_name text,
-  last_name text,
   middle_name text,
+  last_name text,
+  fullname text,
   user_name text,
   role text not null default 'user' check (role in ('user', 'admin', 'super_admin')),
   phone text,
@@ -13,19 +13,36 @@ create table if not exists public.profiles (
   updated_at timestamptz not null default now()
 );
 
+create or replace function public.set_fullname()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.fullname = nullif(btrim(concat_ws(' ', nullif(new.first_name, ''), nullif(new.middle_name, ''), nullif(new.last_name, ''))), '');
+  return new;
+end;
+$$;
+
+do $$
+begin
+  drop trigger if exists set_profiles_fullname on public.profiles;
+  create trigger set_profiles_fullname
+    before insert or update on public.profiles
+    for each row execute function public.set_fullname();
+end $$;
+
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql security definer set search_path = public
 as $$
 begin
-  insert into public.profiles (id, name, user_name, first_name, last_name, middle_name, role)
+  insert into public.profiles (id, first_name, middle_name, last_name, user_name, role)
   values (
     new.id,
-    coalesce(new.raw_user_meta_data->>'name', ''),
-    coalesce(new.raw_user_meta_data->>'userName', new.raw_user_meta_data->>'name', ''),
     new.raw_user_meta_data->>'firstName',
-    new.raw_user_meta_data->>'lastName',
     new.raw_user_meta_data->>'middleName',
+    new.raw_user_meta_data->>'lastName',
+    coalesce(new.raw_user_meta_data->>'userName', new.raw_user_meta_data->>'name', ''),
     'user'
   );
   return new;

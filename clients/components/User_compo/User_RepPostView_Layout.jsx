@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -8,9 +8,12 @@ import {
   StyleSheet,
   ScrollView,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFonts } from "expo-font";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import apiClient from "../../services/apiClient";
 
 const PRIMARY = "#294880";
 
@@ -22,7 +25,26 @@ const FONT = {
 
 const User_RepPostView_Layout = ({ post }) => {
   const [commentText, setCommentText] = useState("");
-  const [comments, setComments] = useState(post?.commentList || []);
+  const [comments, setComments] = useState([]);
+
+  useEffect(() => {
+    const loadComments = async () => {
+      if (!post?.id) return;
+      try {
+        const token = await AsyncStorage.getItem("access_token");
+        if (!token) return;
+
+        const res = await apiClient.get(`/reports/${post.id}/comments`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setComments(res.data?.comments || []);
+      } catch {
+        setComments(post?.commentList || []);
+      }
+    };
+
+    loadComments();
+  }, [post?.id]);
 
   const [fontsLoaded] = useFonts({
     "Poppins-Regular": require("../../assets/fonts/Poppins-Regular.ttf"),
@@ -97,18 +119,34 @@ const User_RepPostView_Layout = ({ post }) => {
     }
   };
 
-  const handleAddComment = () => {
+  const handleAddComment = async () => {
     if (!commentText.trim()) return;
 
-    const newComment = {
-      id: Date.now().toString(),
-      user: "You",
-      text: commentText.trim(),
-      datePosted: "Just now",
-    };
+    try {
+      const token = await AsyncStorage.getItem("access_token");
+      if (!token) {
+        Alert.alert("Not Signed In", "Please sign in to comment.");
+        return;
+      }
 
-    setComments((prev) => [...prev, newComment]);
-    setCommentText("");
+      await apiClient.post(
+        `/reports/${post.id}/comments`,
+        { content: commentText.trim() },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      const res = await apiClient.get(`/reports/${post.id}/comments`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      setComments(res.data?.comments || []);
+      setCommentText("");
+    } catch (error) {
+      Alert.alert(
+        "Comment Failed",
+        error.response?.data?.error || "Could not add comment."
+      );
+    }
   };
 
   if (!post) {

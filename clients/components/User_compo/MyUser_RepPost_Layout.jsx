@@ -34,6 +34,7 @@ const MyUser_RepPost_Layout = ({
   likes = 0,
   comments = 0,
   commentList = [],
+  isLiked = false,
   onLike = () => {},
   onComment = () => {},
   onDelete = () => {},
@@ -329,7 +330,11 @@ const MyUser_RepPost_Layout = ({
           activeOpacity={0.8}
           onPress={onLike}
         >
-          <Ionicons name="thumbs-up-outline" size={iconSize} color={PRIMARY} />
+          <Ionicons
+            name={isLiked ? "thumbs-up" : "thumbs-up-outline"}
+            size={iconSize}
+            color={PRIMARY}
+          />
           <Text style={styles.actionText}>Like</Text>
           <Text style={styles.actionCount}>{likes}</Text>
         </TouchableOpacity>

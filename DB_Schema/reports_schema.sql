@@ -21,6 +21,42 @@ insert into public.incident_categories (name) values
   ('Cyber and Online Incidents (Non-sensitive)')
 on conflict (name) do nothing;
 
+insert into public.incident_types (category_id, name)
+select c.id, t.incident_type
+from (values
+  ('Public Safety Incidents', 'Public Disturbance'),
+  ('Public Safety Incidents', 'Harassment'),
+  ('Public Safety Incidents', 'Loitering / Suspicious Presence'),
+  ('Public Safety Incidents', 'Trespassing'),
+  ('Property-Related Incidents', 'Theft'),
+  ('Property-Related Incidents', 'Lost Property'),
+  ('Property-Related Incidents', 'Vandalism / Property Damage'),
+  ('Property-Related Incidents', 'Shoplifting'),
+  ('Traffic and Road Incidents', 'Vehicular Accident'),
+  ('Traffic and Road Incidents', 'Reckless Driving'),
+  ('Traffic and Road Incidents', 'Illegal Parking'),
+  ('Traffic and Road Incidents', 'Road Obstruction'),
+  ('Community and Environmental Concerns', 'Fire Incident'),
+  ('Community and Environmental Concerns', 'Flooding'),
+  ('Community and Environmental Concerns', 'Blocked Drainage'),
+  ('Community and Environmental Concerns', 'Garbage / Sanitation Issues'),
+  ('Community and Environmental Concerns', 'Streetlight Outage'),
+  ('Suspicious Activities', 'Suspicious Person'),
+  ('Suspicious Activities', 'Suspicious Vehicle'),
+  ('Suspicious Activities', 'Unattended / Abandoned Object'),
+  ('Suspicious Activities', 'Unusual Behavior'),
+  ('Suspicious Activities', 'Loitering / Suspicious Presence'),
+  ('Public Assistance / Community Reports', 'Missing Pet'),
+  ('Public Assistance / Community Reports', 'Lost Item'),
+  ('Public Assistance / Community Reports', 'Request for Assistance'),
+  ('Public Assistance / Community Reports', 'General Safety Concern'),
+  ('Cyber and Online Incidents (Non-sensitive)', 'Online Scam / Suspicious Message'),
+  ('Cyber and Online Incidents (Non-sensitive)', 'Cyberbullying'),
+  ('Cyber and Online Incidents (Non-sensitive)', 'Fake Information / Misinformation')
+) as t(category_name, incident_type)
+join public.incident_categories c on c.name = t.category_name
+on conflict (category_id, name) do nothing;
+
 create table if not exists public.reports (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references auth.users(id) on delete set null,

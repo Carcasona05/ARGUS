@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   View,
   StyleSheet,
@@ -7,10 +7,12 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import ThemedView from "../../components/ThemedView";
 import ThemedText from "../../components/ThemedText";
 import ReportPost_Layout from "../../components/ReportPost_Layout";
 import ReportByAdmin from "../../components/ReportByAdmin";
+import apiClient from "../../services/apiClient";
 
 const PRIMARY = "#294880";
 
@@ -19,140 +21,6 @@ const FONT = {
   medium: "Poppins-Medium",
   semiBold: "Poppins-SemiBold",
 };
-
-const getDateHoursAgo = (hours) => {
-  const date = new Date();
-  date.setHours(date.getHours() - hours);
-  return date.toISOString();
-};
-
-const initialReports = [
-  {
-    id: "report_001",
-    postSource: "User",
-    userName: "Anonymous User",
-    userAvatar: null,
-    location: "Mabini Street, Manila",
-    incidentCategory: "Suspicious Activities",
-    incidentType: "Loitering / Suspicious Presence",
-    details:
-      "A suspicious person was seen loitering near the gate around 9:30 PM.",
-    status: "Resolved",
-    verified: true,
-    datePosted: getDateHoursAgo(3),
-    likes: 12,
-    comments: 2,
-    images: [],
-    commentList: [
-      {
-        id: "c1",
-        user: "Anonymous User",
-        text: "Please stay alert in this area.",
-      },
-      {
-        id: "c2",
-        user: "Anonymous User",
-        text: "I also noticed this last night.",
-      },
-    ],
-  },
-  {
-    id: "report_002",
-    postSource: "User",
-    userName: "Anonymous User",
-    userAvatar: null,
-    location: "Rizal Avenue, Manila",
-    incidentCategory: "Public Safety Incidents",
-    incidentType: "Public Disturbance",
-    details:
-      "A loud commotion and shouting were reported near the park entrance. Nearby residents were advised to stay alert while the situation was being checked.",
-    status: "Under Verification",
-    verified: true,
-    datePosted: getDateHoursAgo(18),
-    likes: 41,
-    comments: 1,
-    images: [],
-    commentList: [
-      {
-        id: "c3",
-        user: "Anonymous User",
-        text: "Hope authorities respond soon.",
-      },
-    ],
-  },
-  {
-    id: "report_003",
-    postSource: "User",
-    userName: "Anonymous User",
-    userAvatar: null,
-    location: "Taft Avenue, Manila",
-    incidentCategory: "Community and Environmental Concerns",
-    incidentType: "Streetlight Outage",
-    details:
-      "The street light near the pedestrian lane is not working, causing poor visibility at night.",
-    status: "Pending Review",
-    verified: false,
-    datePosted: getDateHoursAgo(48),
-    likes: 8,
-    comments: 0,
-    images: [],
-    commentList: [],
-  },
-  {
-    id: "report_004",
-    postSource: "User",
-    userName: "Anonymous User",
-    userAvatar: null,
-    location: "España Boulevard, Manila",
-    incidentCategory: "Traffic and Road Incidents",
-    incidentType: "Road Obstruction",
-    details:
-      "A stalled vehicle has been blocking one lane for over 20 minutes, causing traffic buildup.",
-    status: "Rejected",
-    verified: false,
-    datePosted: getDateHoursAgo(72),
-    likes: 17,
-    comments: 0,
-    images: [],
-    commentList: [],
-  },
-  {
-    id: "admin_001",
-    postSource: "Admin",
-    adminName: "ARGUS Admin",
-    type: "Seminar",
-    location: "Argao Municipal Hall",
-    details:
-      "A community safety awareness seminar will be conducted for residents. Everyone is encouraged to attend and learn basic incident reporting and emergency response reminders.",
-    datePosted: getDateHoursAgo(5),
-    status: "Admin Report",
-    pic: null,
-  },
-  {
-    id: "admin_002",
-    postSource: "Admin",
-    adminName: "ARGUS Admin",
-    type: "Safety/Tips",
-    location: "Poblacion, Argao",
-    details:
-      "Reminder: Avoid walking alone in poorly lit areas at night. Report suspicious activities immediately through the ARGUS app.",
-    datePosted: getDateHoursAgo(22),
-    status: "Admin Report",
-    pic: null,
-  },
-  {
-    id: "admin_003",
-    postSource: "Admin",
-    adminName: "ARGUS Admin",
-    type: "Curfew",
-    location: "Argao, Cebu",
-    details:
-      "Curfew reminder for minors will be observed from 10:00 PM onwards. Parents and guardians are advised to monitor outdoor activities.",
-    datePosted: getDateHoursAgo(120),
-    status: "Admin Report",
-    pic: null,
-  },
-];
 
 const timeRangeOptions = ["Past 24 Hours", "Past 7 Days"];
 
@@ -333,7 +201,65 @@ const User_Home = () => {
   const [selectedStatus, setSelectedStatus] = useState("All Status");
   const [selectedSource, setSelectedSource] = useState("All");
   const [openDropdown, setOpenDropdown] = useState(null);
-  const [reports, setReports] = useState(initialReports);
+  const [reports, setReports] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadReports = async () => {
+      try {
+        const token = await AsyncStorage.getItem("access_token");
+        if (!token) return;
+
+        const [reportsRes, adminRes] = await Promise.all([
+          apiClient.get("/reports", {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          apiClient.get("/admin/posts", {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]);
+
+        const userPosts = (reportsRes.data?.reports || []).map((r) => ({
+          id: r.id,
+          postSource: "User",
+          userName: r.poster_name || "Anonymous User",
+          userAvatar: null,
+          location: r.location,
+          incidentCategory: r.incident_category,
+          incidentType: r.incident_type,
+          details: r.details,
+          status: r.status || "Pending Review",
+          verified: r.is_verified,
+          datePosted: r.created_at,
+          likes: r.likes ?? 0,
+          comments: r.comments ?? 0,
+          isLiked: r.is_liked ?? false,
+          images: Array.isArray(r.images) ? r.images : [],
+          commentList: [],
+        }));
+
+        const adminPosts = (adminRes.data?.posts || []).map((p) => ({
+          id: p.id,
+          postSource: "Admin",
+          adminName: p.adminName || "ARGUS Admin",
+          type: p.type,
+          location: p.location,
+          details: p.details,
+          datePosted: p.datePosted,
+          status: "Admin Report",
+          pic: p.pic,
+        }));
+
+        setReports([...adminPosts, ...userPosts]);
+      } catch {
+        // keep empty feed on failure
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadReports();
+  }, []);
 
   const filteredReports = useMemo(() => {
     return reports.filter((report) => {
@@ -373,14 +299,33 @@ const User_Home = () => {
     );
   };
 
-  const handleLike = (reportId) => {
-    setReports((prevReports) =>
-      prevReports.map((report) =>
-        report.id === reportId && report.postSource === "User"
-          ? { ...report, likes: report.likes + 1 }
-          : report
-      )
-    );
+  const handleLike = async (reportId) => {
+    try {
+      const token = await AsyncStorage.getItem("access_token");
+      if (!token) return;
+
+      const res = await apiClient.post(
+        `/reports/${reportId}/like`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      const liked = res.data?.liked ?? false;
+
+      setReports((prevReports) =>
+        prevReports.map((report) =>
+          report.id === reportId && report.postSource === "User"
+            ? {
+                ...report,
+                isLiked: liked,
+                likes: report.likes + (liked ? 1 : -1),
+              }
+            : report
+        )
+      );
+    } catch {
+      // ignore like failures
+    }
   };
 
   const handleOpenPost = (report) => {
@@ -537,9 +482,11 @@ const User_Home = () => {
                 incidentCategory={report.incidentCategory}
                 incidentType={report.incidentType}
                 details={report.details}
+                status={report.status}
                 verified={report.verified}
                 likes={report.likes}
                 comments={report.comments}
+                isLiked={report.isLiked}
                 images={report.images}
                 onLike={() => handleLike(report.id)}
                 onComment={() => handleOpenPost(report)}

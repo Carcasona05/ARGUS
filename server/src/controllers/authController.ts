@@ -3,8 +3,21 @@ import { supabase } from "../config/supabase.ts";
 import { supabaseAdmin } from "../config/supabaseAdmin.ts";
 import type { User } from "@supabase/supabase-js";
 import { profileService } from "../services/authService.ts";
+import { notificationService } from "../services/notificationService.ts";
 
 type AuthRequest = Request & { user?: User; token?: string };
+
+const detectDevice = (userAgent?: string): string => {
+  const ua = userAgent || "";
+  if (/mobile|iphone|ipad|android/i.test(ua)) {
+    return /iphone/i.test(ua) ? "iPhone" : /ipad/i.test(ua) ? "iPad" : "Mobile Device";
+  }
+  if (/samsung/i.test(ua)) return "Samsung Device";
+  if (/chrome/i.test(ua)) return "Chrome Browser";
+  if (/firefox/i.test(ua)) return "Firefox Browser";
+  if (/safari/i.test(ua)) return "Safari Browser";
+  return "Unknown Device";
+};
 
 export const register = async (req: Request, res: Response) => {
   try {
@@ -55,6 +68,17 @@ export const login = async (req: Request, res: Response) => {
 
     if (error) return res.status(401).json({ error: error.message });
 
+    try {
+      await notificationService.createLoginActivity({
+        userId: data.user.id,
+        device: detectDevice(req.headers["user-agent"]),
+        location: "Philippines",
+        isCurrent: true,
+      });
+    } catch {
+      // login activity logging is best-effort
+    }
+
     res.json({
       message: "Login successful",
       access_token: data.session?.access_token ?? null,
@@ -100,7 +124,7 @@ export const adminLogin = async (req: Request, res: Response) => {
     res.json({
       message: "Admin login successful",
       access_token: token,
-      user: { ...data.user, name: profile.name, role: profile.role },
+      user: { ...data.user, name: profile.fullname, role: profile.role },
     });
   } catch (err) {
     res.status(500).json({ error: "Internal server error" });
@@ -147,9 +171,10 @@ export const getProfile = async (
   const fallbackName = meta.userName ?? meta.name ?? user.email ?? "";
 
   res.json({
-    name: data?.name ?? fallbackName,
+    name: data?.fullname ?? fallbackName,
     user_name: data?.user_name ?? fallbackName,
     first_name: data?.first_name ?? meta.firstName ?? "",
+    middle_name: data?.middle_name ?? meta.middleName ?? "",
     last_name: data?.last_name ?? meta.lastName ?? "",
     phone: data?.phone ?? meta.phone ?? "",
     role: data?.role ?? "user",
@@ -166,10 +191,11 @@ export const updateProfile = async (
 
   await profileService.ensureProfile(user.id);
 
-  const { first_name, last_name, user_name, phone } = req.body ?? {};
+  const { first_name, middle_name, last_name, user_name, phone } = req.body ?? {};
 
   const updates: Record<string, unknown> = {};
   if (first_name !== undefined) updates.first_name = first_name;
+  if (middle_name !== undefined) updates.middle_name = middle_name;
   if (last_name !== undefined) updates.last_name = last_name;
   if (user_name !== undefined) updates.user_name = user_name;
   if (phone !== undefined) updates.phone = phone;

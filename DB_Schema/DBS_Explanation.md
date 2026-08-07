@@ -8,10 +8,10 @@ authenticated user has exactly one row here, keyed by the same `uuid`.
 | Column        | Type        | Constraint / Default       | Purpose                                    |
 | ------------- | ----------- | -------------------------- | ------------------------------------------ |
 | `id`          | `uuid`      | PRIMARY KEY                | References `auth.users(id)`, cascades on delete |
-| `name`        | `text`      | NOT NULL                   | Full name (legacy/admin flows use this)    |
 | `first_name`  | `text`      | NULL                       | First name                                 |
+| `middle_name` | `text`      | NULL                       | Middle name                                |
 | `last_name`   | `text`      | NULL                       | Last name                                  |
-| `middle_name` | `text`      | NULL                       | Middle name (reserved for later use)       |
+| `fullname`    | `text`      | Auto-filled by trigger    | Computed: `first + middle + last` name; set by `set_fullname` trigger |
 | `user_name`   | `text`      | NULL                       | Username (from the register form)          |
 | `role`        | `text`      | NOT NULL, DEFAULT `'user'` | `'user'` / `'admin'` / `'super_admin'`     |
 | `phone`       | `text`      | NULL                       | Optional contact number                    |
@@ -19,6 +19,18 @@ authenticated user has exactly one row here, keyed by the same `uuid`.
 | `status`      | `text`      | NOT NULL, DEFAULT `'Active'` | `'Active'` / `'Disabled'`                |
 | `created_at`  | `timestamptz`| NOT NULL, DEFAULT now()    | Set on creation                            |
 | `updated_at`  | `timestamptz`| NOT NULL, DEFAULT now()    | Auto-refreshed on update                   |
+
+`fullname` is auto-derived from `first_name + middle_name + last_name` (blank
+parts skipped). It is kept in sync by the `set_profiles_fullname` trigger
+(`BEFORE INSERT OR UPDATE`). A regular column + trigger is used instead of a
+**generated column** because `concat_ws` is not guaranteed immutable in every
+Postgres version (a generated expression would fail with `42P17`). Code still
+writes the individual name parts and `fullname` is set automatically.
+
+`fullname` is a **generated column**: Postgres computes it automatically from
+`first_name + middle_name + last_name` (blank parts skipped). It cannot be
+written directly — code must write the individual name parts, and `fullname`
+stays in sync automatically.
 
 The `check` constraints enforce valid `role` and `status` values at the database level so bad data cannot be inserted.
 
@@ -28,8 +40,8 @@ The relation satisfies 3NF (and BCNF) without any extra splitting:
 
 - **Single key:** `id` is the only key.
 - **1NF:** all columns are atomic (phone is a single number, not a list, etc.).
-- **2NF:** every non-key column (`name`, `role`, `phone`, `department`, `status`, timestamps) depends on the *entire* key `id`, not just part of it (there is only one column in the key).
-- **3NF:** no non-key column depends on another non-key column. For example, `department` does not determine `role`, and `role` does not determine `department`. `status` is independent of `role`.
+- **2NF:** every non-key column (`first_name`, `middle_name`, `last_name`, `user_name`, `phone`, `department`, `status`, timestamps) depends on the *entire* key `id`, not just part of it (there is only one column in the key).
+- **3NF:** no non-key column depends on another non-key column. For example, `department` does not determine `role`, and `role` does not determine `department`. `status` is independent of `role`. `fullname` is auto-derived from the name parts by a trigger rather than stored redundantly by hand.
 
 Splitting `role` / `department` / `status` into lookup tables would only be for maintenance convenience, not a normalization requirement. Keeping the enums inline here is simpler and stays 3NF-compliant.
 
@@ -37,7 +49,7 @@ Splitting `role` / `department` / `status` into lookup tables would only be for 
 
 A database trigger runs whenever a new `auth.users` row is created, so every signup is guaranteed a profile.
 
-- `handle_new_user()` inserts a profile row with `role = 'user'`, copying the username from `user_metadata.userName` (falling back to `user_metadata.name`), and optionally `firstName`, `lastName`, and `middleName` from the same metadata.
+- `handle_new_user()` inserts a profile row with `role = 'user'`, copying `firstName`, `lastName`, and `middleName` from the metadata (the generated `fullname` is computed automatically), plus the username from `user_metadata.userName` (falling back to `user_metadata.name`).
 - Trigger `on_auth_user_created` fires `AFTER INSERT ON auth.users`, executing the function.
 
 Both triggers are created inside `DO $$ ... end $$` blocks that `DROP TRIGGER IF EXISTS ...` first. This makes the script safe to re-run (Postgres does not support `CREATE OR REPLACE TRIGGER`).
@@ -153,3 +165,68 @@ Because account management uses the service role, the backend checks `profile.ro
   query at the top of `reports_schema.sql`.
 - A user's own reports (`User_MyReports`):
   `select * from public.reports where user_id = auth.uid() order by created_at desc;`
+
+---
+
+# NOTIFICATIONS — Schema Explanation
+
+> Schema file: `notifications_schema.sql`. Covers the Notification screen
+> (`User_Notification.jsx`) and the admin/superadmin bell dropdowns
+> (`Admin_Layout.jsx`, `SAdmin_Layout.jsx`).
+
+## 1. Tables
+
+| Table                            | Purpose                                                        |
+| -------------------------------- | -------------------------------------------------------------- |
+| `notification_types`             | Lookup of valid notification kinds (1NF: no repeated type text) |
+| `notifications`                  | Shared base row for every notification                         |
+| `notification_report_status`     | Extra fields for "Your Reports" status updates (1:1)           |
+| `notification_nearby_incident`   | Extra fields for "Near Your Location" alerts (1:1)             |
+| `login_activities`               | "Recent Account Login" device sessions (separate entity)       |
+
+## 2. `notifications` columns
+
+| Column       | Type        | Notes                                          |
+| ------------ | ----------- | ---------------------------------------------- |
+| `id`         | `uuid` PK   |                                                |
+| `user_id`    | `uuid`      | → `auth.users`, cascades on delete             |
+| `type_id`    | `uuid`      | → `notification_types`                         |
+| `title`      | `text`      | Notification headline                          |
+| `message`    | `text`      | Notification body                              |
+| `priority`   | `text`      | Low / Medium / High                            |
+| `is_read`    | `boolean`   | Read/unread for the bell badge                 |
+| `created_at` | `timestamptz`| Set on creation                               |
+| `updated_at` | `timestamptz`| Auto-refreshed                                 |
+
+Child tables (`notification_report_status`, `notification_nearby_incident`) use
+`notification_id` as both primary key and foreign key, giving a 1:1 relationship
+to a `notifications` row — shared fields stay in the base table while the
+variant-specific fields live in the child.
+
+## 3. Why it is in 3NF
+
+- **1NF:** atomic columns; the three mock arrays (`userReports`,
+  `nearbyIncidents`, `loginActivity`) are split into proper tables instead of
+  repeated groups.
+- **2NF:** every table has a single-column key (`id` / `notification_id`), so
+  there are no partial dependencies.
+- **3NF:** no non-key column depends on another non-key column. `type`/`level`/
+  `priority` are constrained enums or lookup rows rather than duplicated text.
+
+## 4. RLS
+
+- Users read/update only their own notifications (`auth.uid() = user_id`).
+- Child rows are visible only through an owning notification belonging to the
+  caller (`EXISTS` against `notifications`).
+- `login_activities` are restricted to their own user.
+
+## 5. Key queries
+
+- Bell dropdown: join `notifications` to `notification_types`, filter by
+  `user_id`, order by `created_at desc`.
+- "Your Reports": join to `notification_report_status` where type is
+  `report_status`.
+- "Near Your Location": join to `notification_nearby_incident` where type is
+  `nearby_incident`.
+- "Recent Account Login": `select * from login_activities where user_id = auth.uid()
+  order by created_at desc;`

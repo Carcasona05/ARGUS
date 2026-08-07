@@ -14,10 +14,13 @@ import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useFonts } from "expo-font";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import ThemedView from "../../components/ThemedView";
 import ThemedText from "../../components/ThemedText";
 import MyUser_RepPost_Layout from "../../components/User_compo/MyUser_RepPost_Layout";
+import apiClient from "../../services/apiClient";
+import { uploadImage } from "../../services/imageUpload";
 
 const PRIMARY = "#294880";
 
@@ -26,125 +29,6 @@ const FONT = {
   medium: "Poppins-Medium",
   semiBold: "Poppins-SemiBold",
 };
-
-const incidentOptions = {
-  "Public Safety Incidents": [
-    "Public Disturbance",
-    "Harassment",
-    "Loitering / Suspicious Presence",
-    "Trespassing",
-  ],
-  "Property-Related Incidents": [
-    "Theft",
-    "Lost Property",
-    "Vandalism / Property Damage",
-    "Shoplifting",
-  ],
-  "Traffic and Road Incidents": [
-    "Vehicular Accident",
-    "Reckless Driving",
-    "Illegal Parking",
-    "Road Obstruction",
-  ],
-  "Community and Environmental Concerns": [
-    "Fire Incident",
-    "Flooding",
-    "Blocked Drainage",
-    "Garbage / Sanitation Issues",
-    "Streetlight Outage",
-  ],
-  "Suspicious Activities": [
-    "Suspicious Person",
-    "Suspicious Vehicle",
-    "Unattended / Abandoned Object",
-    "Unusual Behavior",
-    "Loitering / Suspicious Presence",
-  ],
-  "Public Assistance / Community Reports": [
-    "Missing Pet",
-    "Lost Item",
-    "Request for Assistance",
-    "General Safety Concern",
-  ],
-  "Cyber and Online Incidents (Non-sensitive)": [
-    "Online Scam / Suspicious Message",
-    "Cyberbullying",
-    "Fake Information / Misinformation",
-  ],
-};
-
-const initialMyReports = [
-  {
-    id: "my_report_001",
-    userName: "You",
-    userAvatar: null,
-    location: "Poblacion, Argao, Cebu",
-    incidentCategory: "Community and Environmental Concerns",
-    incidentType: "Flooding",
-    details:
-      "Flooding was seen near the roadside after heavy rain. The water level is rising and may affect nearby houses.",
-    status: "Pending Review",
-    verified: false,
-    likes: 0,
-    comments: 0,
-    images: [],
-    commentList: [],
-  },
-  {
-    id: "my_report_002",
-    userName: "You",
-    userAvatar: null,
-    location: "Langtad, Argao, Cebu",
-    incidentCategory: "Community and Environmental Concerns",
-    incidentType: "Streetlight Outage",
-    details:
-      "The street light near the corner is not working. The area becomes dark at night and may be unsafe for pedestrians.",
-    status: "Resolved",
-    verified: true,
-    likes: 6,
-    comments: 1,
-    images: [],
-    commentList: [
-      {
-        id: "c1",
-        user: "Anonymous User",
-        text: "This area really needs better lighting.",
-      },
-    ],
-  },
-  {
-    id: "my_report_003",
-    userName: "You",
-    userAvatar: null,
-    location: "Talaga, Argao, Cebu",
-    incidentCategory: "Traffic and Road Incidents",
-    incidentType: "Road Obstruction",
-    details:
-      "A large branch is blocking part of the road and may cause accidents for motorcycles passing at night.",
-    status: "Rejected",
-    verified: false,
-    likes: 3,
-    comments: 0,
-    images: [],
-    commentList: [],
-  },
-  {
-    id: "my_report_004",
-    userName: "You",
-    userAvatar: null,
-    location: "Canbanua, Argao, Cebu",
-    incidentCategory: "Suspicious Activities",
-    incidentType: "Suspicious Vehicle",
-    details:
-      "A vehicle was seen parked for a long time near a residential area. The driver was not familiar to nearby residents.",
-    status: "Under Verification",
-    verified: false,
-    likes: 2,
-    comments: 0,
-    images: [],
-    commentList: [],
-  },
-];
 
 const statusOptions = [
   "All Status",
@@ -254,12 +138,33 @@ const EditReportModal = ({ visible, report, onClose, onSave }) => {
   const [location, setLocation] = useState("");
   const [incidentCategory, setIncidentCategory] = useState("");
   const [incidentType, setIncidentType] = useState("");
+  const [categoryOptions, setCategoryOptions] = useState([]);
   const [details, setDetails] = useState("");
   const [photos, setPhotos] = useState([]);
 
   const incidentTypes = useMemo(() => {
-    return incidentOptions[incidentCategory] || [];
-  }, [incidentCategory]);
+    const found = categoryOptions.find((o) => o.category === incidentCategory);
+    return found?.types || [];
+  }, [categoryOptions, incidentCategory]);
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const token = await AsyncStorage.getItem("access_token");
+        if (!token) return;
+
+        const res = await apiClient.get("/incidents/options", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        setCategoryOptions(res.data?.categories || []);
+      } catch {
+        // keep defaults empty
+      }
+    };
+
+    loadCategories();
+  }, []);
 
   useEffect(() => {
     if (report) {
@@ -405,11 +310,11 @@ const EditReportModal = ({ visible, report, onClose, onSave }) => {
                 >
                   <Picker.Item label="Select Incident Category" value="" />
 
-                  {Object.keys(incidentOptions).map((category) => (
+                  {categoryOptions.map((option) => (
                     <Picker.Item
-                      key={category}
-                      label={category}
-                      value={category}
+                      key={option.category}
+                      label={option.category}
+                      value={option.category}
                     />
                   ))}
                 </Picker>
@@ -537,10 +442,46 @@ const User_MyReports = () => {
 
   const [selectedStatus, setSelectedStatus] = useState("All Status");
   const [openDropdown, setOpenDropdown] = useState(null);
-  const [myReports, setMyReports] = useState(initialMyReports);
+  const [myReports, setMyReports] = useState([]);
 
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [selectedReport, setSelectedReport] = useState(null);
+
+  useEffect(() => {
+    const loadMyReports = async () => {
+      try {
+        const token = await AsyncStorage.getItem("access_token");
+        if (!token) return;
+
+        const res = await apiClient.get("/reports/mine", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const fetched = (res.data?.reports || []).map((r) => ({
+          id: r.id,
+          userName: "You",
+          userAvatar: null,
+          location: r.location,
+          incidentCategory: r.incident_category,
+          incidentType: r.incident_type,
+          details: r.details,
+          status: r.status || "Pending Review",
+          verified: r.is_verified,
+          likes: r.likes ?? 0,
+          comments: r.comments ?? 0,
+          isLiked: r.is_liked ?? false,
+          images: Array.isArray(r.images) ? r.images : [],
+          commentList: [],
+        }));
+
+        setMyReports(fetched);
+      } catch {
+        // keep empty list on failure
+      }
+    };
+
+    loadMyReports();
+  }, []);
 
   const filteredReports = useMemo(() => {
     if (selectedStatus === "All Status") {
@@ -566,17 +507,33 @@ const User_MyReports = () => {
     );
   };
 
-  const handleLike = (reportId) => {
-    setMyReports((prevReports) =>
-      prevReports.map((report) =>
-        report.id === reportId
-          ? {
-              ...report,
-              likes: report.likes + 1,
-            }
-          : report
-      )
-    );
+  const handleLike = async (reportId) => {
+    try {
+      const token = await AsyncStorage.getItem("access_token");
+      if (!token) return;
+
+      const res = await apiClient.post(
+        `/reports/${reportId}/like`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      const liked = res.data?.liked ?? false;
+
+      setMyReports((prevReports) =>
+        prevReports.map((report) =>
+          report.id === reportId
+            ? {
+                ...report,
+                isLiked: liked,
+                likes: report.likes + (liked ? 1 : -1),
+              }
+            : report
+        )
+      );
+    } catch {
+      // ignore like failures
+    }
   };
 
   const handleOpenReport = (reportData) => {
@@ -598,17 +555,54 @@ const User_MyReports = () => {
     setSelectedReport(null);
   };
 
-  const handleSaveEditedReport = (updatedReport) => {
-    setMyReports((prevReports) =>
-      prevReports.map((report) =>
-        report.id === updatedReport.id ? updatedReport : report
-      )
-    );
+  const handleSaveEditedReport = async (updatedReport) => {
+    try {
+      const token = await AsyncStorage.getItem("access_token");
+      if (!token) return;
 
-    setEditModalVisible(false);
-    setSelectedReport(null);
+      const uploadPhotos = [];
+      for (const img of updatedReport.images || []) {
+        if (typeof img === "string" && img.startsWith("blob:")) {
+          const url = await uploadImage(img);
+          uploadPhotos.push(url);
+        } else {
+          uploadPhotos.push(img);
+        }
+      }
 
-    Alert.alert("Report Updated", "Your report has been updated successfully.");
+      await apiClient.put(
+        `/reports/${updatedReport.id}`,
+        {
+          details: updatedReport.details,
+          location: updatedReport.location,
+          poster_name: updatedReport.userName,
+          incident_category: updatedReport.incidentCategory,
+          incident_type: updatedReport.incidentType,
+          photos: uploadPhotos,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      setMyReports((prevReports) =>
+        prevReports.map((report) =>
+          report.id === updatedReport.id
+            ? { ...updatedReport, images: uploadPhotos }
+            : report
+        )
+      );
+
+      setEditModalVisible(false);
+      setSelectedReport(null);
+
+      Alert.alert("Report Updated", "Your report has been updated successfully.");
+    } catch (error) {
+      Alert.alert(
+        "Update Failed",
+        error.response?.data?.error || "Could not update the report."
+      );
+    }
   };
 
   const handleDeleteReport = (reportId) => {
@@ -620,10 +614,24 @@ const User_MyReports = () => {
       {
         text: "Delete",
         style: "destructive",
-        onPress: () => {
-          setMyReports((prevReports) =>
-            prevReports.filter((report) => report.id !== reportId)
-          );
+        onPress: async () => {
+          try {
+            const token = await AsyncStorage.getItem("access_token");
+            if (!token) return;
+
+            await apiClient.delete(`/reports/${reportId}`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+
+            setMyReports((prevReports) =>
+              prevReports.filter((report) => report.id !== reportId)
+            );
+          } catch (error) {
+            Alert.alert(
+              "Delete Failed",
+              error.response?.data?.error || "Could not delete the report."
+            );
+          }
         },
       },
     ]);
@@ -738,6 +746,7 @@ const User_MyReports = () => {
                 verified={report.verified}
                 likes={report.likes}
                 comments={report.comments}
+                isLiked={report.isLiked}
                 images={report.images}
                 onLike={() => handleLike(report.id)}
                 onComment={() => handleOpenReport(report)}

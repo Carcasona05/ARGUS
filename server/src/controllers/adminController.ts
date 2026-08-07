@@ -17,7 +17,7 @@ export const getAccounts = async (req: AuthRequest, res: Response) => {
 
     const { data, error } = await supabaseAdmin
       .from("profiles")
-      .select("id, name, phone, role, department, status, created_at, updated_at")
+      .select("id, first_name, phone, role, department, status, created_at, updated_at")
       .in("role", ["admin", "super_admin"])
       .order("created_at", { ascending: false });
 
@@ -28,7 +28,7 @@ export const getAccounts = async (req: AuthRequest, res: Response) => {
         const { data: userData } = await supabaseAdmin.auth.admin.getUserById(acc.id);
         return {
           id: acc.id,
-          name: acc.name,
+          name: acc.first_name ?? "",
           email: userData?.user?.email ?? "",
           phone: acc.phone ?? "",
           role: acc.role,
@@ -59,7 +59,7 @@ export const updateAccount = async (req: AuthRequest, res: Response) => {
     const { name, email, role, department, phone, status } = req.body;
 
     const updates: Record<string, unknown> = {};
-    if (name !== undefined) updates.name = name;
+    if (name !== undefined) updates.first_name = name;
     if (role !== undefined) updates.role = role;
     if (department !== undefined) updates.department = department;
     if (phone !== undefined) updates.phone = phone;

@@ -12,7 +12,7 @@ export const profileService = {
   async getProfile(userId: string) {
     const result = await supabaseAdmin
       .from("profiles")
-      .select("name, user_name, first_name, last_name, phone, role")
+      .select("fullname, user_name, first_name, last_name, middle_name, phone, role")
       .eq("id", userId)
       .maybeSingle();
 
@@ -22,7 +22,7 @@ export const profileService = {
 
     return await supabaseAdmin
       .from("profiles")
-      .select("name, user_name, first_name, last_name, phone, role")
+      .select("fullname, user_name, first_name, last_name, middle_name, phone, role")
       .eq("id", userId)
       .maybeSingle();
   },
@@ -33,23 +33,23 @@ export const profileService = {
 
     const { data: existing } = await supabaseAdmin
       .from("profiles")
-      .select("id, name, user_name, first_name, last_name, phone")
+      .select("id, user_name, first_name, last_name, middle_name, phone")
       .eq("id", userId)
       .maybeSingle();
 
     const payload = {
-      name: meta.userName ?? meta.name ?? "",
       user_name: meta.userName ?? meta.name ?? "",
       first_name: meta.firstName ?? "",
+      middle_name: meta.middleName ?? "",
       last_name: meta.lastName ?? "",
       phone: meta.phone ?? "",
     };
 
     if (existing) {
       const updates: Record<string, unknown> = {};
-      if (!existing.name && payload.name) updates.name = payload.name;
       if (!existing.user_name && payload.user_name) updates.user_name = payload.user_name;
       if (!existing.first_name && payload.first_name) updates.first_name = payload.first_name;
+      if (!existing.middle_name && payload.middle_name) updates.middle_name = payload.middle_name;
       if (!existing.last_name && payload.last_name) updates.last_name = payload.last_name;
       if (!existing.phone && payload.phone) updates.phone = payload.phone;
 
@@ -75,9 +75,12 @@ export const profileService = {
   async updateName(userId: string, data: { name?: string }, token: string) {
     const supabaseUser = createSupabaseUser(token);
 
+    const updates: Record<string, unknown> = {};
+    if (data.name !== undefined) updates.first_name = data.name;
+
     return await supabaseUser
       .from("profiles")
-      .update(data)
+      .update(updates)
       .eq("id", userId)
       .select()
       .maybeSingle();
@@ -107,7 +110,9 @@ export const profileService = {
     if (error) return { error };
 
     const updates: Record<string, unknown> = {
-      name,
+      first_name: name,
+      middle_name: "",
+      last_name: "",
       role: normalizeRole(role),
     };
     if (department) updates.department = department;

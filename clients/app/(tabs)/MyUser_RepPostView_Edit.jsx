@@ -17,6 +17,8 @@ import { useFonts } from "expo-font";
 
 import ThemedView from "../../components/ThemedView";
 import ThemedText from "../../components/ThemedText";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import apiClient from "../../services/apiClient";
 
 const PRIMARY = "#294880";
 
@@ -24,52 +26,6 @@ const FONT = {
   regular: "Poppins-Regular",
   medium: "Poppins-Medium",
   semiBold: "Poppins-SemiBold",
-};
-
-const incidentOptions = {
-  "Public Safety Incidents": [
-    "Public Disturbance",
-    "Harassment",
-    "Loitering / Suspicious Presence",
-    "Trespassing",
-  ],
-  "Property-Related Incidents": [
-    "Theft",
-    "Lost Property",
-    "Vandalism / Property Damage",
-    "Shoplifting",
-  ],
-  "Traffic and Road Incidents": [
-    "Vehicular Accident",
-    "Reckless Driving",
-    "Illegal Parking",
-    "Road Obstruction",
-  ],
-  "Community and Environmental Concerns": [
-    "Fire Incident",
-    "Flooding",
-    "Blocked Drainage",
-    "Garbage / Sanitation Issues",
-    "Streetlight Outage",
-  ],
-  "Suspicious Activities": [
-    "Suspicious Person",
-    "Suspicious Vehicle",
-    "Unattended / Abandoned Object",
-    "Unusual Behavior",
-    "Loitering / Suspicious Presence",
-  ],
-  "Public Assistance / Community Reports": [
-    "Missing Pet",
-    "Lost Item",
-    "Request for Assistance",
-    "General Safety Concern",
-  ],
-  "Cyber and Online Incidents (Non-sensitive)": [
-    "Online Scam / Suspicious Message",
-    "Cyberbullying",
-    "Fake Information / Misinformation",
-  ],
 };
 
 export default function MyUser_RepPostView_Edit() {
@@ -87,12 +43,33 @@ export default function MyUser_RepPostView_Edit() {
   const [location, setLocation] = useState("");
   const [incidentCategory, setIncidentCategory] = useState("");
   const [incidentType, setIncidentType] = useState("");
+  const [categoryOptions, setCategoryOptions] = useState([]);
   const [details, setDetails] = useState("");
   const [photos, setPhotos] = useState([]);
 
   const incidentTypes = useMemo(() => {
-    return incidentOptions[incidentCategory] || [];
-  }, [incidentCategory]);
+    const found = categoryOptions.find((o) => o.category === incidentCategory);
+    return found?.types || [];
+  }, [categoryOptions, incidentCategory]);
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const token = await AsyncStorage.getItem("access_token");
+        if (!token) return;
+
+        const res = await apiClient.get("/incidents/options", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        setCategoryOptions(res.data?.categories || []);
+      } catch {
+        // keep defaults empty
+      }
+    };
+
+    loadCategories();
+  }, []);
 
   useEffect(() => {
     try {
@@ -253,11 +230,11 @@ export default function MyUser_RepPostView_Edit() {
               >
                 <Picker.Item label="Select Incident Category" value="" />
 
-                {Object.keys(incidentOptions).map((category) => (
+                {categoryOptions.map((option) => (
                   <Picker.Item
-                    key={category}
-                    label={category}
-                    value={category}
+                    key={option.category}
+                    label={option.category}
+                    value={option.category}
                   />
                 ))}
               </Picker>
