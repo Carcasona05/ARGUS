@@ -15,27 +15,54 @@ import {
 } from "react-native";
 import { MaterialIcons, FontAwesome, Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import apiClient from "../../services/apiClient";
 
 const { width, height } = Dimensions.get("window");
 
+function seedAdminStore() {
+  if (!globalThis.argusAdmins) {
+    globalThis.argusAdmins = [];
+  }
+
+  if (
+    globalThis.adminAccount?.email &&
+    !globalThis.argusAdmins.some(
+      (a) => a.email === globalThis.adminAccount.email
+    )
+  ) {
+    globalThis.argusAdmins.push({
+      email: globalThis.adminAccount.email,
+      fullName: globalThis.adminAccount.fullName || "ARGUS Admin",
+      password: globalThis.adminAccount.password || "",
+      role: globalThis.adminAccount.role || "admin",
+      type:
+        globalThis.adminAccount.role === "super_admin" ? "sadmin" : "nadmin",
+    });
+  }
+
+  if (globalThis.argusAdmins.length === 0) {
+    globalThis.argusAdmins.push({
+      email: "admin@argus.com",
+      fullName: "ARGUS Admin",
+      password: "Admin123",
+      role: "admin",
+      type: "nadmin",
+    });
+  }
+}
+
+const getAdminByEmail = (email) => {
+  seedAdminStore();
+  const clean = (email || "").trim().toLowerCase();
+  return (
+    globalThis.argusAdmins.find(
+      (a) => (a.email || "").toLowerCase() === clean
+    ) || null
+  );
+};
+
 export default function Admin_Login() {
-  const defaultSadminacc = {
-    fullName: "ARGUS SuperAdmin",
-    email: "superadmin@argus.com",
-    password: "SuperAdmin123",
-    role: "SuperAdmin",
-  };
-
-  const defaultNadminacc = {
-    fullName: "ARGUS Admin",
-    email: "admin@argus.com",
-    password: "Admin123",
-    role: "Admin",
-  };
-
-  const [Sadminacc, setSadminacc] = useState(defaultSadminacc);
-  const [Nadminacc, setNadminacc] = useState(defaultNadminacc);
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -53,27 +80,7 @@ export default function Admin_Login() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
 
-  const getAdminByEmail = (targetEmail) => {
-    const cleanEmail = targetEmail.trim().toLowerCase();
-
-    if (cleanEmail === Sadminacc.email.toLowerCase()) {
-      return {
-        type: "sadmin",
-        account: Sadminacc,
-      };
-    }
-
-    if (cleanEmail === Nadminacc.email.toLowerCase()) {
-      return {
-        type: "nadmin",
-        account: Nadminacc,
-      };
-    }
-
-    return null;
-  };
-
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (Platform.OS !== "web") {
       Alert.alert("Restricted", "Admin login is available on web only.");
       return;
@@ -87,25 +94,38 @@ export default function Admin_Login() {
       return;
     }
 
-    if (
-      cleanEmail === Sadminacc.email.toLowerCase() &&
-      cleanPassword === Sadminacc.password
-    ) {
-      globalThis.adminAccount = Sadminacc;
-      router.replace("/(sadmin)/SAdmin_Dashboard");
-      return;
-    }
+    try {
+      const res = await apiClient.post("/admin/login", {
+        email: cleanEmail,
+        password: cleanPassword,
+      });
 
-    if (
-      cleanEmail === Nadminacc.email.toLowerCase() &&
-      cleanPassword === Nadminacc.password
-    ) {
-      globalThis.adminAccount = Nadminacc;
-      router.replace("/(admin)/Admin_Dashboard");
-      return;
-    }
+      const token = res.data?.access_token;
+      const user = res.data?.user;
 
-    Alert.alert("Login Failed", "Invalid admin email or password.");
+      if (!token) {
+        throw new Error("No access token received");
+      }
+
+      await AsyncStorage.setItem("access_token", token);
+
+      globalThis.adminAccount = {
+        fullName: user?.name || user?.email || "Admin",
+        email: user?.email || cleanEmail,
+        role: user?.role || "Admin",
+      };
+
+      if (user?.role === "super_admin") {
+        router.replace("/(sadmin)/SAdmin_Dashboard");
+      } else {
+        router.replace("/(admin)/Admin_Dashboard");
+      }
+    } catch (error) {
+      Alert.alert(
+        "Login Failed",
+        error.response?.data?.error || "Invalid admin email or password."
+      );
+    }
   };
 
   const resetForgotForm = () => {
@@ -194,18 +214,14 @@ export default function Admin_Login() {
       return;
     }
 
-    if (foundAdmin.type === "sadmin") {
-      setSadminacc({
-        ...Sadminacc,
-        password: newPassword,
-      });
-    }
+    foundAdmin.password = newPassword;
+    foundAdmin.type = foundAdmin.type || (foundAdmin.role === "super_admin" ? "sadmin" : "nadmin");
 
-    if (foundAdmin.type === "nadmin") {
-      setNadminacc({
-        ...Nadminacc,
-        password: newPassword,
-      });
+    if (
+      globalThis.adminAccount &&
+      (globalThis.adminAccount.email || "").toLowerCase() === cleanEmail
+    ) {
+      globalThis.adminAccount.password = newPassword;
     }
 
     setPassword("");

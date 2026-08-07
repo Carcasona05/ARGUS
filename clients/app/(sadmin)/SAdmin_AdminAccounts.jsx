@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -11,6 +11,8 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFonts } from "expo-font";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import apiClient from "../../services/apiClient";
 
 import SAdmin_Layout from "../../components/SAdmin_Compo/SAdmin_Layout";
 import Admin_AddAdmin from "../../components/modals/Admin_AddAdmin";
@@ -75,7 +77,7 @@ function AdminAccountRow({ admin, isLast, onEdit, onDelete, onToggleStatus }) {
         <View style={styles.actionRow}>
           <TouchableOpacity
             style={styles.smallButton}
-            onPress={() => onToggleStatus(admin.id)}
+            onPress={() => onToggleStatus(admin.id, admin.email)}
             activeOpacity={0.8}
           >
             <Ionicons
@@ -100,7 +102,7 @@ function AdminAccountRow({ admin, isLast, onEdit, onDelete, onToggleStatus }) {
 
           <TouchableOpacity
             style={styles.deleteButton}
-            onPress={() => onDelete(admin.id)}
+            onPress={() => onDelete(admin.id, admin.email)}
             activeOpacity={0.8}
           >
             <Ionicons name="trash-outline" size={17} color="#E45757" />
@@ -127,50 +129,37 @@ export default function SAdmin_AdminAccounts() {
     return null;
   }
 
-  const [adminAccounts, setAdminAccounts] = useState([
-    {
-      id: 1,
-      name: "Maria Santos",
-      email: "maria.santos@argus.com",
-      role: "Super Admin",
-      department: "System Management",
-      phone: "0912 345 6789",
-      status: "Active",
-      createdAt: "Apr 20, 2026",
-    },
-    {
-      id: 2,
-      name: "John Reyes",
-      email: "john.reyes@argus.com",
-      role: "Operations Admin",
-      department: "Incident Operations",
-      phone: "0923 456 7890",
-      status: "Active",
-      createdAt: "Apr 22, 2026",
-    },
-    {
-      id: 3,
-      name: "Carla Lim",
-      email: "carla.lim@argus.com",
-      role: "Validation Admin",
-      department: "Report Validation",
-      phone: "0934 567 8901",
-      status: "Active",
-      createdAt: "Apr 25, 2026",
-    },
-    {
-      id: 4,
-      name: "Ramon Cruz",
-      email: "ramon.cruz@argus.com",
-      role: "Map Admin",
-      department: "Mapping and Verification",
-      phone: "0945 678 9012",
-      status: "Disabled",
-      createdAt: "Apr 26, 2026",
-    },
-  ]);
+  const [adminAccounts, setAdminAccounts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredAdmins = adminAccounts.filter((admin) => {
+  const currentAdminEmail = (globalThis.adminAccount?.email || "").toLowerCase();
+
+  const visibleAdmins = adminAccounts.filter(
+    (admin) => (admin.email || "").toLowerCase() !== currentAdminEmail
+  );
+
+  const fetchAccounts = useCallback(async () => {
+    try {
+      const token = await AsyncStorage.getItem("access_token");
+      if (!token) return;
+
+      const res = await apiClient.get("/admin/accounts", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      setAdminAccounts(res.data?.accounts || []);
+    } catch {
+      // silent fail
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAccounts();
+  }, [fetchAccounts]);
+
+  const filteredAdmins = visibleAdmins.filter((admin) => {
     const query = searchText.trim().toLowerCase();
 
     if (!query) {
@@ -178,25 +167,32 @@ export default function SAdmin_AdminAccounts() {
     }
 
     return (
-      admin.name.toLowerCase().includes(query) ||
-      admin.email.toLowerCase().includes(query) ||
-      admin.role.toLowerCase().includes(query) ||
-      admin.department.toLowerCase().includes(query) ||
-      admin.status.toLowerCase().includes(query)
+      (admin.name || "").toLowerCase().includes(query) ||
+      (admin.email || "").toLowerCase().includes(query) ||
+      (admin.role || "").toLowerCase().includes(query) ||
+      (admin.department || "").toLowerCase().includes(query) ||
+      (admin.status || "").toLowerCase().includes(query)
     );
   });
 
-  const activeCount = adminAccounts.filter(
+  const activeCount = visibleAdmins.filter(
     (admin) => admin.status === "Active"
   ).length;
 
-  const disabledCount = adminAccounts.filter(
+  const disabledCount = visibleAdmins.filter(
     (admin) => admin.status === "Disabled"
   ).length;
 
-  const superAdminCount = adminAccounts.filter((admin) =>
-    admin.role.toLowerCase().includes("super")
+  const superAdminCount = visibleAdmins.filter((admin) =>
+    (admin.role || "").toLowerCase().includes("super")
   ).length;
+
+  const getTokenHeaders = async () => {
+    const token = await AsyncStorage.getItem("access_token");
+    return {
+      headers: { Authorization: `Bearer ${token}` },
+    };
+  };
 
   const showMessage = (title, message) => {
     if (Platform.OS === "web") {
@@ -207,49 +203,72 @@ export default function SAdmin_AdminAccounts() {
     Alert.alert(title, message);
   };
 
-  const handleAddAdmin = (newAdmin) => {
-    const adminToAdd = {
-      id: Date.now(),
-      name: newAdmin?.name || newAdmin?.fullName || "New Admin",
-      email: newAdmin?.email || "new.admin@argus.com",
-      role: newAdmin?.role || "Admin",
-      department: newAdmin?.department || "Admin Department",
-      phone: newAdmin?.phone || "Not provided",
-      status: "Active",
-      createdAt: "Today",
-    };
+  const handleAddAdmin = async (newAdmin) => {
+    try {
+      const config = await getTokenHeaders();
+      await apiClient.post(
+        "/admin/register",
+        {
+          name: newAdmin.name,
+          email: newAdmin.email,
+          password: newAdmin.password,
+          role: newAdmin.role,
+          department: newAdmin.department,
+          phone: newAdmin.phone,
+        },
+        config
+      );
 
-    setAdminAccounts((prev) => [adminToAdd, ...prev]);
-    setIsAddAdminVisible(false);
-    showMessage("Admin Added", "New admin account has been added successfully.");
+      setIsAddAdminVisible(false);
+      showMessage("Admin Added", "New admin account has been added successfully.");
+      fetchAccounts();
+    } catch (error) {
+      showMessage("Error", error.response?.data?.error || "Failed to add admin");
+    }
   };
 
   const handleOpenEdit = (admin) => {
+    if ((admin.email || "").toLowerCase() === currentAdminEmail) {
+      showMessage("Restricted", "You cannot edit your own account here. Use Settings instead.");
+      return;
+    }
     setSelectedAdmin(admin);
     setIsEditRequestVisible(true);
   };
 
-  const handleSaveEdit = (updatedAdmin) => {
-    setAdminAccounts((prev) =>
-      prev.map((admin) =>
-        admin.id === updatedAdmin.id
-          ? {
-              ...admin,
-              ...updatedAdmin,
-            }
-          : admin
-      )
-    );
+  const handleSaveEdit = async (updatedAdmin) => {
+    if ((updatedAdmin.email || "").toLowerCase() === currentAdminEmail) {
+      showMessage("Restricted", "You cannot edit your own account here. Use Settings instead.");
+      return;
+    }
+    try {
+      const config = await getTokenHeaders();
+      await apiClient.put(`/admin/accounts/${updatedAdmin.id}`, updatedAdmin, config);
 
-    setSelectedAdmin(null);
-    setIsEditRequestVisible(false);
-    showMessage("Edit Request Saved", "The admin account was updated successfully.");
+      setSelectedAdmin(null);
+      setIsEditRequestVisible(false);
+      showMessage("Edit Request Saved", "The admin account was updated successfully.");
+      fetchAccounts();
+    } catch (error) {
+      showMessage("Error", error.response?.data?.error || "Failed to update admin");
+    }
   };
 
-  const handleDeleteAdmin = (adminId) => {
-    const deleteAction = () => {
-      setAdminAccounts((prev) => prev.filter((admin) => admin.id !== adminId));
-      showMessage("Admin Deleted", "The admin account has been removed.");
+  const handleDeleteAdmin = (adminId, adminEmail) => {
+    if ((adminEmail || "").toLowerCase() === currentAdminEmail) {
+      showMessage("Restricted", "You cannot delete your own account.");
+      return;
+    }
+
+    const deleteAction = async () => {
+      try {
+        const config = await getTokenHeaders();
+        await apiClient.delete(`/admin/accounts/${adminId}`, config);
+        showMessage("Admin Deleted", "The admin account has been removed.");
+        fetchAccounts();
+      } catch (error) {
+        showMessage("Error", error.response?.data?.error || "Failed to delete admin");
+      }
     };
 
     if (Platform.OS === "web") {
@@ -277,17 +296,20 @@ export default function SAdmin_AdminAccounts() {
     ]);
   };
 
-  const handleToggleStatus = (adminId) => {
-    setAdminAccounts((prev) =>
-      prev.map((admin) =>
-        admin.id === adminId
-          ? {
-              ...admin,
-              status: admin.status === "Active" ? "Disabled" : "Active",
-            }
-          : admin
-      )
-    );
+  const handleToggleStatus = async (adminId, adminEmail) => {
+    if ((adminEmail || "").toLowerCase() === currentAdminEmail) {
+      showMessage("Restricted", "You cannot disable or change your own account status.");
+      return;
+    }
+
+    try {
+      const config = await getTokenHeaders();
+      const res = await apiClient.patch(`/admin/accounts/${adminId}/status`, {}, config);
+      showMessage("Status Updated", `Account is now ${res.data?.status || "updated"}.`);
+      fetchAccounts();
+    } catch (error) {
+      showMessage("Error", error.response?.data?.error || "Failed to toggle status");
+    }
   };
 
   return (
@@ -316,7 +338,7 @@ export default function SAdmin_AdminAccounts() {
               </View>
 
               <View>
-                <Text style={styles.summaryValue}>{adminAccounts.length}</Text>
+                <Text style={styles.summaryValue}>{visibleAdmins.length}</Text>
                 <Text style={styles.summaryLabel}>Total Accounts</Text>
               </View>
             </View>

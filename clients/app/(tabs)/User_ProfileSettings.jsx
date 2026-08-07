@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -9,15 +9,18 @@ import {
   Platform,
   Keyboard,
   TouchableWithoutFeedback,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFonts } from "expo-font";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import ThemedView from "../../components/ThemedView";
 import ThemedText from "../../components/ThemedText";
 import Divboxwhite from "../../components/Divboxwhite";
 import ThemedHeader from "../../components/ThemedHeader";
+import apiClient from "../../services/apiClient";
 
 const ARGUS_BLUE = "#294880";
 
@@ -167,13 +170,13 @@ const UserProfileSettings = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [userDetails, setUserDetails] = useState({
-    firstName: "Mika",
-    lastName: "Santos",
-    username: "Mika",
-    birthdate: new Date(2002, 4, 15),
-    contactNumber: "09123456789",
-    location: "Langtad, Argao, Cebu",
-    email: "mika@gmail.com",
+    firstName: "",
+    lastName: "",
+    username: "",
+    birthdate: new Date(2000, 0, 1),
+    contactNumber: "",
+    location: "",
+    email: "",
     credibilityStatus: 3,
   });
 
@@ -185,6 +188,43 @@ const UserProfileSettings = () => {
     confirmPassword: "",
   });
 
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const token = await AsyncStorage.getItem("access_token");
+        if (!token) return;
+
+        const res = await apiClient.get("/profile", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const profile = res.data ?? {};
+
+        const loaded = {
+          firstName: profile.first_name ?? "",
+          lastName: profile.last_name ?? "",
+          username: profile.user_name ?? profile.name ?? "",
+          contactNumber: profile.phone ?? "",
+          email: profile.email ?? "",
+          credibilityStatus: 3,
+        };
+
+        setUserDetails((prev) => ({
+          ...prev,
+          ...loaded,
+        }));
+        setTempDetails((prev) => ({
+          ...prev,
+          ...loaded,
+        }));
+      } catch {
+        // profile fetch failed; keep empty defaults
+      }
+    };
+
+    loadProfile();
+  }, []);
+
   if (!fontsLoaded) {
     return null;
   }
@@ -194,10 +234,56 @@ const UserProfileSettings = () => {
     setEditMode(true);
   };
 
-  const handleSave = () => {
-    setUserDetails(tempDetails);
-    setEditMode(false);
-    setShowBirthdatePicker(false);
+  const handleSave = async () => {
+    try {
+      const token = await AsyncStorage.getItem("access_token");
+      if (!token) {
+        console.warn("No access token found; not saving.");
+        return;
+      }
+
+      await apiClient.put(
+        "/profile",
+        {
+          first_name: tempDetails.firstName,
+          last_name: tempDetails.lastName,
+          user_name: tempDetails.username,
+          phone: tempDetails.contactNumber,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      setUserDetails(tempDetails);
+      setEditMode(false);
+      setShowBirthdatePicker(false);
+
+      const res = await apiClient.get("/profile", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const profile = res.data ?? {};
+      const synced = {
+        ...tempDetails,
+        firstName: profile.first_name ?? tempDetails.firstName,
+        lastName: profile.last_name ?? tempDetails.lastName,
+        username: profile.user_name ?? tempDetails.username,
+        contactNumber: profile.phone ?? tempDetails.contactNumber,
+        email: profile.email ?? tempDetails.email,
+      };
+      setUserDetails(synced);
+      setTempDetails(synced);
+    } catch (error) {
+      console.warn(
+        "Failed to save profile:",
+        error.response?.data?.error || error.message
+      );
+      Alert.alert(
+        "Save failed",
+        error.response?.data?.error ||
+          "Could not save your profile. Please try again."
+      );
+    }
   };
 
   const handleCancel = () => {

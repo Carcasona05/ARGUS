@@ -1,0 +1,125 @@
+import { createSupabaseUser } from "../config/supabaseUser.ts";
+import { supabaseAdmin } from "../config/supabaseAdmin.ts";
+
+const normalizeRole = (role?: string): string => {
+  const r = role?.toLowerCase().trim() || "";
+  if (r.includes("super")) return "super_admin";
+  return "admin";
+};
+
+export const profileService = {
+
+  async getProfile(userId: string) {
+    const result = await supabaseAdmin
+      .from("profiles")
+      .select("name, user_name, first_name, last_name, phone, role")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (!result.data) {
+      await this.ensureProfile(userId);
+    }
+
+    return await supabaseAdmin
+      .from("profiles")
+      .select("name, user_name, first_name, last_name, phone, role")
+      .eq("id", userId)
+      .maybeSingle();
+  },
+
+  async ensureProfile(userId: string) {
+    const { data: userData } = await supabaseAdmin.auth.admin.getUserById(userId);
+    const meta = userData?.user?.user_metadata ?? {};
+
+    const { data: existing } = await supabaseAdmin
+      .from("profiles")
+      .select("id, name, user_name, first_name, last_name, phone")
+      .eq("id", userId)
+      .maybeSingle();
+
+    const payload = {
+      name: meta.userName ?? meta.name ?? "",
+      user_name: meta.userName ?? meta.name ?? "",
+      first_name: meta.firstName ?? "",
+      last_name: meta.lastName ?? "",
+      phone: meta.phone ?? "",
+    };
+
+    if (existing) {
+      const updates: Record<string, unknown> = {};
+      if (!existing.name && payload.name) updates.name = payload.name;
+      if (!existing.user_name && payload.user_name) updates.user_name = payload.user_name;
+      if (!existing.first_name && payload.first_name) updates.first_name = payload.first_name;
+      if (!existing.last_name && payload.last_name) updates.last_name = payload.last_name;
+      if (!existing.phone && payload.phone) updates.phone = payload.phone;
+
+      if (Object.keys(updates).length > 0) {
+        const { error } = await supabaseAdmin
+          .from("profiles")
+          .update(updates)
+          .eq("id", userId);
+        if (error) console.error("ensureProfile update error:", error.message);
+      }
+      return;
+    }
+
+    const { error } = await supabaseAdmin.from("profiles").insert({
+      id: userId,
+      role: "user",
+      ...payload,
+    });
+
+    if (error) console.error("ensureProfile insert error:", error.message);
+  },
+
+  async updateName(userId: string, data: { name?: string }, token: string) {
+    const supabaseUser = createSupabaseUser(token);
+
+    return await supabaseUser
+      .from("profiles")
+      .update(data)
+      .eq("id", userId)
+      .select()
+      .maybeSingle();
+  },
+
+  async updateProfileFields(userId: string, data: Record<string, unknown>) {
+    return await supabaseAdmin
+      .from("profiles")
+      .update(data)
+      .eq("id", userId)
+      .select()
+      .maybeSingle();
+  },
+
+  async updateAuth(userId: string, data: { email?: string; password?: string }) {
+    return await supabaseAdmin.auth.admin.updateUserById(userId, data);
+  },
+
+  async createAdmin(email: string, password: string, name: string, role?: string, department?: string, phone?: string) {
+    const { data, error } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: { name },
+    });
+
+    if (error) return { error };
+
+    const updates: Record<string, unknown> = {
+      name,
+      role: normalizeRole(role),
+    };
+    if (department) updates.department = department;
+    if (phone) updates.phone = phone;
+
+    const { error: updateError } = await supabaseAdmin
+      .from("profiles")
+      .update(updates)
+      .eq("id", data.user.id);
+
+    if (updateError) return { error: updateError };
+
+    return { data };
+  },
+};
