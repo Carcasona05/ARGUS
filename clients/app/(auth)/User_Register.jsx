@@ -15,6 +15,8 @@ import {
 } from "react-native";
 import { MaterialIcons, FontAwesome } from "@expo/vector-icons";
 import { router } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import apiClient from "../../services/apiClient";
 
 export default function Register() {
   const { width, height } = useWindowDimensions();
@@ -22,13 +24,13 @@ export default function Register() {
   const isSmallPhone = width < 360;
   const isShortScreen = height < 720;
 
-  const [name, setName] = useState("");
+  const [userName, setUserName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  const handleRegister = () => {
-    if (!name.trim() || !email.trim() || !password || !confirmPassword) {
+  const handleRegister = async () => {
+    if (!userName.trim() || !email.trim() || !password || !confirmPassword) {
       Alert.alert("Error", "Please fill in all fields.");
       return;
     }
@@ -51,12 +53,37 @@ export default function Register() {
       return;
     }
 
-    Alert.alert("Success", "Registration successful!", [
-      {
-        text: "OK",
-        onPress: () => router.replace("/(tabs)/User_Home"),
-      },
-    ]);
+    try {
+      const res = await apiClient.post("/register", {
+        userName: userName.trim(),
+        email: cleanEmail,
+        password,
+      });
+
+      const token = res.data?.access_token;
+
+      if (token) {
+        try {
+          await AsyncStorage.setItem("access_token", token);
+        } catch (storageError) {
+          console.warn("Failed to store access token:", storageError);
+        }
+      }
+
+      Alert.alert("Success", "Registration successful!", [
+        {
+          text: "OK",
+          onPress: () => router.replace("/(tabs)/User_Home"),
+        },
+      ]);
+    } catch (error) {
+      const serverMessage = error.response?.data?.error;
+      Alert.alert(
+        "Registration Failed",
+        serverMessage ||
+          "Network error. Please check your connection and try again."
+      );
+    }
   };
 
   return (
@@ -138,10 +165,10 @@ export default function Register() {
 
                 <TextInput
                   style={styles.input}
-                  placeholder="Name"
+                  placeholder="Username"
                   placeholderTextColor="#6E7FA5"
-                  value={name}
-                  onChangeText={setName}
+                  value={userName}
+                  onChangeText={setUserName}
                 />
               </View>
 

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -9,9 +9,11 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useFonts } from "expo-font";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import ThemedView from "../../components/ThemedView";
 import ThemedText from "../../components/ThemedText";
+import apiClient from "../../services/apiClient";
 
 const ARGUS_BLUE = "#294880";
 
@@ -26,6 +28,32 @@ const UserSettings = () => {
 
   const [notifications, setNotifications] = useState(true);
   const [crimeAlerts, setCrimeAlerts] = useState(true);
+  const [displayName, setDisplayName] = useState("");
+  const [displayEmail, setDisplayEmail] = useState("");
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const token = await AsyncStorage.getItem("access_token");
+        if (!token) return;
+
+        const res = await apiClient.get("/profile", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const profile = res.data ?? {};
+        setDisplayName(
+          profile.user_name || profile.name || profile.email || "SafeZone User"
+        );
+        setDisplayEmail(profile.email || "youraccount@email.com");
+      } catch {
+        setDisplayName("SafeZone User");
+        setDisplayEmail("youraccount@email.com");
+      }
+    };
+
+    loadProfile();
+  }, []);
 
   if (!fontsLoaded) {
     return null;
@@ -80,9 +108,9 @@ const UserSettings = () => {
           </View>
 
           <View style={styles.profileInfo}>
-            <ThemedText style={styles.profileName}>SafeZone User</ThemedText>
+            <ThemedText style={styles.profileName}>{displayName}</ThemedText>
             <ThemedText style={styles.profileEmail}>
-              youraccount@email.com
+              {displayEmail}
             </ThemedText>
           </View>
         </View>

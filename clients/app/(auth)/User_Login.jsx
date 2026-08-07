@@ -16,6 +16,8 @@ import {
 } from "react-native";
 import { MaterialIcons, FontAwesome, Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import apiClient from "../../services/apiClient";
 
 if (!globalThis.demoAccount) {
   globalThis.demoAccount = {
@@ -32,17 +34,15 @@ export default function UserLogin() {
   const isSmallPhone = width < 360;
   const isShortScreen = height < 700;
 
-  const [email, setEmail] = useState(globalThis.demoAccount.resetEmail || "");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  
   const [showForgotModal, setShowForgotModal] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
-  const [adminTapCount, setAdminTapCount] = useState(0);
+  const [, setAdminTapCount] = useState(0);
 
   useFocusEffect(
     useCallback(() => {
-      if (globalThis.demoAccount?.resetEmail) {
-        setEmail(globalThis.demoAccount.resetEmail);
-      }
     }, []),
   );
 
@@ -63,7 +63,7 @@ export default function UserLogin() {
     });
   };
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     const cleanEmail = email.trim().toLowerCase();
 
     if (!cleanEmail || !password) {
@@ -78,18 +78,30 @@ export default function UserLogin() {
       return;
     }
 
-    if (
-      cleanEmail === globalThis.demoAccount.email.toLowerCase() &&
-      password === globalThis.demoAccount.password
-    ) // mao nani ihatag
+    try {
+      const res = await apiClient.post("/login", {
+        email: cleanEmail,
+        password,
+      });
 
-    {
+      const token = res.data?.access_token;
+
+      if (!token) {
+        throw new Error("No access token received from server.");
+      }
+
+      try {
+        await AsyncStorage.setItem("access_token", token);
+      } catch (storageError) {
+        console.warn("Failed to store access token:", storageError);
+      }
+
       Alert.alert("Success", "Login successful!");
       router.replace("/(tabs)/User_Home");
-    } else {
+    } catch (error) {
       Alert.alert(
         "Login Failed",
-        `Use:\nEmail: ${globalThis.demoAccount.email}\nPassword: ${globalThis.demoAccount.password}`,
+        error.response?.data?.error || "Invalid credentials"
       );
     }
   };
