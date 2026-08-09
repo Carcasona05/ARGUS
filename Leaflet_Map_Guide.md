@@ -1,306 +1,412 @@
-# ARGUS — Leaflet Map Guide
+# ARGUS — Leaflet That Works on BOTH Web and Mobile (JSX Only)
 
-This guide explains how to call the **Leaflet** map API, and how to make the map
-(1) start centered on the user's **current location** and (2) **follow** the user
-as they move.
+The old guide said "Leaflet only works on web." That's only half-true:
 
----
+> **Leaflet works on mobile.** It is a JavaScript/DOM library, so it runs
+> anywhere an HTML page can render — that includes **mobile browsers** and the
+> **WebView** embedded inside a native Android/iOS app.
 
-## 1. The important packaging note for THIS project
+The one real limitation: Leaflet **cannot render as a native React Native view**
+(you can't put it inside a `<View>` on Android/iOS). On native, it must be hosted
+inside a `react-native-webview` — which is just a mini browser window.
 
-Your app is an **Expo / React Native** app. `User_Map.jsx` and `MapView.jsx` use
-React Native `<View>`s, not a browser DOM.
+**This version needs no separate `.html` file.** The entire map page is a plain
+string embedded in `MapView.jsx`, so both the web build and the native app load
+the exact same map from one JSX file.
 
-**Leaflet is a browser (DOM) library.** It can only run on the **web** target of
-your app (`npx expo start --web`). It cannot render inside a React Native native
-view on Android/iOS.
-
-So you have two real options:
-
-| Target              | Recommended library                                       |
-| ------------------- | --------------------------------------------------------- |
-| Web (Expo web)      | **Leaflet** directly, or `react-leaflet` wrapper          |
-| Android / iOS native| **`react-native-maps`** (`react-native-maps-directions` etc.) |
-
-This guide teaches **Leaflet** (web). The "current location + follow" concepts at
-the bottom apply to both; the code differs only in the map object API.
+| Target             | How the map renders                              |
+| ------------------ | ------------------------------------------------ |
+| Web (`expo web`)   | `<iframe srcDoc={mapHtml}>` — HTML string inline |
+| Android / iOS app  | `<WebView source={{ html: mapHtml }}>`           |
+| Phone browser      | Open the web build URL on the phone — works as-is, no extra code |
 
 ---
 
-## 2. Getting Leaflet (CDN — best for web)
+## The plan
 
-Add the CSS + JS in `public/index.html` (Expo web) or your app's HTML shell:
-
-```html
-<!-- In the <head> -->
-<link
-  rel="stylesheet"
-  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-  crossorigin=""
-/>
-
-<!-- Before your app script -->
-<script
-  src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-  crossorigin=""
-></script>
-```
-
-> The `integrity` hashes let the browser verify the file. If you change the
-> version, regenerate the hashes from https://unpkg.com or drop them.
+1. `MapView.jsx` holds one constant: the full Leaflet HTML page (as a string).
+2. It renders that string in an `<iframe>` on **web** and a `<WebView>` on
+   **native** — same tiles, same markers, same "follow the user" logic.
+3. `User_Map.jsx` sends the user's location + facility markers into the map and
+   reacts to marker taps, all through a tiny message bridge.
 
 ---
 
-## 3. The core Leaflet API calls
+## Step 1 — Install the native WebView
 
-### 3.1 Create a map
-
-`L.map(id, options)` needs a DOM element. In React on web you give it a `<div>`
-with `ref`/`id`:
-
-```js
-// createMap.js
-export function createMap(divId, { latitude, longitude, zoom = 14 }) {
-  const map = L.map(divId, {
-    center: [latitude, longitude], // [lat, lng] — Leaflet is lat-first!
-    zoom,
-  });
-
-  // Add OpenStreetMap tiles (required or you get an empty grey box)
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 19,
-    attribution: "© OpenStreetMap contributors",
-  }).addTo(map);
-
-  return map;
-}
-```
-
-> **CRITICAL ORDERING:** Leaflet coordinates are **[latitude, longitude]**.
-> Your `User_PostReport.jsx` stores `latitude` and `longitude` — pass them as
-> `[lat, lng]`, **not** `[lng, lat]`.
-
-### 3.2 Add a marker at the user's location
-
-```js
-const marker = L.marker([lat, lng]).addTo(map);
-marker.bindPopup("You are here").openPopup();
-```
-
-### 3.3 Set/pan the view
-
-```js
-map.setView([lat, lng], 15);          // jump (center) + zoom
-map.panTo([lat, lng]);                // animate center, keep zoom
-map.flyTo([lat, lng], 15);            // animated fly (nice for follow)
-```
-
-### 3.4 Add circles / heat zones / custom icons
-
-```js
-L.circle([lat, lng], {
-  radius: 500,            // meters
-  color: "#E45757",
-  fillColor: "#E45757",
-  fillOpacity: 0.2,
-}).addTo(map);
-```
-
----
-
-## 4. Getting the user's location
-
-The browser lets you read real GPS position. There are two calls:
-
-| Call                 | Behavior                          |
-| -------------------- | --------------------------------- |
-| `getCurrentPosition` | Get the position **once**         |
-| `watchPosition`      | Keep firing as the user moves **important for FOLLOW** |
-
-```js
-// browser geolocation (web)
-if (!navigator.geolocation) {
-  console.error("Geolocation not supported");
-  return;
-}
-
-// 1) initial position
-navigator.geolocation.getCurrentPosition(
-  (pos) => {
-    const { latitude, longitude } = pos.coords;
-    map.setView([latitude, longitude], 14);
-    userMarker.setLatLng([latitude, longitude]);
-  },
-  (err) => console.error("Location error:", err.message),
-  { enableHighAccuracy: true, timeout: 10000 }
-);
-```
-
----
-
-## 5. Make it FOLLOW the user (the core of your question)
-
-"Follow" = keep the map centered on the user as they move. The recipe has three
-parts:
-
-1. **Start centered on current location** (a one-time call).
-2. **Watch position continuously** (`watchPosition`).
-3. **Keep panning** to the new position **only if "follow" is on**.
-
-```js
-let followUser = true;          // toggled by a "re-center" button
-const userMarker = L.marker([0, 0]).addTo(map);
-
-function startFollow() {
-  // initial positioning
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      const ll = [pos.coords.latitude, pos.coords.longitude];
-      userMarker.setLatLng(ll);
-      if (follow) map.setView(ll, 14);
-    },
-    (err) => console.error(err.message),
-    { enableHighAccuracy: true }
-  );
-
-  // follow: re-center whenever the user moves
-  const watchId = navigator.geolocation.watchPosition(
-    (pos) => {
-      const ll = [pos.coords.latitude, pos.coords.longitude];
-      userMarker.setLatLng(ll);
-      if (follow) map.panTo(ll, { animate: true });
-    },
-    (err) => console.error(err.message),
-    { enableHighAccuracy: true, maximumAge: 1000, timeout: 15000 }
-  );
-
-  // store watchId if you later want to stop following:
-  // navigator.geolocation.clearWatch(watchId);
-}
-```
-
-A common UI is a **crosshair/recenter** button that sets `follow = true` and pans
-to the user again. If the user drags the map around, they can set `follow = false`.
-
----
-
-## 6. In React — the react-leaflet version (cleaner for web)
-
-Install:
+In `clients/`:
 
 ```bash
-npm install leaflet react-leaflet
-# and the types if you use TS
-npm install -D @types/leaflet
+npx expo install react-native-webview
 ```
 
-Make a `LocateMap.jsx`:
+> `leaflet` and `react-leaflet` are **not needed** — Leaflet loads from a CDN
+> inside the embedded HTML string.
+
+---
+
+## Step 2 — Rewrite `MapView.jsx` (everything lives here)
+
+Replace `clients/components/MapView.jsx` with:
 
 ```jsx
-import { useEffect, useRef, useState } from "react";
-import { MapContainer, TileLayer, Marker, useMap } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
+import React, { useRef, useCallback } from "react";
+import { Platform, StyleSheet, View } from "react-native";
+import { WebView } from "react-native-webview";
 
-// Child component that listens for location once the map mounts
-function LocationController() {
-  const map = useMap();
-  const [pos, setPos] = useState(null);
+// The whole Leaflet map, as an HTML string. Used by BOTH the web iframe
+// (srcDoc) and the native WebView (source.html). No .html file needed.
+const MAP_HTML = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>html, body, #map { margin: 0; height: 100%; }</style>
+</head>
+<body>
+  <div id="map"></div>
+  <script>
+    function sendToHost(msg) {
+      if (window.ReactNativeWebView) {
+        window.ReactNativeWebView.postMessage(JSON.stringify(msg));
+      } else if (window.parent) {
+        window.parent.postMessage(JSON.stringify(msg), "*");
+      }
+    }
 
-  useEffect(() => {
-    if (!navigator.geolocation) return;
+    // Default center: Argao, Cebu
+    const map = L.map("map", { center: [9.8816, 123.5953], zoom: 13 });
 
-    navigator.geolocation.getCurrentPosition(
-      (p) => setPos([p.coords.latitude, p.coords.longitude]),
-      (err) => console.error(err.message),
-      { enableHighAccuracy: true }
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: "&copy; OpenStreetMap contributors",
+    }).addTo(map);
+
+    let userMarker = L.marker([9.8816, 123.5953]).addTo(map);
+    userMarker.bindPopup("Your current location");
+    let follow = true;
+
+    // Called from the app to set position + markers.
+    window.__argusInit = function (cfg) {
+      const c = cfg || {};
+      if (c.lat !== undefined && c.lng !== undefined) {
+        userMarker.setLatLng([c.lat, c.lng]);
+        map.setView([c.lat, c.lng], 15);
+        sendToHost({ type: "location", lat: c.lat, lng: c.lng });
+      }
+      if (c.markers) {
+        c.markers.forEach((m) => {
+          const marker = L.marker([m.lat, m.lng]).addTo(map);
+          marker.bindPopup(m.label || m.name || "");
+          marker.on("click", () => sendToHost({ type: "markerPress", id: m.id }));
+        });
+      }
+    };
+
+    // Re-center from the app's button.
+    window.__argusRecenter = function (lat, lng) {
+      follow = true;
+      if (lat !== undefined && lng !== undefined) userMarker.setLatLng([lat, lng]);
+      map.setView([lat, lng], 15);
+    };
+
+    // Web iframe sends data via postMessage.
+    window.addEventListener("message", (e) => {
+      try {
+        const d = JSON.parse(e.data);
+        if (d.type === "init") window.__argusInit(d);
+        if (d.type === "recenter") window.__argusRecenter(d.lat, d.lng);
+        if (d.type === "setFollow") follow = !!d.follow;
+      } catch (_) {}
+    });
+
+    // User drags the map -> stop following.
+    map.on("dragstart", () => { follow = false; });
+
+    // Browser GPS (web). On native the app injects position via __argusInit.
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (p) => { userMarker.setLatLng([p.coords.latitude, p.coords.longitude]); if (follow) map.setView([p.coords.latitude, p.coords.longitude], 15); },
+        () => {},
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+      navigator.geolocation.watchPosition(
+        (p) => { userMarker.setLatLng([p.coords.latitude, p.coords.longitude]); if (follow) map.setView([p.coords.latitude, p.coords.longitude], 15); },
+        () => {},
+        { enableHighAccuracy: true, maximumAge: 1000, timeout: 15000 }
+      );
+    }
+  <\/script>
+</body>
+</html>
+`;
+
+const MapView = React.forwardRef(({ position, markers = [], onMarkerPress, onLocation }, ref) => {
+  const mapRef = useRef(null);
+
+  // Data we want to push into the map.
+  const buildConfig = useCallback(
+    () => ({
+      type: "init",
+      lat: position?.[0],
+      lng: position?.[1],
+      markers: markers.map((m) => ({
+        id: m.id,
+        lat: m.lat,
+        lng: m.lng,
+        label: m.label,
+      })),
+    }),
+    [position, markers]
+  );
+
+  const pushInit = useCallback(() => {
+    if (!mapRef.current) return;
+    const cfg = JSON.stringify(buildConfig());
+    if (Platform.OS === "web") {
+      mapRef.current.contentWindow?.postMessage(cfg, "*");
+    } else {
+      mapRef.current.injectJavaScript(
+        `window.__argusInit && window.__argusInit(${cfg}); true;`
+      );
+    }
+  }, [buildConfig]);
+
+  const recenter = useCallback(() => {
+    if (!position || !mapRef.current) return;
+    if (Platform.OS === "web") {
+      mapRef.current.contentWindow?.postMessage(
+        JSON.stringify({ type: "recenter", lat: position[0], lng: position[1] }),
+        "*"
+      );
+    } else {
+      mapRef.current.injectJavaScript(
+        `window.__argusRecenter && window.__argusRecenter(${position[0]}, ${position[1]}); true;`
+      );
+    }
+  }, [position]);
+
+  // Expose recenter() so User_Map.jsx can call it via a ref.
+  React.useImperativeHandle(ref, () => ({ recenter }));
+
+  const onMessage = useCallback(
+    (e) => {
+      try {
+        const data = JSON.parse(e.nativeEvent?.data ?? e.data);
+        if (data.type === "markerPress") onMarkerPress?.(data.id);
+        if (data.type === "location") onLocation?.([data.lat, data.lng]);
+      } catch (_) {}
+    },
+    [onMarkerPress, onLocation]
+  );
+
+  if (Platform.OS === "web") {
+    return (
+      <iframe
+        ref={mapRef}
+        srcDoc={MAP_HTML}
+        style={{ width: "100%", height: "100%", borderWidth: 0 }}
+        onLoad={() => pushInit()}
+      />
     );
-  }, []);
+  }
 
-  useEffect(() => {
-    if (pos) map.setView(pos, 14);
-  }, [pos, map]);
-
-  // FOLLOW: watchPosition re-centers continuously
-  useEffect(() => {
-    const watch = navigator.geolocation.watchPosition(
-      (p) => {
-        const ll = [p.coords.latitude, p.coords.longitude];
-        setPos(ll);
-      },
-      (err) => console.error(err.message),
-      { enableHighAccuracy: true }
-    );
-    return () => navigator.geolocation.clearWatch(watch); // cleanup
-  }, []);
-
-  if (!pos) return null;
-  return <Marker position={pos} />;
-}
-
-export default function LocateMap() {
   return (
-    <MapContainer center={[10.3145, 123.3067]} zoom={13} style={{ height: 500 }}>
-      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-      <LocationController />
-    </MapContainer>
+    <View style={styles.map}>
+      <WebView
+        ref={mapRef}
+        source={{ html: MAP_HTML }}
+        style={styles.map}
+        onMessage={onMessage}
+        onLoadEnd={pushInit}
+        geolocationEnabled={true}
+        javaScriptEnabled={true}
+        originWhitelist={["*"]}
+      />
+    </View>
   );
-}
+});
+
+const styles = StyleSheet.create({
+  map: {
+    width: "100%",
+    height: "100%",
+  },
+});
+
+export default MapView;
 ```
 
-### React Native equivalent (native apps)
+What this does:
 
-For Android/iOS use `react-native-maps` (not Leaflet):
+- `MAP_HTML` is the whole Leaflet page as a string — no `.html` file anywhere.
+- The page exposes `window.__argusInit(cfg)` and `window.__argusRecenter(lat, lng)`.
+- **Native** calls those via `injectJavaScript` (WebView) and gets events back via
+  `onMessage`.
+- **Web** calls them via `postMessage` on the iframe's `contentWindow` and gets
+  events back via the `message` listener + `sendToHost`.
+- Browser GPS inside the page powers the web "follow"; on native, the app injects
+  the position from `expo-location`.
 
-```bash
-npx expo install react-native-maps
-npx expo install expo-location
-```
+> **Lat/Lng order:** Leaflet is **latitude-first** (`[lat, lng]`). Your reports
+> store `latitude` and `longitude` separately — keep them in that order.
+>
+> Note: the `<\/script>` in the JSX is a template-literal escape so the closing
+> tag inside the string doesn't terminate the template.
+
+---
+
+## Step 3 — Wire up `User_Map.jsx`
+
+Open `clients/app/(tabs)/User_Map.jsx`:
+
+1. **Add state + a ref for the map:**
 
 ```jsx
-import MapView, { Marker } from "react-native-maps";
+const mapViewRef = useRef(null);
+const [userPosition, setUserPosition] = useState(null);
 ```
 
-getting the current position the same way your `User_PostReport.jsx` already
-does:
+2. **Request location permission on native** (web falls back to the browser GPS
+   inside the map page):
 
-```js
-const { status } = await Location.requestForegroundPermissionsAsync();
-const current = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
-const { latitude, longitude } = current.coords;
+```jsx
+useEffect(() => {
+  let cancelled = false;
+
+  const requestLocation = async () => {
+    if (Platform.OS === "web") return; // HTML handles browser GPS
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") return;
+      const current = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High,
+      });
+      if (!cancelled) {
+        setUserPosition([current.coords.latitude, current.coords.longitude]);
+      }
+    } catch (err) {
+      console.warn("Location error:", err.message);
+    }
+  };
+
+  requestLocation();
+  return () => {
+    cancelled = true;
+  };
+}, []);
 ```
 
-and `<MapView region={{ latitude, longitude, latitudeDelta: 0.02, longitudeDelta: 0.02 }} />`.
+> Add `import * as Location from "expo-location";` and make sure `Platform` is
+> imported from `react-native`. This mirrors the pattern already used in
+> `User_PostReport.jsx`.
+
+3. **Give every facility real coordinates** (replace the fake `top`/`left` with
+   `lat`/`lng`):
+
+```jsx
+const EMERGENCY_FACILITIES = [
+  {
+    id: 1,
+    type: "Police Station",
+    name: "Argao Municipal Police Station",
+    location: "Poblacion, Argao",
+    contact: "911 / Local Police Hotline",
+    lat: 9.8767,
+    lng: 123.5989,
+  },
+  // ...add lat/lng to the other 3 entries
+];
+```
+
+4. **Render the real map** (replace the placeholder `<MapView style={styles.map} />`):
+
+```jsx
+<MapView
+  ref={mapViewRef}
+  style={styles.map}
+  position={userPosition}
+  markers={filteredFacilities.map((f) => ({
+    id: f.id,
+    lat: f.lat,
+    lng: f.lng,
+    label: f.name,
+  }))}
+  onMarkerPress={(id) => {
+    const facility = EMERGENCY_FACILITIES.find((f) => f.id === id);
+    if (facility) setSelectedFacility(facility);
+  }}
+  onLocation={setUserPosition}
+/>
+```
+
+5. **Remove the fake overlays** — the hard-coded `<View style={styles.userLocation}>`
+   dot and `<View style={styles.userBadge}>` "You" label no longer align with the
+   real map. Delete them (Leaflet draws the real user marker now).
+
+6. **Re-center button:**
+
+```jsx
+<TouchableOpacity
+  style={styles.recenterButton}
+  onPress={() => mapViewRef.current?.recenter()}
+>
+  <Ionicons name="locate-outline" size={20} color="#FFFFFF" />
+</TouchableOpacity>
+```
+
+The facility card, search bar, filter modal, legend, and bottom summary stay as
+React Native UI floating on top of the map — they work identically on both
+platforms.
 
 ---
 
-## 7. How this maps to YOUR code
+## Step 4 — Run it
 
-- `MapView.jsx` is a **placeholder** — replace its body:
-  - **Web:** render `<div id="argus-map">` and import the Leaflet scripts, then
-    call `createMap("argus-map", { center })`.
-  - **Native:** use `<MapView>` from `react-native-maps`.
-- `User_Map.jsx` calls `<MapView style={styles.map} />` and renders the "user
-  location" dot at hard-coded `top`/`left`. Replace those hard-coded values with
-  the **real GPS coordinates** you already store in `User_PostReport`.
-- The toggle "follow" can be wired to the blue re-center button already in the UI.
+```bash
+cd clients
+npx expo start --web      # test web + open the URL on your phone
+# and on the device / emulator:
+npx expo start
+```
 
-### Quick checklist for "start at my location + follow"
+Verify:
 
-1. Request location permission (user gesture / on mount).
-2. `getCurrentPosition` once → `map.setView([lat, lng], 14)` → place user marker.
-3. `watchPosition` → on each update, move the marker and `map.panTo`/`setView`.
-4. Keep `follow` flag; re-enable on button tap.
+1. Web: map loads, browser asks for location, user marker appears, map follows.
+2. Phone browser: open the web URL → same experience, no extra code.
+3. Native: `react-native-webview` opens, location permission prompt appears, and
+   the map follows the user.
+4. Tapping a facility marker opens the facility card in `User_Map.jsx`.
+5. Re-center button brings the map back to the user.
 
 ---
 
-## 6. Common pitfalls
+## Pitfalls specific to this approach
 
-- **Lat/Lng order:** Leaflet and react-native-maps use `[latitude, longitude]`.
-- **Missing tiles:** you must add at least one `TileLayer`, or the map is blank.
-- **Marker vs popup on first load:** the marker may exist before tiles load;
-  call `map.invalidateSize()` if the container resizes (e.g., modal opens).
-- **Battery:** `watchPosition` with `enableHighAccuracy:true` drains battery;
-  consider throttling or clearing the watch when following is disabled.
-- **Web vs native:** Leaflet only on web; use `react-native-maps` on Android/iOS.
+- **`react-native-webview` needs a native rebuild.** After `npx expo install
+  react-native-webview`, run the app fresh (`npx expo start` then press `a`/`i`).
+- **`<\/script>` escape:** inside the JSX template literal you must write the
+  closing script tag as `<\/script>`, or it will break the JSX string.
+- **WebView location:** keep `geolocationEnabled` + `javaScriptEnabled` on, or
+  pass `lat`/`lng` from `expo-location` (Step 3) instead.
+- **Events arrive after the map loads:** call `pushInit` on `onLoad` / `onLoadEnd`
+  so the app's data reaches the map once the page is ready.
+- **Coordinate order:** always `[latitude, longitude]`. Swap them and the map
+  centers in the wrong ocean.
+- **Grey map:** the CDN script must load; if offline, the tiles (and map) won't
+  render. Consider bundling Leaflet locally for production.
+- **Web iframe + `<div>` parents:** keep the `iframe` inside a container with an
+  explicit height (`style={styles.map}`), otherwise it collapses to 0px.
+
+---
+
+## Checklist
+
+1. `npx expo install react-native-webview`.
+2. `MapView.jsx` contains the `MAP_HTML` string + `<iframe>`/`<WebView>` render.
+3. `User_Map.jsx` passes real `lat`/`lng` + markers, listens for `markerPress`.
+4. Fake `top`/`left` dots removed; re-center button wired to `recenter()`.
+5. Tested on `expo web` + a phone browser + a native build.

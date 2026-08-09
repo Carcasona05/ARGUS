@@ -5,6 +5,7 @@ import authRoutes from "./src/routes/authRoute.ts";
 import reportRoutes from "./src/routes/reportRoute.ts";
 import notificationRoutes from "./src/routes/notificationRoute.ts";
 import uploadRoutes from "./src/routes/uploadRoute.ts";
+import facilityRoutes from "./src/routes/facilityRoute.ts";
 
 dotenv.config();
 
@@ -18,6 +19,7 @@ app.use("/api", authRoutes);
 app.use("/api", reportRoutes);
 app.use("/api", notificationRoutes);
 app.use("/api", uploadRoutes);
+app.use("/api", facilityRoutes);
 
 app.get ("/", (req, res) => {
     res.send("It is working");

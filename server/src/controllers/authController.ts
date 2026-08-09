@@ -4,6 +4,7 @@ import { supabaseAdmin } from "../config/supabaseAdmin.ts";
 import type { User } from "@supabase/supabase-js";
 import { profileService } from "../services/authService.ts";
 import { notificationService } from "../services/notificationService.ts";
+import { credibilityService } from "../services/credibilityService.ts";
 
 type AuthRequest = Request & { user?: User; token?: string };
 
@@ -170,6 +171,20 @@ export const getProfile = async (
   const meta = user.user_metadata ?? {};
   const fallbackName = meta.userName ?? meta.name ?? user.email ?? "";
 
+  let credibilityScore = 60;
+  let credibilityStatus = 3;
+
+  try {
+    const { data: credibility, error } =
+      await credibilityService.getUserCredibility(user.id);
+    if (!error && credibility) {
+      credibilityScore = credibility.score;
+      credibilityStatus = credibility.level;
+    }
+  } catch {
+    // keep defaults
+  }
+
   res.json({
     name: data?.fullname ?? fallbackName,
     user_name: data?.user_name ?? fallbackName,
@@ -179,7 +194,46 @@ export const getProfile = async (
     phone: data?.phone ?? meta.phone ?? "",
     role: data?.role ?? "user",
     email: user.email,
+    credibility_score: credibilityScore,
+    credibility_status: credibilityStatus,
   });
+};
+
+export const changePassword = async (
+  req: AuthRequest,
+  res: Response
+) => {
+  try {
+    const user = req.user;
+    if (!user || !req.token) return res.status(401).json({ error: "Unauthorized" });
+
+    const { currentPassword, newPassword } = req.body ?? {};
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: "Current and new password are required" });
+    }
+
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: user.email ?? "",
+      password: currentPassword,
+    });
+
+    if (signInError) {
+      return res.status(401).json({ error: "Current password is incorrect" });
+    }
+
+    const { error: updateError } = await profileService.updateAuth(user.id, {
+      password: newPassword,
+    });
+
+    if (updateError) {
+      return res.status(500).json({ error: updateError.message });
+    }
+
+    res.json({ message: "Password updated successfully" });
+  } catch (err) {
+    res.status(500).json({ error: "Internal server error" });
+  }
 };
 
 export const updateProfile = async (

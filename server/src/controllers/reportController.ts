@@ -2,6 +2,7 @@ import type { Response } from "express";
 import { reportService } from "../services/reportService.ts";
 import { profileService } from "../services/authService.ts";
 import { notificationService } from "../services/notificationService.ts";
+import { credibilityService } from "../services/credibilityService.ts";
 
 type AuthRequest = import("express").Request & { user?: { id: string }; token?: string };
 
@@ -31,6 +32,17 @@ export const validateReport = async (req: AuthRequest, res: Response) => {
     const newStatus = status ?? prev.previousStatus ?? "Pending Review";
     const verified = is_verified ?? prev.previousVerified ?? false;
 
+    if (newStatus === "Rejected") {
+      await credibilityService
+        .addPoints(
+          result.data.ownerId,
+          "report_rejected",
+          "Report rejected after review",
+          result.data.id
+        )
+        .catch(() => {});
+    }
+
     await notificationService.createNotification({
       userId: result.data.ownerId,
       type: "report_status",
@@ -58,6 +70,15 @@ export const createReport = async (req: AuthRequest, res: Response) => {
   const result = await reportService.createReport(user.id, req.body ?? {});
 
   if (result.error) return res.status(400).json({ error: result.error });
+
+  await credibilityService
+    .addPoints(
+      user.id,
+      "report_submitted",
+      "Report submitted",
+      result.data ?? null
+    )
+    .catch(() => {});
 
   res.status(201).json({
     message: "Report submitted successfully",

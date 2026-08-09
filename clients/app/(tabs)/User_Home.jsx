@@ -10,6 +10,7 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import ThemedView from "../../components/ThemedView";
 import ThemedText from "../../components/ThemedText";
+import MapView from "../../components/MapView";
 import ReportPost_Layout from "../../components/ReportPost_Layout";
 import ReportByAdmin from "../../components/ReportByAdmin";
 import apiClient from "../../services/apiClient";
@@ -64,23 +65,7 @@ const formatDatePosted = (dateValue) => {
 const MapPreview = ({ style }) => {
   return (
     <View style={[styles.mapCard, style]}>
-      <View style={styles.mapGlowOne} />
-      <View style={styles.mapGlowTwo} />
-
-      <View style={styles.roadLineOne} />
-      <View style={styles.roadLineTwo} />
-      <View style={styles.roadLineThree} />
-      <View style={styles.roadLineFour} />
-
-      <View style={styles.pinPulse} />
-
-      <View style={styles.userPin}>
-        <Ionicons name="location" size={18} color="#FFFFFF" />
-      </View>
-
-      <View style={styles.userLabel}>
-        <ThemedText style={styles.userLabelText}>You are here</ThemedText>
-      </View>
+      <MapView interactive={false} />
 
       <View style={styles.mapReminderCard}>
         <View style={styles.reminderIcon}>
@@ -561,115 +546,6 @@ const styles = StyleSheet.create({
     position: "relative",
     borderWidth: 1,
     borderColor: "#DDE7F5",
-  },
-
-  mapGlowOne: {
-    position: "absolute",
-    width: 170,
-    height: 170,
-    borderRadius: 85,
-    backgroundColor: "rgba(255,255,255,0.35)",
-    top: -50,
-    right: -40,
-  },
-
-  mapGlowTwo: {
-    position: "absolute",
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: "rgba(255,255,255,0.28)",
-    bottom: 34,
-    left: -48,
-  },
-
-  roadLineOne: {
-    position: "absolute",
-    width: 440,
-    height: 12,
-    backgroundColor: "rgba(255,255,255,0.76)",
-    top: 62,
-    left: -30,
-    transform: [{ rotate: "-20deg" }],
-  },
-
-  roadLineTwo: {
-    position: "absolute",
-    width: 440,
-    height: 12,
-    backgroundColor: "rgba(255,255,255,0.76)",
-    top: 125,
-    left: -34,
-    transform: [{ rotate: "-18deg" }],
-  },
-
-  roadLineThree: {
-    position: "absolute",
-    width: 12,
-    height: 280,
-    backgroundColor: "rgba(255,255,255,0.76)",
-    top: -12,
-    left: 96,
-    transform: [{ rotate: "22deg" }],
-  },
-
-  roadLineFour: {
-    position: "absolute",
-    width: 12,
-    height: 300,
-    backgroundColor: "rgba(255,255,255,0.76)",
-    top: -16,
-    right: 76,
-    transform: [{ rotate: "18deg" }],
-  },
-
-  pinPulse: {
-    position: "absolute",
-    bottom: 118,
-    left: "50%",
-    marginLeft: -24,
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "rgba(41,72,128,0.14)",
-  },
-
-  userPin: {
-    position: "absolute",
-    bottom: 128,
-    left: "50%",
-    marginLeft: -17,
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: PRIMARY,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 3,
-    borderColor: "#FFFFFF",
-    shadowColor: PRIMARY,
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    elevation: 5,
-  },
-
-  userLabel: {
-    position: "absolute",
-    bottom: 96,
-    left: "50%",
-    marginLeft: -43,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderWidth: 1,
-    borderColor: "#E4EBF7",
-  },
-
-  userLabelText: {
-    fontFamily: FONT.medium,
-    fontSize: 11,
-    color: "#4B5563",
   },
 
   mapReminderCard: {

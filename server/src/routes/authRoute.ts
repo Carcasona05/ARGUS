@@ -1,5 +1,5 @@
 import express from "express";
-import { login, register, getProfile, updateProfile, adminLogin, adminRegister } from "../controllers/authController.ts";
+import { login, register, getProfile, updateProfile, changePassword, adminLogin, adminRegister } from "../controllers/authController.ts";
 import { getAccounts, updateAccount, deleteAccount, toggleStatus } from "../controllers/adminController.ts";
 import { authenticate } from "../middlewares/authMiddleware.ts";
 import { adapt } from "../utils/adapt.ts";
@@ -10,6 +10,7 @@ router.post("/register", register);
 router.post("/login", login);
 router.get("/profile", authenticate, adapt(getProfile));
 router.put("/profile", authenticate, adapt(updateProfile));
+router.put("/profile/password", authenticate, adapt(changePassword));
 
 router.post("/admin/login", adminLogin);
 router.post("/admin/register", authenticate, adapt(adminRegister));

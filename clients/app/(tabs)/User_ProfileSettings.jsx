@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   StyleSheet,
@@ -15,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFonts } from "expo-font";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect } from "expo-router";
 
 import ThemedView from "../../components/ThemedView";
 import ThemedText from "../../components/ThemedText";
@@ -62,8 +63,15 @@ const formatBirthdate = (date) => {
   });
 };
 
-const CredibilityScore = ({ statusIndex = 3 }) => {
-  const currentStatus = credibilityLevels[statusIndex];
+const CredibilityScore = ({ statusIndex = 3, score = 60 }) => {
+  const safeIndex = Math.min(
+    credibilityLevels.length - 1,
+    Math.max(0, Number(statusIndex) || 0)
+  );
+  const safeScore = Math.min(100, Math.max(0, Number(score) || 0));
+  const scorePosition = Math.min(1, Math.max(0, safeScore / 80));
+  const lineWidthPercent = scorePosition * 80;
+  const currentStatus = credibilityLevels[safeIndex];
 
   return (
     <Divboxwhite style={styles.credibilityCard}>
@@ -104,7 +112,7 @@ const CredibilityScore = ({ statusIndex = 3 }) => {
           style={[
             styles.timelineLineActive,
             {
-              width: `${(statusIndex / (credibilityLevels.length - 1)) * 100}%`,
+              width: `${lineWidthPercent}%`,
               backgroundColor: currentStatus.color,
             },
           ]}
@@ -112,8 +120,8 @@ const CredibilityScore = ({ statusIndex = 3 }) => {
 
         <View style={styles.timelineRow}>
           {credibilityLevels.map((item, index) => {
-            const isActive = index === statusIndex;
-            const isPassed = index < statusIndex;
+            const isActive = index === safeIndex;
+            const isPassed = index < safeIndex;
 
             return (
               <View key={index} style={styles.timelineItem}>
@@ -179,6 +187,7 @@ const UserProfileSettings = () => {
     location: "",
     email: "",
     credibilityStatus: 3,
+    credibilityScore: 60,
   });
 
   const [tempDetails, setTempDetails] = useState(userDetails);
@@ -189,43 +198,63 @@ const UserProfileSettings = () => {
     confirmPassword: "",
   });
 
-  useEffect(() => {
-    const loadProfile = async () => {
-      try {
-        const token = await AsyncStorage.getItem("access_token");
-        if (!token) return;
+  const loadProfile = useCallback(async () => {
+    try {
+      const token = await AsyncStorage.getItem("access_token");
+      if (!token) return;
 
-        const res = await apiClient.get("/profile", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+      const res = await apiClient.get("/profile", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-        const profile = res.data ?? {};
+      const profile = res.data ?? {};
 
-        const loaded = {
-          firstName: profile.first_name ?? "",
-          middleName: profile.middle_name ?? "",
-          lastName: profile.last_name ?? "",
-          username: profile.user_name ?? profile.name ?? "",
-          contactNumber: profile.phone ?? "",
-          email: profile.email ?? "",
-          credibilityStatus: 3,
-        };
-
-        setUserDetails((prev) => ({
-          ...prev,
-          ...loaded,
-        }));
-        setTempDetails((prev) => ({
-          ...prev,
-          ...loaded,
-        }));
-      } catch {
-        // profile fetch failed; keep empty defaults
+      let credibilityStatus = 3;
+      const rawStatus = Number(profile.credibility_status);
+      if (Number.isFinite(rawStatus) && rawStatus >= 0 && rawStatus <= 4) {
+        credibilityStatus = rawStatus;
+      } else {
+        console.warn(
+          "[profile] credibility_status missing/invalid - restart the server so /profile returns it:",
+          profile.credibility_status
+        );
       }
-    };
 
-    loadProfile();
+      let credibilityScore = 60;
+      const rawScore = Number(profile.credibility_score);
+      if (Number.isFinite(rawScore)) {
+        credibilityScore = Math.min(100, Math.max(0, rawScore));
+      }
+
+      const loaded = {
+        firstName: profile.first_name ?? "",
+        middleName: profile.middle_name ?? "",
+        lastName: profile.last_name ?? "",
+        username: profile.user_name ?? profile.name ?? "",
+        contactNumber: profile.phone ?? "",
+        email: profile.email ?? "",
+        credibilityStatus,
+        credibilityScore,
+      };
+
+      setUserDetails((prev) => ({
+        ...prev,
+        ...loaded,
+      }));
+      setTempDetails((prev) => ({
+        ...prev,
+        ...loaded,
+      }));
+    } catch {
+      // profile fetch failed; keep empty defaults
+    }
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadProfile();
+    }, [loadProfile])
+  );
 
   if (!fontsLoaded) {
     return null;
@@ -296,17 +325,64 @@ const UserProfileSettings = () => {
     setShowBirthdatePicker(false);
   };
 
-  const handlePasswordSave = () => {
-    setPasswordDetails({
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    });
+  const handlePasswordSave = async () => {
+    const { currentPassword, newPassword, confirmPassword } = passwordDetails;
 
-    setShowCurrentPassword(false);
-    setShowNewPassword(false);
-    setShowConfirmPassword(false);
-    setPasswordEditMode(false);
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      Alert.alert("Error", "Please fill in all password fields.");
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      Alert.alert(
+        "Error",
+        "New access code must be at least 6 characters long."
+      );
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      Alert.alert("Error", "New access codes do not match.");
+      return;
+    }
+
+    try {
+      const token = await AsyncStorage.getItem("access_token");
+      if (!token) {
+        console.warn("No access token found; not saving password.");
+        return;
+      }
+
+      await apiClient.put(
+        "/profile/password",
+        {
+          currentPassword,
+          newPassword,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      setPasswordDetails({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+
+      setShowCurrentPassword(false);
+      setShowNewPassword(false);
+      setShowConfirmPassword(false);
+      setPasswordEditMode(false);
+
+      Alert.alert("Success", "Your access code has been updated successfully.");
+    } catch (error) {
+      Alert.alert(
+        "Update failed",
+        error.response?.data?.error ||
+          "Could not update your access code. Please try again."
+      );
+    }
   };
 
   const handlePasswordCancel = () => {
@@ -529,7 +605,10 @@ const UserProfileSettings = () => {
               />
             </Divboxwhite>
 
-            <CredibilityScore statusIndex={userDetails.credibilityStatus} />
+            <CredibilityScore
+              statusIndex={userDetails.credibilityStatus}
+              score={userDetails.credibilityScore}
+            />
 
             <Divboxwhite style={styles.passwordCard}>
               <View style={styles.cardHeader}>
@@ -576,9 +655,7 @@ const UserProfileSettings = () => {
 
                     <TouchableOpacity
                       activeOpacity={0.8}
-                      onPress={() =>
-                        setShowCurrentPassword()
-                      }
+                      onPress={() => setShowCurrentPassword(!showCurrentPassword)}
                     >
                       <Ionicons
                         name={
@@ -881,8 +958,8 @@ const styles = StyleSheet.create({
   timelineLineBg: {
     position: "absolute",
     top: 12,
-    left: 20,
-    right: 20,
+    left: "10%",
+    right: "10%",
     height: 4,
     borderRadius: 999,
     backgroundColor: "#D9E2F0",
@@ -891,7 +968,7 @@ const styles = StyleSheet.create({
   timelineLineActive: {
     position: "absolute",
     top: 12,
-    left: 20,
+    left: "10%",
     height: 4,
     borderRadius: 999,
   },

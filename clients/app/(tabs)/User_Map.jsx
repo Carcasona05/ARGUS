@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useRef, useEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -8,11 +8,16 @@ import {
   Pressable,
   ScrollView,
   Dimensions,
+  Platform,
+  Linking,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import * as Location from "expo-location";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import ThemedView from "../../components/ThemedView";
 import ThemedText from "../../components/ThemedText";
 import MapView from "../../components/MapView";
+import apiClient from "../../services/apiClient";
 
 const ARGUS_BLUE = "#294880";
 
@@ -20,92 +25,155 @@ const { width } = Dimensions.get("window");
 
 const FACILITY_TYPES = ["All", "Police Station", "Fire Department"];
 
-const EMERGENCY_FACILITIES = [
-  {
-    id: 1,
-    type: "Police Station",
-    name: "Argao Municipal Police Station",
-    location: "Poblacion, Argao",
-    distance: "1.2 km away",
-    contact: "911 / Local Police Hotline",
-    responseNote: "Nearest police assistance for public safety concerns.",
-    top: 165,
-    left: "42%",
-  },
-  {
-    id: 2,
-    type: "Fire Department",
-    name: "Argao Fire Station",
-    location: "Poblacion, Argao",
-    distance: "1.8 km away",
-    contact: "911 / Local Fire Hotline",
-    responseNote: "Nearest fire response for fire and emergency incidents.",
-    top: 250,
-    left: "58%",
-  },
-  {
-    id: 3,
-    type: "Police Station",
-    name: "Nearby Police Assistance Point",
-    location: "South Road Area, Argao",
-    distance: "2.4 km away",
-    contact: "911",
-    responseNote: "Available for patrol assistance and incident reporting.",
-    top: 340,
-    left: "34%",
-  },
-  {
-    id: 4,
-    type: "Fire Department",
-    name: "Nearby Fire Response Unit",
-    location: "Argao Emergency Response Area",
-    distance: "3.1 km away",
-    contact: "911",
-    responseNote: "Available for fire, rescue, and emergency response.",
-    top: 410,
-    left: "64%",
-  },
+const DEFAULT_ARGAO = { lat: 9.8816, lng: 123.5953 };
+
+const CEBU_BOUNDS = { south: 9.45, west: 123.05, north: 11.45, east: 124.05 };
+
+const clampToCebu = (lat, lng) => [
+  Math.min(Math.max(lat, CEBU_BOUNDS.south), CEBU_BOUNDS.north),
+  Math.min(Math.max(lng, CEBU_BOUNDS.west), CEBU_BOUNDS.east),
 ];
+
+const formatDistance = (km) => {
+  if (km === undefined || km === null || Number.isNaN(km)) return "—";
+  if (km < 1) return `${Math.max(1, Math.round(km * 1000))} m away`;
+  return `${km.toFixed(1)} km away`;
+};
+
+const getTypeLabel = (type) =>
+  type === "fire" ? "Fire Department" : "Police Station";
+
+const getFacilityIconName = (type) => {
+  if (type === "fire" || type === "Fire Department") return "flame";
+  if (type === "police" || type === "Police Station") return "shield-checkmark";
+  return "location";
+};
+
+const getResponseNote = (type) =>
+  type === "fire"
+    ? "Nearest fire response for fire and emergency incidents."
+    : "Nearest police assistance for public safety concerns.";
 
 const UserMap = () => {
   const [searchText, setSearchText] = useState("");
   const [selectedType, setSelectedType] = useState("All");
   const [showFilters, setShowFilters] = useState(false);
-  const [selectedFacility, setSelectedFacility] = useState(
-    EMERGENCY_FACILITIES[0]
-  );
+  const [selectedFacility, setSelectedFacility] = useState(null);
+  const [facilities, setFacilities] = useState([]);
+  const [facilitiesLoading, setFacilitiesLoading] = useState(false);
+  const [userPosition, setUserPosition] = useState(null);
+  const mapViewRef = useRef(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const requestLocation = async () => {
+      if (Platform.OS === "web") return;
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== "granted") return;
+        const current = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.High,
+        });
+        if (!cancelled) {
+          setUserPosition([current.coords.latitude, current.coords.longitude]);
+        }
+      } catch (err) {
+        console.warn("Location error:", err.message);
+      }
+    };
+
+    requestLocation();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadFacilities = async () => {
+      setFacilitiesLoading(true);
+      try {
+        const token = await AsyncStorage.getItem("access_token");
+        if (!token) return;
+
+        const anchor = userPosition
+          ? clampToCebu(userPosition[0], userPosition[1])
+          : [DEFAULT_ARGAO.lat, DEFAULT_ARGAO.lng];
+
+        const res = await apiClient.get("/facilities/nearby", {
+          params: { lat: anchor[0], lng: anchor[1], radius: 8000 },
+          headers: { Authorization: `Bearer ${token}` },
+          timeout: 20000,
+        });
+
+        if (cancelled) return;
+
+        const list = res.data?.facilities ?? [];
+        setFacilities(list);
+
+        setSelectedFacility((prev) => {
+          if (prev && list.some((f) => f.id === prev.id)) return prev;
+          return list[0] ?? null;
+        });
+      } catch (err) {
+        if (!cancelled) {
+          console.warn("Failed to load facilities:", err.message);
+        }
+      } finally {
+        if (!cancelled) setFacilitiesLoading(false);
+      }
+    };
+
+    loadFacilities();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [userPosition]);
 
   const filteredFacilities = useMemo(() => {
     const normalizedSearch = searchText.trim().toLowerCase();
 
-    return EMERGENCY_FACILITIES.filter((facility) => {
+    return facilities.filter((facility) => {
       const matchesType =
-        selectedType === "All" || facility.type === selectedType;
+        selectedType === "All" || getTypeLabel(facility.type) === selectedType;
 
       const matchesSearch =
         normalizedSearch === "" ||
         facility.name.toLowerCase().includes(normalizedSearch) ||
-        facility.type.toLowerCase().includes(normalizedSearch) ||
-        facility.location.toLowerCase().includes(normalizedSearch);
+        facility.address.toLowerCase().includes(normalizedSearch) ||
+        getTypeLabel(facility.type).toLowerCase().includes(normalizedSearch);
 
       return matchesType && matchesSearch;
     });
-  }, [searchText, selectedType]);
+  }, [facilities, searchText, selectedType]);
 
-  const nearestPolice = EMERGENCY_FACILITIES.find(
-    (facility) => facility.type === "Police Station"
-  );
+  const nearestPolice = facilities.find((f) => f.type === "police");
 
-  const nearestFire = EMERGENCY_FACILITIES.find(
-    (facility) => facility.type === "Fire Department"
-  );
+  const nearestFire = facilities.find((f) => f.type === "fire");
+
+  const mapPosition = userPosition
+    ? clampToCebu(userPosition[0], userPosition[1])
+    : null;
+
+  const openDirections = (facility) => {
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${facility.lat},${facility.lng}`;
+    Linking.openURL(url).catch(() => {});
+  };
+
+  const openCall = (facility) => {
+    const phone = (facility.phone || "").replace(/[^0-9+]/g, "");
+    if (phone) Linking.openURL(`tel:${phone}`).catch(() => {});
+  };
 
   const handleSelectType = (type) => {
     setSelectedType(type);
     setShowFilters(false);
 
-    const firstMatch = EMERGENCY_FACILITIES.find((facility) => {
-      return type === "All" || facility.type === type;
+    const firstMatch = facilities.find((f) => {
+      return type === "All" || getTypeLabel(f.type) === type;
     });
 
     if (firstMatch) {
@@ -116,20 +184,10 @@ const UserMap = () => {
   const resetFilters = () => {
     setSelectedType("All");
     setSearchText("");
-    setSelectedFacility(EMERGENCY_FACILITIES[0]);
+    setSelectedFacility(facilities[0] ?? null);
   };
 
-  const getFacilityIcon = (type) => {
-    if (type === "Police Station") return "shield-checkmark";
-    if (type === "Fire Department") return "flame";
-    return "location";
-  };
-
-  const getFacilityPinStyle = (type) => {
-    if (type === "Police Station") return styles.policePin;
-    if (type === "Fire Department") return styles.firePin;
-    return styles.defaultPin;
-  };
+  const getFacilityIcon = getFacilityIconName;
 
   return (
     <ThemedView style={styles.container}>
@@ -139,7 +197,23 @@ const UserMap = () => {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.mapWrapper}>
-          <MapView style={styles.map} />
+          <MapView
+            ref={mapViewRef}
+            style={styles.map}
+            position={mapPosition}
+            markers={filteredFacilities.map((facility) => ({
+              id: facility.id,
+              lat: facility.lat,
+              lng: facility.lng,
+              label: facility.name,
+              color: facility.type === "police" ? ARGUS_BLUE : "#D9534F",
+            }))}
+            onMarkerPress={(id) => {
+              const facility = facilities.find((f) => f.id === id);
+              if (facility) setSelectedFacility(facility);
+            }}
+            onLocation={setUserPosition}
+          />
 
           <View style={styles.topBar}>
             <TextInput
@@ -181,35 +255,13 @@ const UserMap = () => {
             </View>
           </ScrollView>
 
-          <View style={styles.userLocation}>
-            <View style={styles.userLocationDot} />
-          </View>
-
-          <View style={styles.userBadge}>
-            <ThemedText style={styles.userBadgeText}>You</ThemedText>
-          </View>
-
-          {filteredFacilities.map((facility) => (
-            <TouchableOpacity
-              key={facility.id}
-              activeOpacity={0.85}
-              style={[
-                styles.facilityMarker,
-                getFacilityPinStyle(facility.type),
-                {
-                  top: facility.top,
-                  left: facility.left,
-                },
-              ]}
-              onPress={() => setSelectedFacility(facility)}
-            >
-              <Ionicons
-                name={getFacilityIcon(facility.type)}
-                size={18}
-                color="#FFFFFF"
-              />
-            </TouchableOpacity>
-          ))}
+          <TouchableOpacity
+            style={styles.recenterButton}
+            activeOpacity={0.8}
+            onPress={() => mapViewRef.current?.recenter()}
+          >
+            <Ionicons name="locate-outline" size={22} color="#FFFFFF" />
+          </TouchableOpacity>
         </View>
 
         {selectedFacility && (
@@ -219,7 +271,7 @@ const UserMap = () => {
                 <View
                   style={[
                     styles.facilityIconBox,
-                    selectedFacility.type === "Police Station"
+                    selectedFacility.type === "police"
                       ? styles.policeIconBox
                       : styles.fireIconBox,
                   ]}
@@ -237,36 +289,40 @@ const UserMap = () => {
                   </ThemedText>
 
                   <ThemedText style={styles.facilityType}>
-                    {selectedFacility.type}
+                    {getTypeLabel(selectedFacility.type)}
                   </ThemedText>
                 </View>
               </View>
 
               <ThemedText style={styles.distanceText}>
-                {selectedFacility.distance}
+                {formatDistance(selectedFacility.distanceKm)}
               </ThemedText>
             </View>
 
             <View style={styles.infoRow}>
               <Ionicons name="location-outline" size={16} color="#6B7280" />
               <ThemedText style={styles.infoText}>
-                {selectedFacility.location}
+                {selectedFacility.address || selectedFacility.name}
               </ThemedText>
             </View>
 
             <View style={styles.infoRow}>
               <Ionicons name="call-outline" size={16} color="#6B7280" />
               <ThemedText style={styles.infoText}>
-                {selectedFacility.contact}
+                {selectedFacility.phone || "911 / Local Hotline"}
               </ThemedText>
             </View>
 
             <ThemedText style={styles.responseNote}>
-              {selectedFacility.responseNote}
+              {getResponseNote(selectedFacility.type)}
             </ThemedText>
 
             <View style={styles.cardButtons}>
-              <TouchableOpacity style={styles.primaryButton} activeOpacity={0.8}>
+              <TouchableOpacity
+                style={styles.primaryButton}
+                activeOpacity={0.8}
+                onPress={() => openDirections(selectedFacility)}
+              >
                 <Ionicons name="navigate-outline" size={16} color="#FFFFFF" />
                 <ThemedText style={styles.primaryButtonText}>
                   Get Directions
@@ -276,6 +332,7 @@ const UserMap = () => {
               <TouchableOpacity
                 style={styles.secondaryButton}
                 activeOpacity={0.8}
+                onPress={() => openCall(selectedFacility)}
               >
                 <Ionicons name="call-outline" size={16} color={ARGUS_BLUE} />
                 <ThemedText style={styles.secondaryButtonText}>
@@ -305,7 +362,11 @@ const UserMap = () => {
                 </ThemedText>
 
                 <ThemedText numberOfLines={1} style={styles.summaryValue}>
-                  {nearestPolice?.distance}
+                  {nearestPolice
+                    ? formatDistance(nearestPolice.distanceKm)
+                    : facilitiesLoading
+                      ? "Searching…"
+                      : "—"}
                 </ThemedText>
               </View>
             </View>
@@ -321,14 +382,18 @@ const UserMap = () => {
                 </ThemedText>
 
                 <ThemedText numberOfLines={1} style={styles.summaryValue}>
-                  {nearestFire?.distance}
+                  {nearestFire
+                    ? formatDistance(nearestFire.distanceKm)
+                    : facilitiesLoading
+                      ? "Searching…"
+                      : "—"}
                 </ThemedText>
               </View>
             </View>
           </View>
 
           <ThemedText style={styles.bottomNote}>
-            Pins show nearby emergency response locations for faster assistance.
+            Facility pins are loaded from the ARGUS database for Argao, Cebu.
           </ThemedText>
         </View>
       </ScrollView>
@@ -538,71 +603,22 @@ const styles = StyleSheet.create({
     color: "#4A4A4A",
   },
 
-  userLocation: {
+  recenterButton: {
     position: "absolute",
-    top: 300,
-    left: "47%",
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: "#FFFFFF",
+    right: 12,
+    bottom: 12,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: ARGUS_BLUE,
     alignItems: "center",
     justifyContent: "center",
-    zIndex: 9,
-  },
-
-  userLocationDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: "#2F80ED",
-  },
-
-  userBadge: {
-    position: "absolute",
-    top: 323,
-    left: "44.5%",
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 10,
-    elevation: 2,
-    zIndex: 9,
-  },
-
-  userBadgeText: {
-    fontSize: 11,
-    fontFamily: "PoppinsMedium",
-    color: "#6B6B6B",
-  },
-
-  facilityMarker: {
-    position: "absolute",
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 3,
-    borderColor: "#FFFFFF",
     elevation: 5,
     shadowColor: "#000",
-    shadowOpacity: 0.14,
+    shadowOpacity: 0.16,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 3 },
-    zIndex: 8,
-  },
-
-  policePin: {
-    backgroundColor: ARGUS_BLUE,
-  },
-
-  firePin: {
-    backgroundColor: "#D9534F",
-  },
-
-  defaultPin: {
-    backgroundColor: "#6B7280",
+    zIndex: 10,
   },
 
   facilityCard: {

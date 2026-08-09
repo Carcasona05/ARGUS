@@ -230,3 +230,182 @@ variant-specific fields live in the child.
   `nearby_incident`.
 - "Recent Account Login": `select * from login_activities where user_id = auth.uid()
   order by created_at desc;`
+
+---
+
+# EMERGENCY FACILITIES — Schema Explanation
+
+> Schema file: `emergency_facilities_schema.sql`. Backs the map screen
+> (`User_Map.jsx`): it fills the "Nearest Police" / "Nearest Fire Dept." summary
+> cards and draws the pins on the Leaflet map via the `/facilities/nearby`
+> endpoint.
+
+## 1. Table structure
+
+| Column       | Type               | Notes                              |
+| ------------ | ------------------ | ---------------------------------- |
+| `id`         | `uuid` PK          | Auto-generated                     |
+| `name`       | `text`, UNIQUE     | Facility display name              |
+| `type`       | `text`             | `'police'` or `'fire'` (checked)   |
+| `latitude`   | `double precision` | Geo point                          |
+| `longitude`  | `double precision` | Geo point                          |
+| `address`    | `text`             | Display address                    |
+| `phone`      | `text`             | Contact number (falls back to 911) |
+| `created_at` | `timestamptz`      | Set on creation                    |
+
+## 2. Seeded data (Argao only)
+
+The map is locked to Cebu, and only **Argao, Cebu** facilities are seeded:
+
+- **Argao Municipal Police Station** (`police`) — 9.8721, 123.5986
+- **Argao Fire Station** (`fire`) — 9.8738, 123.5998
+
+To add more pins, run an insert (the script uses `on conflict (name) do nothing`,
+so re-running it is safe):
+
+```sql
+insert into public.emergency_facilities (name, type, latitude, longitude, address, phone) values
+  ('Sample Police Station', 'police', 9.8700, 123.6000, 'Barangay, Argao, Cebu', '911')
+on conflict (name) do nothing;
+```
+
+## 3. Normalization & RLS
+
+- **3NF:** single-column key; no non-key dependencies. Distance is **not stored** —
+  it is computed at request time with the haversine formula in
+  `facilityService.ts` from the requesting coordinates. Adding/removing pins is a
+  simple row insert/delete, with no counters or derived data to keep in sync.
+- **RLS:** enabled; every authenticated user may read (`read_all_emergency_facilities`).
+  Writes are done via SQL or the service-role backend, not the user client.
+
+## 4. Key query
+
+```sql
+select * from public.emergency_facilities order by name;
+```
+
+---
+
+# CREDIBILITY SCORE — Schema Explanation
+
+> Schema file: `credibility_schema.sql`. Backs everything related to the
+> **credibility score** in the codebase:
+> - `User_ProfileSettings.jsx` — the account **Credibility Score** card with the
+>   5-level timeline (`Suspended`, `At risk`, `Very Limited`, `Limited`, `All
+>   good`). Today it hard-codes `credibilityStatus: 3`; the backend should return
+>   the real value from `user_credibility.level`.
+> - `Admin_Validation.jsx` / `SAdmin_Validation.jsx` / validation modals —
+>   per-report AI analysis (`aiScore`, `severity`, `sentiment`,
+>   `credibilityReview` / `credibility`).
+> - `SAdmin_Settings.jsx` — AI credibility on/off toggle plus the High ("85→90")
+>   and Medium ("60") thresholds.
+> - `Admin_Analytics.jsx` — the "Credibility Rate" aggregate card.
+
+## 1. Tables
+
+| Table                          | Purpose                                                       |
+| ------------------------------ | ------------------------------------------------------------- |
+| `user_credibility`             | 1:1 account score per user (what the Profile Settings shows)  |
+| `credibility_events`           | Audit trail of every change that moves the score              |
+| `report_credibility_analysis`  | 1:1 AI analysis per report (validation screens)               |
+| `app_settings`                 | AI toggle + high/medium credibility thresholds (singleton)    |
+
+## 2. `user_credibility` columns
+
+| Column        | Type            | Notes                                          |
+| ------------- | --------------- | ---------------------------------------------- |
+| `id`          | `uuid` PK       |                                                |
+| `user_id`     | `uuid`, UNIQUE  | → `auth.users`, cascades on delete             |
+| `score`       | `numeric(5,2)`  | 0–100; default 60                              |
+| `level`       | `smallint`      | 0–4 index that feeds `statusIndex` in the UI   |
+| `level_label` | `text`          | Display label                                  |
+| `updated_at`  | `timestamptz`   | Auto-refreshed                                 |
+
+`level` and `level_label` are **derived from `score`** by the
+`set_credibility_level` trigger so they can never disagree with the number:
+
+| Score range | `level` | `level_label` |
+| ----------- | ------- | ------------- |
+| 80–100      | 4       | All good      |
+| 60–79       | 3       | Limited       |
+| 40–59       | 2       | Very Limited  |
+| 20–39       | 1       | At risk       |
+| 0–19        | 0       | Suspended     |
+
+The default row (`score 60` → `level 3` "Limited") matches the current hard-coded
+UI value of `3`.
+
+## 3. `credibility_events` — how the score moves
+
+Instead of recomputing from scratch, every change is recorded as a row with a
+signed `points` delta (`+` gains, `-` penalties). The reference events:
+
+| `event_type`        | Typical source                                 |
+| ------------------- | ---------------------------------------------- |
+| `report_submitted`  | User files a report                            |
+| `report_verified`   | Admin verifies a report (validation)           |
+| `report_resolved`   | Report resolved / mapped                       |
+| `report_rejected`   | Report rejected (credibility loss)             |
+| `penalty`           | Abuse / repeated false reports                 |
+| `admin_adjustment`  | Super admin manual correction                  |
+| `system`            | Automatic system change                        |
+
+`report_id` optionally links the event to the report that caused it
+(`on delete set null`).
+
+## 4. `report_credibility_analysis` columns
+
+| Column              | Type            | Notes                                        |
+| ------------------- | --------------- | -------------------------------------------- |
+| `id`                | `uuid` PK       |                                              |
+| `report_id`         | `uuid`, UNIQUE  | → `reports`, cascades on delete (1:1)        |
+| `ai_score`          | `numeric(5,2)`  | 0–100 (admin list shows `X%`)                |
+| `severity`          | `text`          | Low / Medium / High / Critical               |
+| `sentiment`         | `text`          | Negative / Neutral / Positive / Concerned / Anxious / Unclear |
+| `credibility_level` | `text`          | Low / Medium / High (drives the `ScoreBadge`)|
+| `credibility_review`| `text`          | Free-text AI justification                   |
+| `ai_model_version`  | `text`          | Model that produced it                       |
+| `analyzed_at`       | `timestamptz`   | Set on creation                              |
+
+The validation UI groups `aiScore` by report; this is also the source for the
+"Credibility Rate" card in `Admin_Analytics`.
+
+## 5. `app_settings` (singleton)
+
+| Column                       | Type      | Default | Notes                      |
+| ---------------------------- | --------- | ------- | -------------------------- |
+| `ai_credibility_enabled`     | `boolean` | `true`  | `SAdmin_Settings` toggle   |
+| `high_credibility_threshold` | `smallint`| `90`    | Threshold config input     |
+| `medium_credibility_threshold`| `smallint`| `60`   | Threshold config input     |
+| `updated_at`                 | `timestamptz` | `now()` | Auto-refreshed       |
+
+## 6. Seeded data
+
+- `app_settings`: one row (`true`, 90, 60); rerun safe via
+  `WHERE NOT EXISTS`.
+- `user_credibility`: one default row per **existing** profile
+  (`select id from public.profiles ... on conflict (user_id) do nothing`).
+- New accounts automatically get a `user_credibility` row via the
+  `on_profile_created_credibility` trigger on `profiles`.
+
+> Order matters: run `profiles_schema.sql` first (the seed depends on
+> `profiles`), then `reports_schema.sql` (the analysis table references
+> `reports`), then this script.
+
+## 7. Normalization & RLS
+
+- **3NF:** single-column keys; `level`/`level_label` are derived by trigger, not
+  stored by hand; like/score aggregates come from `credibility_events`
+  (signed deltas), never cached totals.
+- **RLS:** users read their own score and events; `admin`/`super_admin` read
+  everyone's; validation and settings data is readable by all authenticated
+  users (writes happen via the service-role backend).
+
+## 8. What the backend still needs
+
+- `/profile` (`authController.getProfile`) must join `user_credibility` and
+  return `credibility_score` (0–100) and `credibility_status` (the 0–4 index) so
+  `User_ProfileSettings.jsx` can replace its hard-coded `credibilityStatus: 3`.
+- Report feeds (`reportService.listReports`) should join
+  `report_credibility_analysis` and expose `ai_score`, `severity`, `sentiment`,
+  and `credibility_review`, which the validation screens already expect.
