@@ -11,6 +11,10 @@ import {
   validateReport,
   getIncidentOptions,
   getAdminPosts,
+  getAdminDashboard,
+  getAdminAnalytics,
+  createAdminAnnouncement,
+  getAdminLogs,
 } from "../controllers/reportController.ts";
 import { authenticate } from "../middlewares/authMiddleware.ts";
 
@@ -27,5 +31,9 @@ router.put("/reports/:id", authenticate, updateReport);
 router.delete("/reports/:id", authenticate, deleteReport);
 router.get("/incidents/options", authenticate, getIncidentOptions);
 router.get("/admin/posts", authenticate, getAdminPosts);
+router.get("/admin/dashboard", authenticate, getAdminDashboard);
+router.get("/admin/analytics", authenticate, getAdminAnalytics);
+router.post("/admin/announcements", authenticate, createAdminAnnouncement);
+router.get("/admin/logs", authenticate, getAdminLogs);
 
 export default router;

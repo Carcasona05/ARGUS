@@ -192,6 +192,7 @@ export const getProfile = async (
     middle_name: data?.middle_name ?? meta.middleName ?? "",
     last_name: data?.last_name ?? meta.lastName ?? "",
     phone: data?.phone ?? meta.phone ?? "",
+    department: data?.department ?? "",
     birthdate: data?.birthdate ?? null,
     location: data?.location ?? "",
     role: data?.role ?? "user",
@@ -247,7 +248,7 @@ export const updateProfile = async (
 
   await profileService.ensureProfile(user.id);
 
-  const { first_name, middle_name, last_name, user_name, phone, birthdate, location } =
+  const { first_name, middle_name, last_name, user_name, phone, birthdate, location, department } =
     req.body ?? {};
 
   const updates: Record<string, unknown> = {};
@@ -258,6 +259,7 @@ export const updateProfile = async (
   if (phone !== undefined) updates.phone = phone;
   if (birthdate !== undefined) updates.birthdate = birthdate;
   if (location !== undefined) updates.location = location;
+  if (department !== undefined) updates.department = department;
 
   const { data, error } = await profileService.updateProfileFields(
     user.id,
@@ -267,4 +269,31 @@ export const updateProfile = async (
   if (error) return res.status(500).json({ error: error.message });
 
   res.json({ message: "Profile updated successfully", data });
+};
+
+export const changeEmail = async (req: AuthRequest, res: Response) => {
+  const user = req.user;
+  if (!user || !req.token) return res.status(401).json({ error: "Unauthorized" });
+
+  const { currentEmail, newEmail } = req.body ?? {};
+
+  if (!currentEmail || !newEmail) {
+    return res.status(400).json({ error: "Current and new email are required" });
+  }
+
+  if (String(currentEmail).toLowerCase() !== String(user.email).toLowerCase()) {
+    return res.status(400).json({ error: "Current email does not match" });
+  }
+
+  const { error: updateError } = await profileService.updateAuth(user.id, {
+    email: newEmail,
+  });
+
+  if (updateError) {
+    return res.status(500).json({ error: updateError.message });
+  }
+
+  res.json({
+    message: "Email update requested. Confirm the change from your new email.",
+  });
 };

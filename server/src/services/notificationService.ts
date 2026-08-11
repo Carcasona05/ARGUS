@@ -212,12 +212,91 @@ export const notificationService = {
     return { data: activities, error: null };
   },
 
+  async listAdminNotifications() {
+    const { data: types, error: typesError } = await supabaseAdmin
+      .from("notification_types")
+      .select("id, name");
+
+    if (typesError) return { data: null, error: typesError.message };
+
+    const nameByTypeId = new Map<string, string>();
+    const typeIdByName = new Map<string, string>();
+    (types || []).forEach((t: { id: string; name: string }) => {
+      nameByTypeId.set(t.id, t.name);
+      typeIdByName.set(t.name, t.id);
+    });
+
+    const adminTypeNames = [
+      "report_submitted",
+      "ai_validation",
+      "report_approved",
+      "admin_account",
+      "system",
+      "log",
+    ];
+    const adminTypeIds = adminTypeNames
+      .map((name) => typeIdByName.get(name))
+      .filter((id): id is string => !!id);
+
+    let query = supabaseAdmin
+      .from("notifications")
+      .select("id, type_id, title, message, priority, is_read, created_at")
+      .order("created_at", { ascending: false });
+
+    if (adminTypeIds.length > 0) {
+      query = query.in("type_id", adminTypeIds);
+    }
+
+    const { data, error } = await query.limit(50);
+
+    if (error) return { data: null, error: error.message };
+
+    const notifications = (data || []).map((n) => {
+      const rawType = nameByTypeId.get(String(n.type_id)) || "system";
+      let type = "system";
+      if (rawType === "report_submitted") type = "report";
+      else if (rawType === "ai_validation") type = "ai";
+      else if (
+        rawType === "report_approved" ||
+        rawType === "admin_account"
+      ) {
+        type = "admin";
+      }
+
+      return {
+        id: n.id,
+        type,
+        title: n.title,
+        message: n.message,
+        time: n.created_at,
+        priority: n.priority ?? "Low",
+        unread: !n.is_read,
+        route:
+          type === "report" || type === "ai"
+            ? "/(admin)/Admin_Validation"
+            : "/(admin)/Admin_Logs",
+      };
+    });
+
+    return { data: notifications, error: null };
+  },
+
   async markRead(userId: string, notificationId: string) {
     const { error } = await supabaseAdmin
       .from("notifications")
       .update({ is_read: true })
       .eq("id", notificationId)
       .eq("user_id", userId);
+
+    if (error) return { error: error.message };
+    return { data: true };
+  },
+
+  async markAdminRead(notificationId: string) {
+    const { error } = await supabaseAdmin
+      .from("notifications")
+      .update({ is_read: true })
+      .eq("id", notificationId);
 
     if (error) return { error: error.message };
     return { data: true };

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -11,7 +11,9 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFonts } from "expo-font";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import Admin_Layout from "../../components/Admin_compo/Admin_Layout";
+import apiClient from "../../services/apiClient";
 
 const COLORS = {
   primary: "#294880",
@@ -25,21 +27,6 @@ const COLORS = {
   success: "#22A06B",
   danger: "#E45757",
 };
-
-function InfoCard({ icon, title, description }) {
-  return (
-    <View style={styles.infoCard}>
-      <View style={styles.infoIconWrap}>
-        <Ionicons name={icon} size={24} color={COLORS.primary} />
-      </View>
-
-      <View style={styles.infoTextWrap}>
-        <Text style={styles.infoTitle}>{title}</Text>
-        <Text style={styles.infoDescription}>{description}</Text>
-      </View>
-    </View>
-  );
-}
 
 function FormSection({ icon, title, description, children }) {
   return (
@@ -93,14 +80,14 @@ function InputField({
 
 export default function Admin_Settings() {
   const [profile, setProfile] = useState({
-    fullName: "ARGUS Admin",
-    username: "admin_argus",
-    phone: "0912 345 6789",
-    department: "Incident Management",
+    fullName: "",
+    username: "",
+    phone: "",
+    department: "",
   });
 
   const [emailData, setEmailData] = useState({
-    currentEmail: "admin@argus.com",
+    currentEmail: "",
     newEmail: "",
     confirmEmail: "",
   });
@@ -117,6 +104,34 @@ export default function Admin_Settings() {
     PoppinsSemiBold: require("../../assets/fonts/Poppins-SemiBold.ttf"),
   });
 
+  const loadProfile = useCallback(async () => {
+    try {
+      const token = await AsyncStorage.getItem("access_token");
+      if (!token) return;
+
+      const res = await apiClient.get("/profile", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const data = res.data ?? {};
+
+      setProfile({
+        fullName: data.name || data.fullname || "",
+        username: data.user_name || "",
+        phone: data.phone || "",
+        department: data.department || "",
+      });
+
+      setEmailData((prev) => ({ ...prev, currentEmail: data.email || "" }));
+    } catch {
+      // keep empty defaults on failure
+    }
+  }, []);
+
+  useEffect(() => {
+    loadProfile();
+  }, [loadProfile]);
+
   if (!fontsLoaded) {
     return null;
   }
@@ -129,7 +144,7 @@ export default function Admin_Settings() {
     }
   };
 
-  const handleProfileSave = () => {
+  const handleProfileSave = async () => {
     if (
       !profile.fullName ||
       !profile.username ||
@@ -140,14 +155,35 @@ export default function Admin_Settings() {
       return;
     }
 
-    showMessage(
-      "Profile Updated",
-      "Your profile details have been updated successfully."
-    );
+    try {
+      const token = await AsyncStorage.getItem("access_token");
+      if (!token) return;
+
+      await apiClient.put(
+        "/profile",
+        {
+          first_name: profile.fullName,
+          user_name: profile.username,
+          phone: profile.phone,
+          department: profile.department,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      showMessage(
+        "Profile Updated",
+        "Your profile details have been updated successfully."
+      );
+    } catch (error) {
+      showMessage(
+        "Update Failed",
+        error.response?.data?.error || "Could not update your profile."
+      );
+    }
   };
 
-  const handleEmailSave = () => {
-    if (!emailData.newEmail || !emailData.confirmEmail) {
+  const handleEmailSave = async () => {
+    if (!emailData.currentEmail || !emailData.newEmail || !emailData.confirmEmail) {
       showMessage("Missing Email", "Please enter and confirm your new email.");
       return;
     }
@@ -160,16 +196,38 @@ export default function Admin_Settings() {
       return;
     }
 
-    setEmailData({
-      currentEmail: emailData.newEmail,
-      newEmail: "",
-      confirmEmail: "",
-    });
+    try {
+      const token = await AsyncStorage.getItem("access_token");
+      if (!token) return;
 
-    showMessage("Email Updated", "Your email has been changed successfully.");
+      await apiClient.put(
+        "/profile/email",
+        {
+          currentEmail: emailData.currentEmail,
+          newEmail: emailData.newEmail,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setEmailData((prev) => ({
+        ...prev,
+        newEmail: "",
+        confirmEmail: "",
+      }));
+
+      showMessage(
+        "Email Update Requested",
+        "Confirm the change from your new email."
+      );
+    } catch (error) {
+      showMessage(
+        "Update Failed",
+        error.response?.data?.error || "Could not update your email."
+      );
+    }
   };
 
-  const handlePasswordSave = () => {
+  const handlePasswordSave = async () => {
     if (
       !passwordData.currentPassword ||
       !passwordData.newPassword ||
@@ -192,16 +250,35 @@ export default function Admin_Settings() {
       return;
     }
 
-    setPasswordData({
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    });
+    try {
+      const token = await AsyncStorage.getItem("access_token");
+      if (!token) return;
 
-    showMessage(
-      "Password Updated",
-      "Your password has been changed successfully."
-    );
+      await apiClient.put(
+        "/profile/password",
+        {
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setPasswordData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+
+      showMessage(
+        "Password Updated",
+        "Your password has been changed successfully."
+      );
+    } catch (error) {
+      showMessage(
+        "Update Failed",
+        error.response?.data?.error || "Could not update your password."
+      );
+    }
   };
 
   return (

@@ -16,7 +16,7 @@ create table if not exists public.notification_types (
 
 create table if not exists public.notifications (
   id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
+  user_id uuid references auth.users(id) on delete cascade,
   type_id uuid not null references public.notification_types(id),
   title text not null,
   message text not null default '',
@@ -83,6 +83,14 @@ create policy "read_own_notifications" on public.notifications for select
   using (auth.uid() = user_id);
 create policy "update_own_notifications" on public.notifications for update
   using (auth.uid() = user_id);
+
+create policy "admin_read_all_notifications" on public.notifications for select
+  to authenticated
+  using (public.current_user_role() in ('admin', 'super_admin'));
+create policy "admin_update_all_notifications" on public.notifications for update
+  to authenticated
+  using (public.current_user_role() in ('admin', 'super_admin'))
+  with check (public.current_user_role() in ('admin', 'super_admin'));
 
 create policy "read_own_report_status" on public.notification_report_status for select
   using (exists (

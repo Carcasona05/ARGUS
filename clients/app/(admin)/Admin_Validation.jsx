@@ -1,17 +1,22 @@
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
   StyleSheet,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFonts } from "expo-font";
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import Admin_Layout from "../../components/Admin_compo/Admin_Layout";
 import Admin_ViewSimilarReportsModal from "../../components/Admin_compo/Admin_ViewSimilarReportsModal";
 import Admin_AddReportModal from "../../components/Admin_compo/Admin_AddReportModal";
+import apiClient from "../../services/apiClient";
+import { uploadImage } from "../../services/imageUpload";
+import useAutoRefresh from "../../hooks/useAutoRefresh";
+import { getCache, setCache } from "../../services/dataStore";
 
 const ARGUS_BLUE = "#294880";
 
@@ -34,197 +39,76 @@ export default function Admin_Validation() {
 
 
 
-  const [reports, setReports] = useState([
-    {
-      id: "ARG-2031",
-      title: "Road Obstruction in Poblacion",
-      category: "Traffic and Road Incidents",
-      type: "Road Obstruction",
-      location: "Near Poblacion Public Market, Argao",
-      barangay: "Poblacion",
-      details:
-        "A fallen branch and several debris are blocking one lane of the road, causing traffic buildup.",
-      status: "Pending Review",
-      aiScore: 88,
-      severity: "Medium",
-      sentiment: "Negative",
-      credibilityReview:
-        "The report appears credible because the description is specific and includes a clear location and incident type.",
-      submittedBy: "Juan Dela Cruz",
-      submittedRole: "User",
-      submittedAt: "May 12, 2026 • 09:15 AM",
-      verifiedBy: "",
-      remarks: "",
-    },
-    {
-      id: "ARG-2036",
-      title: "Blocked Road Near Public Market",
-      category: "Traffic and Road Incidents",
-      type: "Road Obstruction",
-      location: "Near Poblacion Public Market, Argao",
-      barangay: "Poblacion",
-      details:
-        "The road near the public market is partly blocked by tree branches and trash. Vehicles are moving slowly.",
-      status: "Pending Review",
-      aiScore: 84,
-      severity: "Medium",
-      sentiment: "Negative",
-      credibilityReview:
-        "This report appears similar to other road obstruction posts in Poblacion and includes matching location details.",
-      submittedBy: "Carlo Mendoza",
-      submittedRole: "User",
-      submittedAt: "May 12, 2026 • 09:24 AM",
-      verifiedBy: "",
-      remarks: "",
-    },
-    {
-      id: "ARG-2037",
-      title: "Traffic Buildup Due to Road Debris",
-      category: "Traffic and Road Incidents",
-      type: "Road Obstruction",
-      location: "Near Poblacion Public Market, Argao",
-      barangay: "Poblacion",
-      details:
-        "There is debris blocking the road near the market. It is causing traffic and may lead to accidents.",
-      status: "Under Verification",
-      aiScore: 90,
-      severity: "Medium",
-      sentiment: "Concerned",
-      credibilityReview:
-        "The report is consistent with other submitted reports about the same obstruction in Poblacion.",
-      submittedBy: "Angel Reyes",
-      submittedRole: "User",
-      submittedAt: "May 12, 2026 • 09:37 AM",
-      verifiedBy: "Admin R. Ramos",
-      remarks: "Checking with barangay responders.",
-    },
-    {
-      id: "ARG-2032",
-      title: "Suspicious Person Near School",
-      category: "Suspicious Activities",
-      type: "Suspicious Person",
-      location: "Argao National High School Gate",
-      barangay: "Lamacan",
-      details:
-        "A person was repeatedly seen walking near the school gate and observing students during dismissal time.",
-      status: "Under Verification",
-      aiScore: 76,
-      severity: "High",
-      sentiment: "Concerned",
-      credibilityReview:
-        "The report needs further verification. It contains useful details but requires confirmation from nearby witnesses or barangay officials.",
-      submittedBy: "Maria Santos",
-      submittedRole: "User",
-      submittedAt: "May 12, 2026 • 10:40 AM",
-      verifiedBy: "Admin R. Ramos",
-      remarks: "Currently checking with barangay officials.",
-    },
-    {
-      id: "ARG-2038",
-      title: "Unknown Person Watching Students",
-      category: "Suspicious Activities",
-      type: "Suspicious Person",
-      location: "Argao National High School Gate",
-      barangay: "Lamacan",
-      details:
-        "An unknown person stayed near the school entrance for a long time and seemed to be watching students.",
-      status: "Pending Review",
-      aiScore: 79,
-      severity: "High",
-      sentiment: "Concerned",
-      credibilityReview:
-        "This report is similar to another suspicious person report near the same school gate.",
-      submittedBy: "Liza Fernandez",
-      submittedRole: "User",
-      submittedAt: "May 12, 2026 • 10:52 AM",
-      verifiedBy: "",
-      remarks: "",
-    },
-    {
-      id: "ARG-2033",
-      title: "Streetlight Outage",
-      category: "Community and Environmental Concerns",
-      type: "Streetlight Outage",
-      location: "Sitio Riverside, Talaga",
-      barangay: "Talaga",
-      details:
-        "Several streetlights are not working, making the area dark and unsafe at night.",
-      status: "Resolved",
-      aiScore: 91,
-      severity: "Low",
-      sentiment: "Neutral",
-      credibilityReview:
-        "The report is credible and matches a common community safety concern. Location and issue are clearly stated.",
-      submittedBy: "Admin Cruz",
-      submittedRole: "Admin",
-      submittedAt: "May 11, 2026 • 08:20 PM",
-      verifiedBy: "Admin Cruz",
-      remarks: "Forwarded to maintenance and marked as resolved.",
-    },
-    {
-      id: "ARG-2034",
-      title: "Garbage Pile Near Drainage",
-      category: "Community and Environmental Concerns",
-      type: "Garbage / Sanitation Issues",
-      location: "Near Barangay Hall, Canbanua",
-      barangay: "Canbanua",
-      details:
-        "Garbage is piling up near the drainage area and may cause blockage if it rains.",
-      status: "Pending Review",
-      aiScore: 82,
-      severity: "Medium",
-      sentiment: "Negative",
-      credibilityReview:
-        "The report is likely credible because it gives a specific place and a possible public safety effect.",
-      submittedBy: "Ana Lopez",
-      submittedRole: "User",
-      submittedAt: "May 12, 2026 • 11:05 AM",
-      verifiedBy: "",
-      remarks: "",
-    },
-    {
-      id: "ARG-2039",
-      title: "Trash Blocking Drainage",
-      category: "Community and Environmental Concerns",
-      type: "Garbage / Sanitation Issues",
-      location: "Near Barangay Hall, Canbanua",
-      barangay: "Canbanua",
-      details:
-        "Trash is blocking the drainage near the barangay hall. This may cause flooding when it rains.",
-      status: "Pending Review",
-      aiScore: 86,
-      severity: "Medium",
-      sentiment: "Negative",
-      credibilityReview:
-        "The report matches another sanitation issue in the same barangay and location.",
-      submittedBy: "Nico Flores",
-      submittedRole: "User",
-      submittedAt: "May 12, 2026 • 11:18 AM",
-      verifiedBy: "",
-      remarks: "",
-    },
-    {
-      id: "ARG-2035",
-      title: "False Fire Alarm Report",
-      category: "Community and Environmental Concerns",
-      type: "Fire Incident",
-      location: "Unknown street, Argao",
-      barangay: "Poblacion",
-      details:
-        "A fire was reported, but the information provided was unclear and lacked specific evidence.",
-      status: "Rejected",
-      aiScore: 41,
-      severity: "Low",
-      sentiment: "Unclear",
-      credibilityReview:
-        "The report has low credibility because the details are vague and the exact location is not properly identified.",
-      submittedBy: "Unknown User",
-      submittedRole: "User",
-      submittedAt: "May 10, 2026 • 03:45 PM",
-      verifiedBy: "Admin R. Ramos",
-      remarks: "Rejected due to unclear and unverifiable details.",
-    },
-  ]);
+  const [reports, setReports] = useState([]);
+
+  const formatSubmittedAt = (iso) => {
+    if (!iso) return "";
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) return "";
+
+    return (
+      date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "2-digit",
+        year: "numeric",
+      }) +
+      " • " +
+      date.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      })
+    );
+  };
+
+  const loadValidation = useCallback(async () => {
+    try {
+      const token = await AsyncStorage.getItem("access_token");
+      if (!token) return;
+
+      const applyList = (list) => {
+        setReports(
+          list.map((r) => ({
+            id: r.id,
+            title: `${r.incident_type || "Incident"} in ${r.barangay || "Argao"}`,
+            category: r.incident_category || "",
+            type: r.incident_type || "",
+            location: r.location || "",
+            barangay: r.barangay || "",
+            details: r.details || "",
+            status: r.status || "Pending Review",
+            aiScore: r.ai_score ?? 0,
+            severity: r.severity || "Medium",
+            sentiment: r.sentiment || "Neutral",
+            credibilityReview: r.credibility_review || "",
+            submittedBy: r.poster_name || "Anonymous User",
+            submittedRole: r.source === "Admin" ? "Admin" : "User",
+            submittedAt: formatSubmittedAt(r.created_at),
+            verifiedBy: r.is_verified ? "System" : "",
+            remarks: "",
+            is_verified: r.is_verified,
+            comments: r.comments || [],
+          }))
+        );
+      };
+
+      const cached = getCache("api:/admin/dashboard");
+      if (cached && Array.isArray(cached.reports)) {
+        applyList(cached.reports);
+      }
+
+      const res = await apiClient.get("/admin/dashboard", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      setCache("api:/admin/dashboard", res.data ?? {});
+      applyList(res.data?.reports || []);
+    } catch {
+      // keep last loaded data on failure
+    }
+  }, []);
+
+  useAutoRefresh(loadValidation, 30000);
 
   if (!fontsLoaded) {
     return null;
@@ -493,91 +377,90 @@ export default function Admin_Validation() {
     setSelectedCompiledGroup(null);
   };
 
-  const updateReportStatus = (target, newStatus, remarks = "") => {
+  const applyValidation = async (target, newStatus) => {
     if (!target) return;
 
     const targetIds = target.reports
       ? target.reports.map((item) => item.id)
       : [target.id];
 
-    setReports((prevReports) =>
-      prevReports.map((item) => {
-        if (!targetIds.includes(item.id)) return item;
+    try {
+      const token = await AsyncStorage.getItem("access_token");
+      if (!token) return;
 
-        return {
-          ...item,
-          status: newStatus,
-          verifiedBy:
-            newStatus === "Pending Review" ? item.verifiedBy : "Current Admin",
-          remarks: remarks || item.remarks,
-        };
-      })
-    );
+      await Promise.all(
+        targetIds.map((id) =>
+          apiClient.post(
+            `/reports/${id}/status`,
+            {
+              status: newStatus,
+              is_verified: newStatus === "Resolved",
+            },
+            { headers: { Authorization: `Bearer ${token}` } }
+          )
+        )
+      );
 
-    setSelectedCompiledGroup((prevGroup) => {
-      if (!prevGroup || !prevGroup.reports) return prevGroup;
-
-      const updatedReports = prevGroup.reports.map((item) => {
-        if (!targetIds.includes(item.id)) return item;
-
-        return {
-          ...item,
-          status: newStatus,
-          verifiedBy:
-            newStatus === "Pending Review" ? item.verifiedBy : "Current Admin",
-          remarks: remarks || item.remarks,
-        };
-      });
-
-      const statusSummary = updatedReports.reduce((summary, report) => {
-        summary[report.status] = (summary[report.status] || 0) + 1;
-        return summary;
-      }, {});
-
-      return {
-        ...prevGroup,
-        reports: updatedReports,
-        status: getGroupMainStatus(updatedReports),
-        statusSummary,
-      };
-    });
+      setViewVisible(false);
+      setSelectedCompiledGroup(null);
+      loadValidation();
+    } catch (error) {
+      Alert.alert(
+        "Update Failed",
+        error.response?.data?.error || "Could not update report status."
+      );
+    }
   };
 
   const handleVerify = (target) => {
-    updateReportStatus(
-      target,
-      "Under Verification",
-      "Report is now being verified by the admin."
-    );
+    applyValidation(target, "Under Verification");
   };
 
   const handleReject = (target) => {
-    updateReportStatus(
-      target,
-      "Rejected",
-      "Report was rejected after admin review."
-    );
+    applyValidation(target, "Rejected");
   };
 
   const handleMapAndVerify = (target) => {
-    updateReportStatus(
-      target,
-      "Resolved",
-      "Report has been verified, resolved, and prepared for mapping."
-    );
-
- 
+    applyValidation(target, "Resolved");
   };
 
-  const handleAnnouncementSubmit = (announcement) => {
-  console.log("New Announcement:", announcement);
+  const handleAnnouncementSubmit = async (announcement) => {
+    try {
+      const token = await AsyncStorage.getItem("access_token");
+      if (!token) return;
 
-  // Close the modal
-  setAddReportVisible(false);
+      let picUrl = null;
+      if (announcement.image?.uri) {
+        try {
+          picUrl = await uploadImage(announcement.image.uri);
+        } catch {
+          // keep null on upload failure
+        }
+      }
 
-  // TODO: Later we will save this to Firebase/MySQL/Supabase
-  // For now it only prints the data.
-};
+      await apiClient.post(
+        "/admin/announcements",
+        {
+          type: announcement.type,
+          location: announcement.location,
+          details: announcement.details,
+          pic_url: picUrl,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setAddReportVisible(false);
+      Alert.alert(
+        "Announcement Published",
+        "The announcement has been posted."
+      );
+    } catch (error) {
+      Alert.alert(
+        "Publish Failed",
+        error.response?.data?.error || "Could not publish the announcement."
+      );
+    }
+  };
 
 
   const StatCard = ({ icon, title, value, color, bg }) => (

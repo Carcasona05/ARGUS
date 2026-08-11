@@ -22,6 +22,50 @@ const VALID_STATUSES = [
   "Archived",
 ];
 
+const ARGAO_BARANGAYS = [
+  "Poblacion",
+  "Lamacan",
+  "Talaga",
+  "Canbanua",
+  "Bugang",
+  "Conalum",
+  "Dawis",
+  "Guiwanon",
+  "Kabangkalan",
+  "Kasambagan",
+  "Langtad",
+  "Mango",
+  "Matic",
+  "Mindalusan",
+  "Oboj",
+  "Osang",
+  "Pajija",
+  "Tulic",
+  "San Miguel",
+  "Binlod",
+  "Tagaytay",
+  "Taloot",
+];
+
+function deriveBarangay(location: string): string {
+  const loc = (location || "").toLowerCase();
+  if (!loc) return "";
+  for (const barangay of ARGAO_BARANGAYS) {
+    if (loc.includes(barangay.toLowerCase())) return barangay;
+  }
+  const first = loc.split(",")[0]?.trim() || "";
+  return first ? first.charAt(0).toUpperCase() + first.slice(1) : "";
+}
+
+function categoryNameOf(rel: unknown): string {
+  if (!rel) return "";
+  if (Array.isArray(rel)) {
+    const first = rel[0] as { name?: string } | undefined;
+    return first?.name ?? "";
+  }
+  return (rel as { name?: string }).name ?? "";
+}
+
 async function resolveIncidentType(
   categoryName: string,
   typeName: string
@@ -140,7 +184,7 @@ export const reportService = {
       };
       typeMap.set(t.id, {
         type: t.name,
-        category: t.incident_categories?.[0]?.name ?? "",
+        category: categoryNameOf(t.incident_categories),
       });
     });
 
@@ -481,6 +525,471 @@ export const reportService = {
     }));
 
     return { data: enriched, error: null };
+  },
+
+  async createAnnouncement(
+    adminId: string,
+    input: { type?: string; location?: string; details?: string; pic_url?: string }
+  ) {
+    const type = (input.type || "").trim();
+    const details = (input.details || "").trim();
+
+    if (!type || !details) {
+      return { error: "Announcement type and details are required" };
+    }
+
+    const { data: announcement, error } = await supabaseAdmin
+      .from("admin_announcement")
+      .insert({
+        admin_id: adminId,
+        type,
+        location: input.location ?? "",
+        details,
+        pic_url: input.pic_url ?? null,
+      })
+      .select("id")
+      .maybeSingle();
+
+    if (error) return { error: error.message };
+    if (!announcement) return { error: "Failed to create announcement" };
+
+    return { data: announcement.id };
+  },
+
+  async listAuditLogs() {
+    const { data, error } = await supabaseAdmin
+      .from("audit_logs")
+      .select(
+        "id, actor_name, action_type, title, details, report_id, old_value, new_value, created_at"
+      )
+      .order("created_at", { ascending: false })
+      .limit(200);
+
+    if (error) return { data: null, error: error.message };
+
+    const logs = (data || []).map((l) => ({
+      id: l.id,
+      actionType: l.action_type,
+      title: l.title ?? "",
+      actor: l.actor_name ?? "System",
+      reportId: l.report_id ?? "",
+      details: l.details ?? "",
+      oldStatus: l.old_value ?? "",
+      newStatus: l.new_value ?? "",
+      dateTime: l.created_at,
+    }));
+
+    return { data: logs, error: null };
+  },
+
+  async getAdminDashboard() {
+    const { data: types, error: typesError } = await supabaseAdmin
+      .from("incident_types")
+      .select("id, name, incident_categories(id, name)");
+
+    if (typesError) return { data: null, error: typesError.message };
+
+    const typeMap = new Map<string, { type: string; category: string }>();
+    (types || []).forEach((row) => {
+      const t = row as unknown as {
+        id: string;
+        name: string;
+        incident_categories: { name: string }[] | null;
+      };
+      typeMap.set(t.id, {
+        type: t.name,
+        category: categoryNameOf(t.incident_categories),
+      });
+    });
+
+    const { data: reports, error: reportError } = await supabaseAdmin
+      .from("reports")
+      .select(
+        "id, location, latitude, longitude, details, poster_name, status, is_verified, created_at, incident_type_id"
+      )
+      .order("created_at", { ascending: false });
+
+    if (reportError) return { data: null, error: reportError.message };
+
+    const reportIds = (reports || []).map((r) => r.id);
+
+    const { data: analyses, error: analysisError } = reportIds.length
+      ? await supabaseAdmin
+          .from("report_credibility_analysis")
+          .select("report_id, ai_score, severity, sentiment, credibility_review")
+          .in("report_id", reportIds)
+      : { data: [], error: null };
+
+    if (analysisError) return { data: null, error: analysisError.message };
+
+    const analysisMap = new Map<
+      string,
+      {
+        ai_score: number | null;
+        severity: string;
+        sentiment: string;
+        credibility_review: string;
+      }
+    >();
+    (analyses || []).forEach(
+      (a: {
+        report_id: string;
+        ai_score: number | null;
+        severity: string | null;
+        sentiment: string | null;
+        credibility_review: string | null;
+      }) => {
+        analysisMap.set(a.report_id, {
+          ai_score: a.ai_score ?? null,
+          severity: a.severity ?? "Medium",
+          sentiment: a.sentiment ?? "Neutral",
+          credibility_review: a.credibility_review ?? "",
+        });
+      }
+    );
+
+    const { data: commentRows, error: commentsError } = reportIds.length
+      ? await supabaseAdmin
+          .from("report_comments")
+          .select("report_id, content")
+          .in("report_id", reportIds)
+      : { data: [], error: null };
+
+    if (commentsError) return { data: null, error: commentsError.message };
+
+    const commentsByReport = new Map<string, string[]>();
+    (commentRows || []).forEach((c: { report_id: string; content: string }) => {
+      const list = commentsByReport.get(c.report_id) || [];
+      list.push(c.content);
+      commentsByReport.set(c.report_id, list);
+    });
+
+    const list = (reports || []).map((r) => {
+      const info = typeMap.get(r.incident_type_id) || {
+        type: "Incident",
+        category: "",
+      };
+      const analysis = analysisMap.get(r.id) ?? {
+        ai_score: null,
+        severity: "Medium",
+        sentiment: "Neutral",
+        credibility_review: "",
+      };
+      return {
+        id: r.id,
+        location: r.location ?? "",
+        barangay: deriveBarangay(r.location ?? ""),
+        details: r.details ?? "",
+        poster_name: r.poster_name ?? "",
+        status: r.status ?? "Pending Review",
+        is_verified: r.is_verified ?? false,
+        created_at: r.created_at,
+        incident_category: info.category,
+        incident_type: info.type,
+        latitude: r.latitude,
+        longitude: r.longitude,
+        ai_score: analysis.ai_score ?? null,
+        severity: analysis.severity ?? "Medium",
+        sentiment: analysis.sentiment ?? "Neutral",
+        credibility_review: analysis.credibility_review ?? "",
+        comments: commentsByReport.get(r.id) || [],
+        source: "User",
+      };
+    });
+
+    const pending = list.filter((r) => r.status === "Pending Review").length;
+    const verified = list.filter(
+      (r) => r.is_verified || r.status === "Resolved"
+    ).length;
+    const rejected = list.filter((r) => r.status === "Rejected").length;
+    const hotspots = list.filter(
+      (r) =>
+        (r.severity === "High" || r.severity === "Critical") &&
+        !["Rejected", "Archived"].includes(r.status)
+    ).length;
+
+    return {
+      data: {
+        summary: {
+          total: list.length,
+          pending,
+          verified,
+          rejected,
+          hotspots,
+        },
+        reports: list,
+      },
+      error: null,
+    };
+  },
+
+  async getAdminAnalytics() {
+    const now = new Date();
+    const thirtyDaysAgo = new Date(
+      now.getTime() - 30 * 24 * 60 * 60 * 1000
+    ).toISOString();
+
+    const { data: types, error: typesError } = await supabaseAdmin
+      .from("incident_types")
+      .select("id, name, incident_categories(id, name)");
+
+    if (typesError) return { data: null, error: typesError.message };
+
+    const typeMap = new Map<string, { type: string; category: string }>();
+    (types || []).forEach((row) => {
+      const t = row as unknown as {
+        id: string;
+        name: string;
+        incident_categories: { name: string }[] | null;
+      };
+      typeMap.set(t.id, {
+        type: t.name,
+        category: categoryNameOf(t.incident_categories),
+      });
+    });
+
+    const { data: reports, error: reportError } = await supabaseAdmin
+      .from("reports")
+      .select(
+        "id, location, latitude, longitude, poster_name, status, is_verified, created_at, incident_type_id"
+      )
+      .gte("created_at", thirtyDaysAgo)
+      .order("created_at", { ascending: false });
+
+    if (reportError) return { data: null, error: reportError.message };
+
+    const reportIds = (reports || []).map((r) => r.id);
+
+    const { data: analyses, error: analysisError } = reportIds.length
+      ? await supabaseAdmin
+          .from("report_credibility_analysis")
+          .select("report_id, ai_score, severity, sentiment")
+          .in("report_id", reportIds)
+      : { data: [], error: null };
+
+    if (analysisError) return { data: null, error: analysisError.message };
+
+    const analysisMap = new Map<
+      string,
+      { ai_score: number | null; severity: string; sentiment: string }
+    >();
+    (analyses || []).forEach(
+      (a: {
+        report_id: string;
+        ai_score: number | null;
+        severity: string | null;
+        sentiment: string | null;
+      }) => {
+        analysisMap.set(a.report_id, {
+          ai_score: a.ai_score ?? null,
+          severity: a.severity ?? "Medium",
+          sentiment: a.sentiment ?? "Neutral",
+        });
+      }
+    );
+
+    const list = (reports || []).map((r) => {
+      const info = typeMap.get(r.incident_type_id) || {
+        type: "Incident",
+        category: "",
+      };
+      const analysis = analysisMap.get(r.id) ?? {
+        ai_score: null,
+        severity: "Medium",
+        sentiment: "Neutral",
+      };
+      return {
+        id: r.id,
+        location: r.location ?? "",
+        poster_name: r.poster_name ?? "",
+        status: r.status ?? "Pending Review",
+        is_verified: r.is_verified ?? false,
+        created_at: r.created_at,
+        incident_category: info.category,
+        incident_type: info.type,
+        latitude: r.latitude,
+        longitude: r.longitude,
+        ai_score: analysis.ai_score ?? null,
+        severity: analysis.severity ?? "Medium",
+        sentiment: analysis.sentiment ?? "Neutral",
+      };
+    });
+
+    const SENTIMENT_POLARITY: Record<string, number> = {
+      Anxious: 1,
+      Concerned: 0.8,
+      Negative: 0.7,
+      Unclear: 0.5,
+      Neutral: 0.4,
+      Positive: 0.2,
+    };
+
+    const SEVERITY_WEIGHT: Record<string, number> = {
+      Low: 1,
+      Medium: 2,
+      High: 3,
+      Critical: 4,
+    };
+
+    const active = list.filter(
+      (r) => !["Rejected", "Archived"].includes(r.status)
+    );
+
+    const criticalHotspots = active.filter(
+      (r) => r.severity === "High" || r.severity === "Critical"
+    ).length;
+
+    const avgPolarity = list.length
+      ? list.reduce(
+          (sum, r) => sum + (SENTIMENT_POLARITY[r.sentiment] ?? 0.5),
+          0
+        ) / list.length
+      : 0.5;
+    const avgSentiment = (avgPolarity * 5).toFixed(1);
+    const sentimentLabel =
+      avgPolarity >= 0.75
+        ? "Anxious"
+        : avgPolarity >= 0.6
+          ? "Concerned"
+          : avgPolarity >= 0.45
+            ? "Neutral"
+            : "Calm";
+
+    const nonRejected = list.filter((r) => r.status !== "Rejected");
+    const verifiedCount = nonRejected.filter(
+      (r) => r.is_verified || r.status === "Resolved"
+    ).length;
+    const credibilityRate = nonRejected.length
+      ? Math.round((verifiedCount / nonRejected.length) * 100)
+      : 0;
+
+    const sentimentTrend = Array.from({ length: 24 }, (_, i) => {
+      const start = new Date(now.getTime() - (23 - i) * 60 * 60 * 1000);
+      const end = new Date(start.getTime() + 60 * 60 * 1000);
+      const bucket = list.filter((r) => {
+        const t = new Date(r.created_at);
+        return t >= start && t < end;
+      });
+      const value = bucket.length
+        ? Math.round(
+            (bucket.reduce(
+              (sum, r) => sum + (SENTIMENT_POLARITY[r.sentiment] ?? 0.5),
+              0
+            ) /
+              bucket.length) *
+              100
+          )
+        : 0;
+      return { hour: start.getHours(), value, count: bucket.length };
+    });
+
+    const hourWeights = new Array(24).fill(0);
+    list.forEach((r) => {
+      const h = new Date(r.created_at).getHours();
+      hourWeights[h] += SEVERITY_WEIGHT[r.severity] ?? 2;
+    });
+    const maxHourWeight = Math.max(1, ...hourWeights);
+
+    let recent = 0;
+    let prior = 0;
+    const weekAgo = now.getTime() - 7 * 24 * 60 * 60 * 1000;
+    const twoWeeksAgo = now.getTime() - 14 * 24 * 60 * 60 * 1000;
+    list.forEach((r) => {
+      const t = new Date(r.created_at).getTime();
+      if (t >= weekAgo) recent += 1;
+      else if (t >= twoWeeksAgo) prior += 1;
+    });
+    const trendFactor =
+      recent + prior ? (recent - prior) / Math.max(1, recent + prior) : 0;
+
+    const forecast = Array.from({ length: 48 }, (_, i) => {
+      const target = new Date(now.getTime() + i * 60 * 60 * 1000);
+      const h = target.getHours();
+      const base = hourWeights[h] / maxHourWeight;
+      let probability = base * 100 + trendFactor * 20 * ((i + 1) / 48);
+      probability = Math.min(100, Math.max(3, Math.round(probability)));
+      return { hour: target.getTime(), probability };
+    });
+
+    const peak = forecast.reduce((best, f) =>
+      f.probability > best.probability ? f : best
+    );
+
+    const zoneCandidates = active.filter(
+      (r) => r.severity === "High" || r.severity === "Critical"
+    );
+    const zoneCounts = new Map<string, number>();
+    zoneCandidates.forEach((r) => {
+      const zoneName = r.location && r.location.trim() ? r.location.trim() : "Unspecified";
+      zoneCounts.set(zoneName, (zoneCounts.get(zoneName) || 0) + 1);
+    });
+    const zone =
+      [...zoneCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || "Argao";
+
+    const riskLevel =
+      peak.probability >= 80 ? "HIGH" : peak.probability >= 60 ? "MEDIUM" : "LOW";
+
+    const inZone = zoneCandidates.filter(
+      (r) => (r.location && r.location.trim()) === zone
+    );
+    const typeCounts = new Map<string, number>();
+    inZone.forEach((r) => {
+      const typeName = r.incident_type || "Incident";
+      typeCounts.set(typeName, (typeCounts.get(typeName) || 0) + 1);
+    });
+    const sortedTypes = [...typeCounts.entries()].sort((a, b) => b[1] - a[1]);
+    const totalTypes = sortedTypes.reduce((sum, [, count]) => sum + count, 0) || 1;
+    const crimeTypes = sortedTypes.slice(0, 3).map(([label, count]) => ({
+      label,
+      value: `${Math.round((count / totalTypes) * 100)}%`,
+    }));
+
+    const fmtHour = (hour: number) => {
+      const display = hour % 12 === 0 ? 12 : hour % 12;
+      return `${display}:00 ${hour < 12 ? "AM" : "PM"}`;
+    };
+    const peakHour = new Date(peak.hour).getHours();
+    const startHour = (peakHour - 2 + 24) % 24;
+    const endHour = (peakHour + 2) % 24;
+    const timeWindow = `${fmtHour(startHour)} – ${fmtHour(endHour)}`;
+
+    const trendPct = Math.round(trendFactor * 100);
+
+    const recommendedActions: string[] = [];
+    if (riskLevel === "HIGH") {
+      recommendedActions.push("Increase patrol in the predicted hotspot area");
+    }
+    if (riskLevel !== "LOW") {
+      recommendedActions.push("Notify nearest response units and prepare standby");
+    }
+    recommendedActions.push("Review similar reports in the area for context");
+    if (criticalHotspots > 0) {
+      recommendedActions.push("Prioritize verified high-severity reports for resolution");
+    }
+
+    return {
+      data: {
+        summary: {
+          activeIncidents: active.length,
+          criticalHotspots,
+          avgSentiment,
+          sentimentLabel,
+          credibilityRate,
+        },
+        sentimentTrend,
+        forecast,
+        forecastSummary: {
+          zone,
+          riskLevel,
+          probability: peak.probability,
+          crimeTypes,
+          timeWindow,
+          trend: trendPct,
+          recommendedActions,
+        },
+      },
+      error: null,
+    };
   },
 
   async validateReport(reportId: string, input: {

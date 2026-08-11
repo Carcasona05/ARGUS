@@ -12,7 +12,7 @@ export const profileService = {
   async getProfile(userId: string) {
     const result = await supabaseAdmin
       .from("profiles")
-      .select("fullname, user_name, first_name, last_name, middle_name, phone, role, birthdate, location")
+      .select("fullname, user_name, first_name, last_name, middle_name, phone, role, birthdate, location, department")
       .eq("id", userId)
       .maybeSingle();
 
@@ -22,7 +22,7 @@ export const profileService = {
 
     return await supabaseAdmin
       .from("profiles")
-      .select("fullname, user_name, first_name, last_name, middle_name, phone, role, birthdate, location")
+      .select("fullname, user_name, first_name, last_name, middle_name, phone, role, birthdate, location, department")
       .eq("id", userId)
       .maybeSingle();
   },
@@ -33,7 +33,7 @@ export const profileService = {
 
     const { data: existing } = await supabaseAdmin
       .from("profiles")
-      .select("id, user_name, first_name, last_name, middle_name, phone, birthdate, location")
+      .select("id, user_name, first_name, last_name, middle_name, phone, birthdate, location, department")
       .eq("id", userId)
       .maybeSingle();
 
@@ -45,6 +45,7 @@ export const profileService = {
       phone: meta.phone ?? "",
       birthdate: meta.birthdate ?? null,
       location: meta.location ?? "",
+      department: meta.department ?? "",
     };
 
     if (existing) {
@@ -56,6 +57,7 @@ export const profileService = {
       if (!existing.phone && payload.phone) updates.phone = payload.phone;
       if (!existing.birthdate && payload.birthdate) updates.birthdate = payload.birthdate;
       if (!existing.location && payload.location) updates.location = payload.location;
+      if (!existing.department && payload.department) updates.department = payload.department;
 
       if (Object.keys(updates).length > 0) {
         const { error } = await supabaseAdmin

@@ -18,7 +18,7 @@ export const validateReport = async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   if (!id) return res.status(400).json({ error: "Report id required" });
 
-  const { status, is_verified, remarks } = req.body ?? {};
+  const { status, is_verified } = req.body ?? {};
 
   const result = await reportService.validateReport(String(id), {
     status,
@@ -188,4 +188,83 @@ export const getAdminPosts = async (req: AuthRequest, res: Response) => {
   if (error) return res.status(500).json({ error });
 
   res.json({ posts: data });
+};
+
+export const getAdminDashboard = async (req: AuthRequest, res: Response) => {
+  const user = req.user;
+  if (!user?.id) return res.status(401).json({ error: "Unauthorized" });
+
+  const { data: profile } = await profileService.getProfile(user.id);
+  if (!profile || !["admin", "super_admin"].includes(profile.role)) {
+    return res.status(403).json({ error: "Admin access only" });
+  }
+
+  const { data, error } = await reportService.getAdminDashboard();
+
+  if (error) return res.status(500).json({ error });
+  if (!data) return res.status(500).json({ error: "No dashboard data" });
+
+  res.json({ summary: data.summary, reports: data.reports });
+};
+
+export const getAdminLogs = async (req: AuthRequest, res: Response) => {
+  const user = req.user;
+  if (!user?.id) return res.status(401).json({ error: "Unauthorized" });
+
+  const { data: profile } = await profileService.getProfile(user.id);
+  if (!profile || !["admin", "super_admin"].includes(profile.role)) {
+    return res.status(403).json({ error: "Admin access only" });
+  }
+
+  const { data, error } = await reportService.listAuditLogs();
+
+  if (error) return res.status(500).json({ error });
+  if (!data) return res.status(500).json({ error: "No log data" });
+
+  res.json({ logs: data });
+};
+
+export const createAdminAnnouncement = async (req: AuthRequest, res: Response) => {
+  const user = req.user;
+  if (!user?.id) return res.status(401).json({ error: "Unauthorized" });
+
+  const { data: profile } = await profileService.getProfile(user.id);
+  if (!profile || !["admin", "super_admin"].includes(profile.role)) {
+    return res.status(403).json({ error: "Admin access only" });
+  }
+
+  const { type, location, details, pic_url } = req.body ?? {};
+
+  const result = await reportService.createAnnouncement(user.id, {
+    type,
+    location,
+    details,
+    pic_url,
+  });
+
+  if (result.error) return res.status(400).json({ error: result.error });
+
+  res.status(201).json({ message: "Announcement published", announcement_id: result.data });
+};
+
+export const getAdminAnalytics = async (req: AuthRequest, res: Response) => {
+  const user = req.user;
+  if (!user?.id) return res.status(401).json({ error: "Unauthorized" });
+
+  const { data: profile } = await profileService.getProfile(user.id);
+  if (!profile || !["admin", "super_admin"].includes(profile.role)) {
+    return res.status(403).json({ error: "Admin access only" });
+  }
+
+  const { data, error } = await reportService.getAdminAnalytics();
+
+  if (error) return res.status(500).json({ error });
+  if (!data) return res.status(500).json({ error: "No analytics data" });
+
+  res.json({
+    summary: data.summary,
+    sentimentTrend: data.sentimentTrend,
+    forecast: data.forecast,
+    forecastSummary: data.forecastSummary,
+  });
 };

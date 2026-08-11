@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "./apiClient";
+import { ROLE_KEY } from "./auth";
 
 const cache = new Map();
 
@@ -30,16 +31,25 @@ const ENDPOINTS = [
   ["api:/incidents/options", "/incidents/options"],
 ];
 
+const ADMIN_ENDPOINTS = [
+  ["api:/admin/dashboard", "/admin/dashboard"],
+  ["api:/admin/analytics", "/admin/analytics"],
+  ["api:/admin/logs", "/admin/logs"],
+  ["api:/admin/notifications", "/admin/notifications"],
+];
+
+const fetchIntoCache = async (key, url, headers) => {
+  const res = await apiClient.get(url, { headers });
+  setCache(key, res.data ?? {});
+};
+
 export const prefetchAllData = async () => {
   const token = await AsyncStorage.getItem("access_token");
   if (!token) return;
   const headers = { Authorization: `Bearer ${token}` };
 
   await Promise.allSettled(
-    ENDPOINTS.map(async ([key, url]) => {
-      const res = await apiClient.get(url, { headers });
-      setCache(key, res.data ?? {});
-    })
+    ENDPOINTS.map(async ([key, url]) => fetchIntoCache(key, url, headers))
   );
 
   try {
@@ -54,4 +64,11 @@ export const prefetchAllData = async () => {
     });
     setCache("api:/facilities/nearby", res.data ?? {});
   } catch {}
+
+  const role = await AsyncStorage.getItem(ROLE_KEY);
+  if (role === "admin" || role === "super_admin") {
+    await Promise.allSettled(
+      ADMIN_ENDPOINTS.map(async ([key, url]) => fetchIntoCache(key, url, headers))
+    );
+  }
 };

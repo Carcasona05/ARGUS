@@ -1,9 +1,51 @@
 import type { Response } from "express";
 import { notificationService } from "../services/notificationService.ts";
+import { profileService } from "../services/authService.ts";
 
 type AuthRequest = import("express").Request & {
   user?: { id: string };
   token?: string;
+};
+
+export const markAdminNotificationRead = async (
+  req: AuthRequest,
+  res: Response
+) => {
+  const user = req.user;
+  if (!user?.id) return res.status(401).json({ error: "Unauthorized" });
+
+  const { data: profile } = await profileService.getProfile(user.id);
+  if (!profile || !["admin", "super_admin"].includes(profile.role)) {
+    return res.status(403).json({ error: "Admin access only" });
+  }
+
+  const { id } = req.params;
+  if (!id) return res.status(400).json({ error: "Notification id required" });
+
+  const { error } = await notificationService.markAdminRead(String(id));
+
+  if (error) return res.status(500).json({ error });
+
+  res.json({ message: "Notification marked as read" });
+};
+
+export const getAdminNotifications = async (
+  req: AuthRequest,
+  res: Response
+) => {
+  const user = req.user;
+  if (!user?.id) return res.status(401).json({ error: "Unauthorized" });
+
+  const { data: profile } = await profileService.getProfile(user.id);
+  if (!profile || !["admin", "super_admin"].includes(profile.role)) {
+    return res.status(403).json({ error: "Admin access only" });
+  }
+
+  const { data, error } = await notificationService.listAdminNotifications();
+
+  if (error) return res.status(500).json({ error });
+
+  res.json({ notifications: data });
 };
 
 export const getNotifications = async (req: AuthRequest, res: Response) => {

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -10,8 +10,12 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFonts } from "expo-font";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import Admin_Layout from "../../components/Admin_compo/Admin_Layout";
+import apiClient from "../../services/apiClient";
+import useAutoRefresh from "../../hooks/useAutoRefresh";
+import { getCache, setCache } from "../../services/dataStore";
 
 export default function Admin_Logs() {
   const [searchText, setSearchText] = useState("");
@@ -27,83 +31,72 @@ export default function Admin_Logs() {
     return null;
   }
 
-  const logs = [
-    {
-      id: "LOG-001",
-      actionType: "Report Verified",
-      title: "Report verified",
-      actor: "Admin R. Ramos",
-      reportId: "ARG-2031",
-      details: "Road accident near Poblacion was reviewed and verified.",
-      oldStatus: "Pending",
-      newStatus: "Verified",
-      dateTime: "Apr 29, 2026 • 10:35 AM",
-    },
-    {
-      id: "LOG-002",
-      actionType: "Map & Verify",
-      title: "Report mapped and verified",
-      actor: "Admin R. Ramos",
-      reportId: "ARG-2033",
-      details: "Flood report near San Miguel was verified and shown on the map.",
-      oldStatus: "Pending",
-      newStatus: "Verified + Map Visible",
-      dateTime: "Apr 29, 2026 • 9:48 AM",
-    },
-    {
-      id: "LOG-003",
-      actionType: "AI Analysis",
-      title: "AI analysis completed",
-      actor: "ARGUS AI",
-      reportId: "ARG-2031",
-      details: "AI generated a 92% credibility score with urgent sentiment.",
-      oldStatus: "Not Analyzed",
-      newStatus: "AI Score 92%",
-      dateTime: "Apr 29, 2026 • 9:41 AM",
-    },
-    {
-      id: "LOG-004",
-      actionType: "Admin Report Created",
-      title: "Admin-created report added",
-      actor: "Admin R. Ramos",
-      reportId: "ARG-2032",
-      details:
-        "Admin created a suspicious activity report. It was automatically verified.",
-      oldStatus: "None",
-      newStatus: "Verified",
-      dateTime: "Apr 29, 2026 • 9:20 AM",
-    },
-    {
-      id: "LOG-005",
-      actionType: "Report Rejected",
-      title: "Report rejected",
-      actor: "Admin R. Ramos",
-      reportId: "ARG-2034",
-      details: "False fire alarm report was rejected due to unclear details.",
-      oldStatus: "Pending",
-      newStatus: "Rejected",
-      dateTime: "Apr 28, 2026 • 5:30 PM",
-    },
-    {
-      id: "LOG-006",
-      actionType: "Notification Sent",
-      title: "Notification sent",
-      actor: "System",
-      reportId: "ARG-2031",
-      details: "A report verification notification was sent to the user.",
-      oldStatus: "Pending Notification",
-      newStatus: "Sent",
-      dateTime: "Apr 28, 2026 • 4:55 PM",
-    },
-  ];
+  const [logs, setLogs] = useState([]);
+
+  const formatLogTime = (iso) => {
+    if (!iso) return "";
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) return "";
+
+    return (
+      date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "2-digit",
+        year: "numeric",
+      }) +
+      " • " +
+      date.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      })
+    );
+  };
+
+  const loadLogs = useCallback(async () => {
+    try {
+      const token = await AsyncStorage.getItem("access_token");
+      if (!token) return;
+
+      const applyLogs = (list) =>
+        setLogs(
+          list.map((log) => ({
+            ...log,
+            dateTime: formatLogTime(log.dateTime),
+          }))
+        );
+
+      const cached = getCache("api:/admin/logs");
+      if (cached && Array.isArray(cached.logs)) {
+        applyLogs(cached.logs);
+      }
+
+      const res = await apiClient.get("/admin/logs", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      setCache("api:/admin/logs", res.data ?? {});
+      applyLogs(res.data?.logs || []);
+    } catch {
+      // keep last loaded data on failure
+    }
+  }, []);
+
+  useAutoRefresh(loadLogs, 30000);
 
   const filters = [
     "All",
     "Report Verified",
+    "Report Mapped",
     "Report Rejected",
-    "Map & Verify",
-    "Admin Report Created",
-    "AI Analysis",
+    "Report Deleted",
+    "AI Analysis Completed",
+    "Admin Added",
+    "Admin Updated",
+    "Admin Disabled",
+    "Admin Deleted",
+    "System Settings Updated",
+    "Announcement Created",
     "Notification Sent",
   ];
 
@@ -125,24 +118,28 @@ export default function Admin_Logs() {
 
       return matchesFilter && matchesSearch;
     });
-  }, [searchText, selectedFilter]);
+  }, [searchText, selectedFilter, logs]);
 
   const totalLogs = logs.length;
   const verifiedLogs = logs.filter(
     (item) =>
       item.actionType === "Report Verified" ||
-      item.actionType === "Map & Verify"
+      item.actionType === "Report Mapped"
   ).length;
   const rejectedLogs = logs.filter(
-    (item) => item.actionType === "Report Rejected"
+    (item) =>
+      item.actionType === "Report Rejected" ||
+      item.actionType === "Report Deleted"
   ).length;
-  const aiLogs = logs.filter((item) => item.actionType === "AI Analysis").length;
+  const aiLogs = logs.filter(
+    (item) => item.actionType === "AI Analysis Completed"
+  ).length;
 
   const getLogStyle = (type) => {
-    if (type === "Report Verified" || type === "Map & Verify") {
+    if (type === "Report Verified" || type === "Report Mapped") {
       return {
         icon:
-          type === "Map & Verify"
+          type === "Report Mapped"
             ? "map-outline"
             : "shield-checkmark-outline",
         color: "#22A06B",
@@ -150,7 +147,7 @@ export default function Admin_Logs() {
       };
     }
 
-    if (type === "Report Rejected") {
+    if (type === "Report Rejected" || type === "Report Deleted") {
       return {
         icon: "close-circle-outline",
         color: "#E45757",
@@ -158,7 +155,7 @@ export default function Admin_Logs() {
       };
     }
 
-    if (type === "AI Analysis") {
+    if (type === "AI Analysis Completed") {
       return {
         icon: "sparkles-outline",
         color: "#7C3AED",
@@ -166,9 +163,9 @@ export default function Admin_Logs() {
       };
     }
 
-    if (type === "Admin Report Created") {
+    if (type && type.startsWith("Admin")) {
       return {
-        icon: "add-circle-outline",
+        icon: "person-circle-outline",
         color: "#294880",
         bg: "#EAF2FF",
       };
@@ -182,6 +179,14 @@ export default function Admin_Logs() {
       };
     }
 
+    if (type === "Announcement Created") {
+      return {
+        icon: "add-circle-outline",
+        color: "#294880",
+        bg: "#EAF2FF",
+      };
+    }
+
     return {
       icon: "document-text-outline",
       color: "#294880",
@@ -190,21 +195,21 @@ export default function Admin_Logs() {
   };
 
   const getBadgeStyle = (type) => {
-    if (type === "Report Verified" || type === "Map & Verify") {
+    if (type === "Report Verified" || type === "Report Mapped") {
       return {
         bg: "#EAF8F1",
         color: "#22A06B",
       };
     }
 
-    if (type === "Report Rejected") {
+    if (type === "Report Rejected" || type === "Report Deleted") {
       return {
         bg: "#FFF5F5",
         color: "#E45757",
       };
     }
 
-    if (type === "AI Analysis") {
+    if (type === "AI Analysis Completed") {
       return {
         bg: "#F3E8FF",
         color: "#7C3AED",

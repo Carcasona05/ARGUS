@@ -1,18 +1,84 @@
-import React from "react";
+import React, { useCallback, useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useFonts } from "expo-font";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import Admin_Layout from "../../components/Admin_compo/Admin_Layout";
+import AdminHeatMap from "../../components/Admin_compo/AdminHeatMap";
+import apiClient from "../../services/apiClient";
+import useAutoRefresh from "../../hooks/useAutoRefresh";
+import { getCache, setCache } from "../../services/dataStore";
+
+const formatFeedTime = (iso) => {
+  if (!iso) return "";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+
+  const now = new Date();
+  const sameDay = date.toDateString() === now.toDateString();
+
+  return sameDay
+    ? date.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      })
+    : date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+};
 
 export default function Admin_Dashboard() {
   const router = useRouter();
+
+  const [summary, setSummary] = useState({
+    total: 0,
+    pending: 0,
+    verified: 0,
+    rejected: 0,
+    hotspots: 0,
+  });
+  const [reports, setReports] = useState([]);
 
   const [fontsLoaded] = useFonts({
     PoppinsRegular: require("../../assets/fonts/Poppins-Regular.ttf"),
     PoppinsMedium: require("../../assets/fonts/Poppins-Medium.ttf"),
     PoppinsSemiBold: require("../../assets/fonts/Poppins-SemiBold.ttf"),
   });
+
+  const loadDashboard = useCallback(async () => {
+    try {
+      const token = await AsyncStorage.getItem("access_token");
+      if (!token) return;
+
+      const cached = getCache("api:/admin/dashboard");
+      if (cached) {
+        if (cached.summary) {
+          setSummary((prev) => ({ ...prev, ...cached.summary }));
+        }
+        if (Array.isArray(cached.reports)) {
+          setReports(cached.reports);
+        }
+      }
+
+      const res = await apiClient.get("/admin/dashboard", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      setCache("api:/admin/dashboard", res.data ?? {});
+
+      const data = res.data ?? {};
+      if (data.summary) {
+        setSummary((prev) => ({ ...prev, ...data.summary }));
+      }
+      if (Array.isArray(data.reports)) {
+        setReports(data.reports);
+      }
+    } catch {
+      // keep last loaded data on failure
+    }
+  }, []);
+
+  useAutoRefresh(loadDashboard, 30000);
 
   if (!fontsLoaded) {
     return null;
@@ -21,7 +87,7 @@ export default function Admin_Dashboard() {
   const summaryCards = [
     {
       title: "Pending Validation",
-      value: "28",
+      value: String(summary.pending),
       subtext: "Needs review",
       subColor: "#D97A1E",
       icon: "time-outline",
@@ -30,7 +96,7 @@ export default function Admin_Dashboard() {
     },
     {
       title: "Verified Reports",
-      value: "119",
+      value: String(summary.verified),
       subtext: "Mapped",
       subColor: "#22A06B",
       icon: "shield-checkmark-outline",
@@ -39,7 +105,7 @@ export default function Admin_Dashboard() {
     },
     {
       title: "Rejected Reports",
-      value: "12",
+      value: String(summary.rejected),
       subtext: "Invalid",
       subColor: "#E45757",
       icon: "close-circle-outline",
@@ -48,7 +114,7 @@ export default function Admin_Dashboard() {
     },
     {
       title: "Critical Hotspots",
-      value: "4 Active",
+      value: String(summary.hotspots),
       subtext: "Argao",
       subColor: "#E45757",
       icon: "warning-outline",
@@ -57,89 +123,39 @@ export default function Admin_Dashboard() {
     },
   ];
 
-  const incidentFeed = [
-    {
-      title: "Road accident near Poblacion",
-      location: "Poblacion, Argao, Cebu",
-      score: "94%",
-      sentiment: "Urgent",
-      status: "Pending",
-      source: "User",
-      time: "14:18",
-      statusColor: "#D97A1E",
-      statusBg: "#FFF4E5",
-    },
-    {
-      title: "Suspicious activity near Public Market",
-      location: "Argao Public Market Area",
-      score: "91%",
-      sentiment: "Concern",
-      status: "Verified",
-      source: "Admin",
-      time: "13:46",
-      statusColor: "#22A06B",
-      statusBg: "#EAF8F1",
-    },
-    {
-      title: "Flood report near San Miguel",
-      location: "Brgy. San Miguel, Argao",
-      score: "88%",
-      sentiment: "Anxious",
-      status: "Pending",
-      source: "User",
-      time: "12:30",
-      statusColor: "#D97A1E",
-      statusBg: "#FFF4E5",
-    },
-    {
-      title: "Fire report near Talaga",
-      location: "Brgy. Talaga, Argao",
-      score: "96%",
-      sentiment: "High Risk",
-      status: "Verified",
-      source: "Admin",
-      time: "11:05",
-      statusColor: "#22A06B",
-      statusBg: "#EAF8F1",
-    },
-    {
-      title: "Illegal parking near Municipal Hall",
-      location: "Municipal Hall Area, Argao",
-      score: "84%",
-      sentiment: "Concern",
-      status: "Pending",
-      source: "User",
-      time: "10:22",
-      statusColor: "#D97A1E",
-      statusBg: "#FFF4E5",
-    },
-    {
-      title: "Streetlight outage near Tulic",
-      location: "Brgy. Tulic, Argao",
-      score: "79%",
-      sentiment: "Low Risk",
-      status: "Verified",
-      source: "User",
-      time: "09:40",
-      statusColor: "#22A06B",
-      statusBg: "#EAF8F1",
-    },
-  ];
+  const getFeedStyle = (item) => {
+    if (item.status === "Rejected") {
+      return { color: "#E45757", bg: "#FDEEEE" };
+    }
+    if (item.is_verified || item.status === "Resolved") {
+      return { color: "#22A06B", bg: "#EAF8F1" };
+    }
+    return { color: "#D97A1E", bg: "#FFF4E5" };
+  };
 
-  const mapPins = [
-    { top: "15%", left: "12%", color: "#F56B6B" },
-    { top: "18%", left: "24%", color: "#F29A2E" },
-    { top: "11%", left: "36%", color: "#4F8EF7" },
-    { top: "16%", left: "44%", color: "#F56B6B" },
-    { top: "10%", left: "54%", color: "#3DBB74" },
-    { top: "15%", left: "66%", color: "#4F8EF7" },
-    { top: "28%", left: "21%", color: "#F56B6B", label: "H1" },
-    { top: "32%", left: "46%", color: "#F56B6B" },
-    { top: "26%", left: "70%", color: "#F56B6B", label: "H3" },
-    { top: "44%", left: "28%", color: "#3DBB74" },
-    { top: "50%", left: "52%", color: "#F29A2E", label: "H4" },
-    { top: "57%", left: "14%", color: "#4F8EF7" },
-  ];
+  const incidentFeed = reports.slice(0, 12).map((r) => {
+    const style = getFeedStyle(r);
+    return {
+      id: r.id,
+      title: r.incident_type || "Incident",
+      location: r.location || "Location not specified",
+      score: r.ai_score != null ? `${r.ai_score}%` : "—",
+      sentiment: r.sentiment || "Neutral",
+      status: r.is_verified ? "Verified" : r.status || "Pending",
+      source: r.source || "User",
+      time: formatFeedTime(r.created_at),
+      statusColor: style.color,
+      statusBg: style.bg,
+    };
+  });
+
+  const mapReports = reports.filter(
+    (r) =>
+      r.latitude != null &&
+      r.longitude != null &&
+      Number.isFinite(Number(r.latitude)) &&
+      Number.isFinite(Number(r.longitude))
+  );
 
   return (
     <Admin_Layout>
@@ -219,7 +235,7 @@ export default function Admin_Dashboard() {
                   <View>
                     <Text style={styles.cardTitle}>Verified Incident Map</Text>
                     <Text style={styles.cardSubtitle}>
-                      Shows verified and mapped reports around Argao.
+                      Report pins and heatmap around Argao.
                     </Text>
                   </View>
 
@@ -265,52 +281,7 @@ export default function Admin_Dashboard() {
 
                 <View style={styles.mapCardBody}>
                   <View style={styles.mapArea}>
-                    <View style={styles.mapBg} />
-
-                    <View style={styles.roadOne} />
-                    <View style={styles.roadTwo} />
-                    <View style={styles.roadThree} />
-                    <View style={styles.roadFour} />
-
-                    <View style={styles.waterArea} />
-
-                    <View style={styles.heatOne} />
-                    <View style={styles.heatTwo} />
-                    <View style={styles.heatThree} />
-
-                    {mapPins.map((pin, index) => (
-                      <View
-                        key={index}
-                        style={[
-                          styles.pinWrap,
-                          { top: pin.top, left: pin.left },
-                        ]}
-                      >
-                        <Ionicons
-                          name="location-sharp"
-                          size={25}
-                          color={pin.color}
-                        />
-
-                        {pin.label ? (
-                          <View style={styles.hotspotBadge}>
-                            <Text style={styles.hotspotBadgeText}>
-                              {pin.label}
-                            </Text>
-                          </View>
-                        ) : null}
-                      </View>
-                    ))}
-
-                    <View style={styles.centerUserWrap}>
-                      <View style={styles.centerUserOuter}>
-                        <View style={styles.centerUserInner}>
-                          <Ionicons name="business" size={17} color="#FFFFFF" />
-                        </View>
-                      </View>
-                    </View>
-
-                    <Text style={styles.cityLabel}>Argao</Text>
+                    <AdminHeatMap reports={mapReports} />
 
                     <View style={styles.legendCard}>
                       <Text style={styles.legendTitle}>Incidents:</Text>
@@ -355,16 +326,6 @@ export default function Admin_Dashboard() {
                         <Text style={styles.legendText}>Flood / Alert</Text>
                       </View>
                     </View>
-
-                    <View style={styles.zoomBox}>
-                      <TouchableOpacity style={styles.zoomBtn}>
-                        <Text style={styles.zoomText}>+</Text>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity style={styles.zoomBtn}>
-                        <Text style={styles.zoomText}>−</Text>
-                      </TouchableOpacity>
-                    </View>
                   </View>
                 </View>
               </View>
@@ -393,7 +354,7 @@ export default function Admin_Dashboard() {
                 >
                   {incidentFeed.map((item, index) => (
                     <TouchableOpacity
-                      key={index}
+                      key={item.id || index}
                       style={[
                         styles.feedRow,
                         index !== 0 && styles.feedRowBorder,
@@ -403,7 +364,11 @@ export default function Admin_Dashboard() {
                     >
                       <View style={styles.feedTopRow}>
                         <View style={styles.feedTitleWrap}>
-                          <Ionicons name="warning" size={17} color="#E45757" />
+                          <Ionicons
+                            name="warning"
+                            size={17}
+                            color="#E45757"
+                          />
                           <Text style={styles.feedTitle}>{item.title}</Text>
                         </View>
 
@@ -447,6 +412,14 @@ export default function Admin_Dashboard() {
                       </Text>
                     </TouchableOpacity>
                   ))}
+
+                  {incidentFeed.length === 0 ? (
+                    <View style={styles.emptyFeed}>
+                      <Text style={styles.emptyFeedText}>
+                        No reports yet.
+                      </Text>
+                    </View>
+                  ) : null}
                 </ScrollView>
               </View>
             </View>
@@ -622,162 +595,9 @@ const styles = {
     height: 410,
     borderRadius: 12,
     overflow: "hidden",
-    position: "relative",
     borderWidth: 1,
     borderColor: "#D9E2F0",
-    backgroundColor: "#D8EAFB",
-  },
-
-  mapBg: {
-    position: "absolute",
-    width: "100%",
-    height: "100%",
-    backgroundColor: "#D9EAF9",
-  },
-
-  roadOne: {
-    position: "absolute",
-    top: 30,
-    left: -20,
-    width: 540,
-    height: 26,
-    backgroundColor: "rgba(255,255,255,0.7)",
-    transform: [{ rotate: "8deg" }],
-  },
-
-  roadTwo: {
-    position: "absolute",
-    top: 120,
-    left: -20,
-    width: 520,
-    height: 20,
-    backgroundColor: "rgba(255,255,255,0.65)",
-    transform: [{ rotate: "-12deg" }],
-  },
-
-  roadThree: {
-    position: "absolute",
-    top: 210,
-    left: -40,
-    width: 560,
-    height: 20,
-    backgroundColor: "rgba(255,255,255,0.65)",
-    transform: [{ rotate: "10deg" }],
-  },
-
-  roadFour: {
-    position: "absolute",
-    top: 40,
-    right: 90,
-    width: 18,
-    height: 300,
-    backgroundColor: "rgba(255,255,255,0.6)",
-    transform: [{ rotate: "18deg" }],
-  },
-
-  waterArea: {
-    position: "absolute",
-    right: -20,
-    bottom: -10,
-    width: 180,
-    height: 220,
-    borderTopLeftRadius: 80,
-    backgroundColor: "#A8D2F7",
-  },
-
-  heatOne: {
-    position: "absolute",
-    bottom: 40,
-    left: "30%",
-    width: 150,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: "rgba(255,0,0,0.28)",
-  },
-
-  heatTwo: {
-    position: "absolute",
-    bottom: 52,
-    left: "39%",
-    width: 100,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "rgba(255,143,0,0.34)",
-  },
-
-  heatThree: {
-    position: "absolute",
-    bottom: 58,
-    left: "46%",
-    width: 68,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: "rgba(255,235,59,0.34)",
-  },
-
-  pinWrap: {
-    position: "absolute",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  hotspotBadge: {
-    position: "absolute",
-    top: -6,
-    minWidth: 24,
-    height: 18,
-    borderRadius: 9,
-    paddingHorizontal: 5,
-    backgroundColor: "#E45757",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  hotspotBadgeText: {
-    color: "#FFFFFF",
-    fontSize: 10,
-    fontFamily: "PoppinsMedium",
-  },
-
-  centerUserWrap: {
-    position: "absolute",
-    top: "38%",
-    left: "54%",
-    width: 38,
-    height: 38,
-    marginLeft: -19,
-    marginTop: -19,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  centerUserOuter: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 2,
-    borderColor: "#D9E2F0",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  centerUserInner: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "#294880",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  cityLabel: {
-    position: "absolute",
-    top: "52%",
-    left: "56%",
-    fontSize: 15,
-    fontFamily: "PoppinsSemiBold",
-    color: "#4B5D7A",
+    position: "relative",
   },
 
   legendCard: {
@@ -790,6 +610,7 @@ const styles = {
     borderRadius: 10,
     paddingHorizontal: 10,
     paddingVertical: 8,
+    zIndex: 1000,
   },
 
   legendTitle: {
@@ -816,31 +637,6 @@ const styles = {
     fontSize: 11,
     color: "#4B5D7A",
     fontFamily: "PoppinsMedium",
-  },
-
-  zoomBox: {
-    position: "absolute",
-    right: 10,
-    bottom: 12,
-    gap: 6,
-  },
-
-  zoomBtn: {
-    width: 26,
-    height: 26,
-    borderRadius: 6,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#D9E2F0",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  zoomText: {
-    fontSize: 17,
-    fontFamily: "PoppinsSemiBold",
-    color: "#5D6F92",
-    lineHeight: 18,
   },
 
   sideCard: {
@@ -974,5 +770,16 @@ const styles = {
   feedSentiment: {
     color: "#E45757",
     fontFamily: "PoppinsSemiBold",
+  },
+
+  emptyFeed: {
+    paddingVertical: 40,
+    alignItems: "center",
+  },
+
+  emptyFeedText: {
+    fontSize: 14,
+    color: "#7A8BA8",
+    fontFamily: "PoppinsRegular",
   },
 };

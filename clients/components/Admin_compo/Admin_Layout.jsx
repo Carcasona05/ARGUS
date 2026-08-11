@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   View,
   Text,
@@ -9,9 +9,31 @@ import {
 import { Ionicons, Feather } from "@expo/vector-icons";
 import { useRouter, usePathname } from "expo-router";
 import { useFonts } from "expo-font";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { clearAuth } from "../../services/auth";
+import apiClient from "../../services/apiClient";
+import useAutoRefresh from "../../hooks/useAutoRefresh";
+import { getCache, setCache } from "../../services/dataStore";
 
 const ARGUS_BLUE = "#294880";
+
+const formatRelativeTime = (iso) => {
+  if (!iso) return "";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+
+  const diffMs = Date.now() - date.getTime();
+  const minutes = Math.floor(diffMs / 60000);
+
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes} minute${minutes === 1 ? "" : "s"} ago`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"} ago`;
+
+  const days = Math.floor(hours / 24);
+  return `${days} day${days === 1 ? "" : "s"} ago`;
+};
 
 export default function Admin_Layout({ children }) {
   const router = useRouter();
@@ -66,48 +88,38 @@ export default function Admin_Layout({ children }) {
     },
   ];
 
-  const notifications = [
-    {
-      id: "N-001",
-      type: "report",
-      title: "New Report Submitted",
-      message: "A new incident report was submitted near Brgy. San Isidro.",
-      time: "2 minutes ago",
-      priority: "High",
-      unread: true,
-      route: "/(admin)/Admin_Validation",
-    },
-    {
-      id: "N-002",
-      type: "ai",
-      title: "AI Validation Completed",
-      message: "Report #ARG-2031 received a credibility score of 92%.",
-      time: "8 minutes ago",
-      priority: "Medium",
-      unread: true,
-      route: "/(admin)/Admin_Validation",
-    },
-    {
-      id: "N-003",
-      type: "admin",
-      title: "Report Approved",
-      message: "Admin R. Ramos approved Report #ARG-2019.",
-      time: "20 minutes ago",
-      priority: "Low",
-      unread: true,
-      route: "/(admin)/Admin_Logs",
-    },
-    {
-      id: "N-004",
-      type: "system",
-      title: "System Activity Logged",
-      message: "AI processing logs were updated successfully.",
-      time: "35 minutes ago",
-      priority: "Low",
-      unread: false,
-      route: "/(admin)/Admin_Logs",
-    },
-  ];
+  const [notifications, setNotifications] = useState([]);
+
+  const loadNotifications = useCallback(async () => {
+    try {
+      const token = await AsyncStorage.getItem("access_token");
+      if (!token) return;
+
+      const applyNotifications = (list) =>
+        setNotifications(
+          list.map((item) => ({
+            ...item,
+            time: formatRelativeTime(item.time),
+          }))
+        );
+
+      const cached = getCache("api:/admin/notifications");
+      if (cached && Array.isArray(cached.notifications)) {
+        applyNotifications(cached.notifications);
+      }
+
+      const res = await apiClient.get("/admin/notifications", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      setCache("api:/admin/notifications", res.data ?? {});
+      applyNotifications(res.data?.notifications || []);
+    } catch {
+      // keep last loaded data on failure
+    }
+  }, []);
+
+  useAutoRefresh(loadNotifications, 30000);
 
   const unreadCount = notifications.filter((item) => item.unread).length;
 
@@ -223,9 +235,29 @@ export default function Admin_Layout({ children }) {
     router.push(route);
   };
 
-  const handleNotificationPress = (item) => {
+  const handleNotificationPress = async (item) => {
     setShowNotifications(false);
     setShowProfileDropdown(false);
+
+    if (item.unread) {
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === item.id ? { ...n, unread: false } : n))
+      );
+
+      try {
+        const token = await AsyncStorage.getItem("access_token");
+        if (token) {
+          await apiClient.patch(
+            `/admin/notifications/${item.id}/read`,
+            {},
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+        }
+      } catch {
+        // keep local read state even if the call fails
+      }
+    }
+
     router.push(item.route);
   };
 
