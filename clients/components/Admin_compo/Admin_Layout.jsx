@@ -9,6 +9,7 @@ import {
 import { Ionicons, Feather } from "@expo/vector-icons";
 import { useRouter, usePathname } from "expo-router";
 import { useFonts } from "expo-font";
+import { clearAuth } from "../../services/auth";
 
 const ARGUS_BLUE = "#294880";
 
@@ -234,9 +235,10 @@ export default function Admin_Layout({ children }) {
     router.push("/(admin)/Admin_Settings");
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     setShowNotifications(false);
     setShowProfileDropdown(false);
+    await clearAuth();
     router.replace("/(auth)/Admin_Login");
   };
 

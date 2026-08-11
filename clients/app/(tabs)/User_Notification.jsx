@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   View,
   StyleSheet,
@@ -12,6 +12,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import ThemedView from "../../components/ThemedView";
 import ThemedText from "../../components/ThemedText";
 import apiClient from "../../services/apiClient";
+import useAutoRefresh from "../../hooks/useAutoRefresh";
+import { getCache, setCache } from "../../services/dataStore";
 
 const ARGUS_BLUE = "#294880";
 
@@ -58,6 +60,21 @@ const formatLoginTime = (iso) => {
     hour12: true,
   })}`;
 };
+
+const mapNotifications = (notifData, activities) => ({
+  userReports: (notifData?.reportStatuses || []).map((item) => ({
+    ...item,
+    time: formatRelativeTime(item.time),
+  })),
+  nearbyIncidents: (notifData?.nearbyIncidents || []).map((item) => ({
+    ...item,
+    time: formatRelativeTime(item.time),
+  })),
+  loginActivity: (activities || []).map((item) => ({
+    ...item,
+    time: formatLoginTime(item.time),
+  })),
+});
 
 const ReportStatusCard = ({ item }) => {
   return (
@@ -252,47 +269,42 @@ const User_Notification = () => {
   const [nearbyIncidents, setNearbyIncidents] = useState([]);
   const [loginActivity, setLoginActivity] = useState([]);
 
-  useEffect(() => {
-    const loadNotifications = async () => {
-      try {
-        const token = await AsyncStorage.getItem("access_token");
-        if (!token) return;
+  const loadNotifications = useCallback(async () => {
+    try {
+      const token = await AsyncStorage.getItem("access_token");
+      if (!token) return;
 
-        const [notifRes, loginRes] = await Promise.all([
-          apiClient.get("/notifications", {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          apiClient.get("/notifications/login-activity", {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-        ]);
-
-        const data = notifRes.data ?? {};
-        setUserReports(
-          (data.reportStatuses || []).map((item) => ({
-            ...item,
-            time: formatRelativeTime(item.time),
-          }))
-        );
-        setNearbyIncidents(
-          (data.nearbyIncidents || []).map((item) => ({
-            ...item,
-            time: formatRelativeTime(item.time),
-          }))
-        );
-        setLoginActivity(
-          (loginRes.data?.activities || []).map((item) => ({
-            ...item,
-            time: formatLoginTime(item.time),
-          }))
-        );
-      } catch {
-        // leave lists empty on failure
+      const cachedNotif = getCache("api:/notifications");
+      const cachedLogin = getCache("api:/notifications/login-activity");
+      if (cachedNotif !== undefined || cachedLogin !== undefined) {
+        const mapped = mapNotifications(cachedNotif, cachedLogin);
+        setUserReports(mapped.userReports);
+        setNearbyIncidents(mapped.nearbyIncidents);
+        setLoginActivity(mapped.loginActivity);
       }
-    };
 
-    loadNotifications();
+      const [notifRes, loginRes] = await Promise.all([
+        apiClient.get("/notifications", {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        apiClient.get("/notifications/login-activity", {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ]);
+
+      setCache("api:/notifications", notifRes.data ?? {});
+      setCache("api:/notifications/login-activity", loginRes.data ?? {});
+
+      const mapped = mapNotifications(notifRes.data, loginRes.data);
+      setUserReports(mapped.userReports);
+      setNearbyIncidents(mapped.nearbyIncidents);
+      setLoginActivity(mapped.loginActivity);
+    } catch {
+      // leave lists empty on failure
+    }
   }, []);
+
+  useAutoRefresh(loadNotifications, 30000);
 
   if (!fontsLoaded) {
     return null;

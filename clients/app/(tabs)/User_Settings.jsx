@@ -14,6 +14,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import ThemedView from "../../components/ThemedView";
 import ThemedText from "../../components/ThemedText";
 import apiClient from "../../services/apiClient";
+import { clearAuth } from "../../services/auth";
+import { getCache, setCache } from "../../services/dataStore";
 
 const ARGUS_BLUE = "#294880";
 
@@ -32,20 +34,28 @@ const UserSettings = () => {
   const [displayEmail, setDisplayEmail] = useState("");
 
   useEffect(() => {
+    const applyProfile = (profile) => {
+      setDisplayName(
+        profile.user_name || profile.name || profile.email || "SafeZone User"
+      );
+      setDisplayEmail(profile.email || "youraccount@email.com");
+    };
+
     const loadProfile = async () => {
       try {
         const token = await AsyncStorage.getItem("access_token");
         if (!token) return;
+
+        const cached = getCache("api:/profile");
+        if (cached !== undefined) applyProfile(cached);
 
         const res = await apiClient.get("/profile", {
           headers: { Authorization: `Bearer ${token}` },
         });
 
         const profile = res.data ?? {};
-        setDisplayName(
-          profile.user_name || profile.name || profile.email || "SafeZone User"
-        );
-        setDisplayEmail(profile.email || "youraccount@email.com");
+        setCache("api:/profile", profile);
+        applyProfile(profile);
       } catch {
         setDisplayName("SafeZone User");
         setDisplayEmail("youraccount@email.com");
@@ -59,8 +69,9 @@ const UserSettings = () => {
     return null;
   }
 
-  const handleLogout = () => {
-    router.push("../(auth)/User_Login");
+  const handleLogout = async () => {
+    await clearAuth();
+    router.replace("/(auth)/User_Login");
   };
 
   const SettingItem = ({

@@ -14,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFonts } from "expo-font";
 
 import SAdmin_Layout from "../../components/SAdmin_Compo/SAdmin_Layout";
+import { saveAdminInfo } from "../../services/auth";
 
 function StatusBadge({ label, tone = "primary" }) {
   const toneMap = {
@@ -171,13 +172,13 @@ export default function SAdmin_Settings() {
       return;
     }
 
-    globalThis.adminAccount = {
+    saveAdminInfo({
       ...(globalThis.adminAccount || {}),
       fullName: fullName.trim(),
       email: emailAddress.trim().toLowerCase(),
       phone: phoneNumber.trim(),
       role: "SuperAdmin",
-    };
+    });
 
     showMessage(
       "Profile Updated",
@@ -204,10 +205,10 @@ export default function SAdmin_Settings() {
       return;
     }
 
-    globalThis.adminAccount = {
+    saveAdminInfo({
       ...(globalThis.adminAccount || {}),
       password: newPassword,
-    };
+    });
 
     setCurrentPassword("");
     setNewPassword("");

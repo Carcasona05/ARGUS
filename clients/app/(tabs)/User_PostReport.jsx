@@ -20,6 +20,7 @@ import ThemedView from "../../components/ThemedView";
 import ThemedText from "../../components/ThemedText";
 import apiClient from "../../services/apiClient";
 import { uploadImages } from "../../services/imageUpload";
+import { getCache, setCache } from "../../services/dataStore";
 
 const ARGUS_BLUE = "#294880";
 
@@ -114,11 +115,21 @@ export default function User_PostReport() {
         const token = await AsyncStorage.getItem("access_token");
         if (!token) return;
 
+        const cached = getCache("api:/profile");
+        if (cached !== undefined) {
+          const cachedFull =
+            cached.name ||
+            `${cached.first_name || ""} ${cached.last_name || ""}`.trim();
+          if (cachedFull) setFullName(cachedFull);
+          if (cached.user_name) setUsername(cached.user_name);
+        }
+
         const res = await apiClient.get("/profile", {
           headers: { Authorization: `Bearer ${token}` },
         });
 
         const profile = res.data ?? {};
+        setCache("api:/profile", profile);
         const full =
           profile.name ||
           `${profile.first_name || ""} ${profile.last_name || ""}`.trim();
@@ -137,11 +148,17 @@ export default function User_PostReport() {
         const token = await AsyncStorage.getItem("access_token");
         if (!token) return;
 
+        const cached = getCache("api:/incidents/options");
+        if (cached !== undefined) {
+          setCategoryOptions(cached?.categories || []);
+        }
+
         const res = await apiClient.get("/incidents/options", {
           headers: { Authorization: `Bearer ${token}` },
         });
 
         const options = res.data?.categories || [];
+        setCache("api:/incidents/options", res.data ?? {});
         setCategoryOptions(options);
       } catch {
         // keep defaults
@@ -185,7 +202,7 @@ export default function User_PostReport() {
       setLatitude(fetchedLatitude);
       setLongitude(fetchedLongitude);
       setLocation(`${fetchedLatitude}, ${fetchedLongitude}`);
-    } catch (error) {
+    } catch {
       setLocation("Unable to fetch current location");
       setLatitude("");
       setLongitude("");
@@ -254,7 +271,7 @@ export default function User_PostReport() {
 
       const photoUrls = await uploadImages(photos);
 
-      const res = await apiClient.post(
+      await apiClient.post(
         "/reports",
         {
           poster_name: selectedDisplayName,

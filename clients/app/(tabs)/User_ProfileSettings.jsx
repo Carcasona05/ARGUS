@@ -22,6 +22,7 @@ import ThemedText from "../../components/ThemedText";
 import Divboxwhite from "../../components/Divboxwhite";
 import ThemedHeader from "../../components/ThemedHeader";
 import apiClient from "../../services/apiClient";
+import { getCache, setCache } from "../../services/dataStore";
 
 const ARGUS_BLUE = "#294880";
 
@@ -61,6 +62,30 @@ const formatBirthdate = (date) => {
     day: "2-digit",
     year: "numeric",
   });
+};
+
+const parseBirthdate = (value) => {
+  if (!value) return new Date(2000, 0, 1);
+  if (value instanceof Date) return value;
+
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(value));
+  if (match) {
+    return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  }
+
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? new Date(2000, 0, 1) : date;
+};
+
+const toDateString = (date) => {
+  if (!date) return "";
+  const d = date instanceof Date ? date : new Date(date);
+  if (Number.isNaN(d.getTime())) return "";
+
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 };
 
 const CredibilityScore = ({ statusIndex = 3, score = 60 }) => {
@@ -198,57 +223,66 @@ const UserProfileSettings = () => {
     confirmPassword: "",
   });
 
+  const applyProfile = useCallback((profile) => {
+    let credibilityStatus = 3;
+    const rawStatus = Number(profile.credibility_status);
+    if (Number.isFinite(rawStatus) && rawStatus >= 0 && rawStatus <= 4) {
+      credibilityStatus = rawStatus;
+    } else {
+      console.warn(
+        "[profile] credibility_status missing/invalid - restart the server so /profile returns it:",
+        profile.credibility_status
+      );
+    }
+
+    let credibilityScore = 60;
+    const rawScore = Number(profile.credibility_score);
+    if (Number.isFinite(rawScore)) {
+      credibilityScore = Math.min(100, Math.max(0, rawScore));
+    }
+
+    const loaded = {
+      firstName: profile.first_name ?? "",
+      middleName: profile.middle_name ?? "",
+      lastName: profile.last_name ?? "",
+      username: profile.user_name ?? profile.name ?? "",
+      birthdate: parseBirthdate(profile.birthdate),
+      contactNumber: profile.phone ?? "",
+      location: profile.location ?? "",
+      email: profile.email ?? "",
+      credibilityStatus,
+      credibilityScore,
+    };
+
+    setUserDetails((prev) => ({
+      ...prev,
+      ...loaded,
+    }));
+    setTempDetails((prev) => ({
+      ...prev,
+      ...loaded,
+    }));
+  }, []);
+
   const loadProfile = useCallback(async () => {
     try {
       const token = await AsyncStorage.getItem("access_token");
       if (!token) return;
+
+      const cached = getCache("api:/profile");
+      if (cached !== undefined) applyProfile(cached);
 
       const res = await apiClient.get("/profile", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       const profile = res.data ?? {};
-
-      let credibilityStatus = 3;
-      const rawStatus = Number(profile.credibility_status);
-      if (Number.isFinite(rawStatus) && rawStatus >= 0 && rawStatus <= 4) {
-        credibilityStatus = rawStatus;
-      } else {
-        console.warn(
-          "[profile] credibility_status missing/invalid - restart the server so /profile returns it:",
-          profile.credibility_status
-        );
-      }
-
-      let credibilityScore = 60;
-      const rawScore = Number(profile.credibility_score);
-      if (Number.isFinite(rawScore)) {
-        credibilityScore = Math.min(100, Math.max(0, rawScore));
-      }
-
-      const loaded = {
-        firstName: profile.first_name ?? "",
-        middleName: profile.middle_name ?? "",
-        lastName: profile.last_name ?? "",
-        username: profile.user_name ?? profile.name ?? "",
-        contactNumber: profile.phone ?? "",
-        email: profile.email ?? "",
-        credibilityStatus,
-        credibilityScore,
-      };
-
-      setUserDetails((prev) => ({
-        ...prev,
-        ...loaded,
-      }));
-      setTempDetails((prev) => ({
-        ...prev,
-        ...loaded,
-      }));
+      setCache("api:/profile", profile);
+      applyProfile(profile);
     } catch {
       // profile fetch failed; keep empty defaults
     }
-  }, []);
+  }, [applyProfile]);
 
   useFocusEffect(
     useCallback(() => {
@@ -281,6 +315,8 @@ const UserProfileSettings = () => {
           last_name: tempDetails.lastName,
           user_name: tempDetails.username,
           phone: tempDetails.contactNumber,
+          birthdate: toDateString(tempDetails.birthdate) || null,
+          location: tempDetails.location,
         },
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -301,7 +337,11 @@ const UserProfileSettings = () => {
         middleName: profile.middle_name ?? tempDetails.middleName,
         lastName: profile.last_name ?? tempDetails.lastName,
         username: profile.user_name ?? tempDetails.username,
+        birthdate: profile.birthdate
+          ? parseBirthdate(profile.birthdate)
+          : tempDetails.birthdate,
         contactNumber: profile.phone ?? tempDetails.contactNumber,
+        location: profile.location ?? tempDetails.location,
         email: profile.email ?? tempDetails.email,
       };
       setUserDetails(synced);

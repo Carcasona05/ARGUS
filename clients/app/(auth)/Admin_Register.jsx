@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import { MaterialIcons, FontAwesome, Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import { saveAdminInfo } from "../../services/auth";
 
 const { width, height } = Dimensions.get("window");
 
@@ -34,7 +35,7 @@ export default function Admin_Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
     if (Platform.OS !== "web") {
       Alert.alert("Restricted", "Admin register is available on web only.");
       return;
@@ -65,11 +66,11 @@ export default function Admin_Register() {
       return;
     }
 
-    globalThis.adminAccount = {
+    await saveAdminInfo({
       fullName: cleanName,
       email: cleanEmail,
       password,
-    };
+    });
 
     Alert.alert(
       "Success",

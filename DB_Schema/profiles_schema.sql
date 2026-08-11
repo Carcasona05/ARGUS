@@ -7,6 +7,8 @@ create table if not exists public.profiles (
   user_name text,
   role text not null default 'user' check (role in ('user', 'admin', 'super_admin')),
   phone text,
+  birthdate date,
+  location text,
   department text,
   status text not null default 'Active' check (status in ('Active', 'Disabled')),
   created_at timestamptz not null default now(),

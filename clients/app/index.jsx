@@ -3,15 +3,37 @@ import { View, StyleSheet, ActivityIndicator } from "react-native";
 import { router } from "expo-router";
 import ThemedView from "../components/ThemedView";
 import ThemedText from "../components/ThemedText";
+import { getAuth } from "../services/auth";
+import { prefetchAllData } from "../services/dataStore";
 
 const LoadingScreen = () => {
   useEffect(() => {
-    // Navigate to login screen after 2 seconds
-    const timer = setTimeout(() => {
-      router.replace("/(auth)/User_Login");
+    let active = true;
+
+    const timer = setTimeout(async () => {
+      const { token, role } = await getAuth();
+      if (!active) return;
+
+      if (!token) {
+        router.replace("/(auth)/User_Login");
+        return;
+      }
+
+      prefetchAllData();
+
+      if (role === "super_admin") {
+        router.replace("/(sadmin)/SAdmin_Dashboard");
+      } else if (role === "admin") {
+        router.replace("/(admin)/Admin_Dashboard");
+      } else {
+        router.replace("/(tabs)/User_Home");
+      }
     }, 2000);
 
-    return () => clearTimeout(timer);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
   }, []);
 
   return (

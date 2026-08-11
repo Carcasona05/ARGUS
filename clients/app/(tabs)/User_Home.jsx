@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   View,
   StyleSheet,
@@ -14,6 +14,8 @@ import MapView from "../../components/MapView";
 import ReportPost_Layout from "../../components/ReportPost_Layout";
 import ReportByAdmin from "../../components/ReportByAdmin";
 import apiClient from "../../services/apiClient";
+import useAutoRefresh from "../../hooks/useAutoRefresh";
+import { getCache, setCache } from "../../services/dataStore";
 
 const PRIMARY = "#294880";
 
@@ -52,14 +54,39 @@ const isWithinPastWeek = (dateValue) => {
   return date >= limit;
 };
 
-const formatDatePosted = (dateValue) => {
-  const date = new Date(dateValue);
+const mapFeed = (reportsData, adminData) => {
+  const userPosts = (reportsData?.reports || []).map((r) => ({
+    id: r.id,
+    postSource: "User",
+    userName: r.poster_name || "Anonymous User",
+    userAvatar: null,
+    location: r.location,
+    incidentCategory: r.incident_category,
+    incidentType: r.incident_type,
+    details: r.details,
+    status: r.status || "Pending Review",
+    verified: r.is_verified,
+    datePosted: r.created_at,
+    likes: r.likes ?? 0,
+    comments: r.comments ?? 0,
+    isLiked: r.is_liked ?? false,
+    images: Array.isArray(r.images) ? r.images : [],
+    commentList: [],
+  }));
 
-  return date.toLocaleDateString("en-PH", {
-    month: "short",
-    day: "2-digit",
-    year: "numeric",
-  });
+  const adminPosts = (adminData?.posts || []).map((p) => ({
+    id: p.id,
+    postSource: "Admin",
+    adminName: p.adminName || "ARGUS Admin",
+    type: p.type,
+    location: p.location,
+    details: p.details,
+    datePosted: p.datePosted,
+    status: "Admin Report",
+    pic: p.pic,
+  }));
+
+  return [...adminPosts, ...userPosts];
 };
 
 const MapPreview = ({ style }) => {
@@ -187,64 +214,39 @@ const User_Home = () => {
   const [selectedSource, setSelectedSource] = useState("All");
   const [openDropdown, setOpenDropdown] = useState(null);
   const [reports, setReports] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
 
-  useEffect(() => {
-    const loadReports = async () => {
-      try {
-        const token = await AsyncStorage.getItem("access_token");
-        if (!token) return;
+  const loadReports = useCallback(async () => {
+    try {
+      const token = await AsyncStorage.getItem("access_token");
+      if (!token) return;
 
-        const [reportsRes, adminRes] = await Promise.all([
-          apiClient.get("/reports", {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          apiClient.get("/admin/posts", {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-        ]);
-
-        const userPosts = (reportsRes.data?.reports || []).map((r) => ({
-          id: r.id,
-          postSource: "User",
-          userName: r.poster_name || "Anonymous User",
-          userAvatar: null,
-          location: r.location,
-          incidentCategory: r.incident_category,
-          incidentType: r.incident_type,
-          details: r.details,
-          status: r.status || "Pending Review",
-          verified: r.is_verified,
-          datePosted: r.created_at,
-          likes: r.likes ?? 0,
-          comments: r.comments ?? 0,
-          isLiked: r.is_liked ?? false,
-          images: Array.isArray(r.images) ? r.images : [],
-          commentList: [],
-        }));
-
-        const adminPosts = (adminRes.data?.posts || []).map((p) => ({
-          id: p.id,
-          postSource: "Admin",
-          adminName: p.adminName || "ARGUS Admin",
-          type: p.type,
-          location: p.location,
-          details: p.details,
-          datePosted: p.datePosted,
-          status: "Admin Report",
-          pic: p.pic,
-        }));
-
-        setReports([...adminPosts, ...userPosts]);
-      } catch {
-        // keep empty feed on failure
-      } finally {
-        setLoading(false);
+      const cachedReports = getCache("api:/reports");
+      const cachedAdmin = getCache("api:/admin/posts");
+      if (cachedReports !== undefined || cachedAdmin !== undefined) {
+        setReports(mapFeed(cachedReports, cachedAdmin));
       }
-    };
 
-    loadReports();
+      const [reportsRes, adminRes] = await Promise.all([
+        apiClient.get("/reports", {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        apiClient.get("/admin/posts", {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ]);
+
+      setCache("api:/reports", reportsRes.data ?? {});
+      setCache("api:/admin/posts", adminRes.data ?? {});
+      setReports(mapFeed(reportsRes.data, adminRes.data));
+    } catch {
+      // keep empty feed on failure
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useAutoRefresh(loadReports, 30000);
 
   const filteredReports = useMemo(() => {
     return reports.filter((report) => {

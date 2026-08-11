@@ -16,8 +16,9 @@ import {
 } from "react-native";
 import { MaterialIcons, FontAwesome, Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../../services/apiClient";
+import { saveAuth } from "../../services/auth";
+import { prefetchAllData } from "../../services/dataStore";
 
 if (!globalThis.demoAccount) {
   globalThis.demoAccount = {
@@ -91,10 +92,12 @@ export default function UserLogin() {
       }
 
       try {
-        await AsyncStorage.setItem("access_token", token);
+        await saveAuth({ token, role: "user" });
       } catch (storageError) {
         console.warn("Failed to store access token:", storageError);
       }
+
+      prefetchAllData();
 
       Alert.alert("Success", "Login successful!");
       router.replace("/(tabs)/User_Home");

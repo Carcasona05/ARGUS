@@ -11,16 +11,16 @@
 - Credibility Score is done but only for the user's features (not included AI yet.)
 
 # USERS NEEDED LOGICS
-- Account Settings Credibility score
 - Map NEEDS Heatmaps
 - Notification turn on turn off
 - Crime Alert Settings on and off
 
 # MINOR USERS NEEDED LOGIC
-- Session Key needed to be integrated for logging out and logging in.
-- need the server to be update in real time so that data feels smooth no need for refresh or relog
+- Session Key needed to be integrated for logging out and logging in. [DONE]
+- need the server to be update in real time so that data feels smooth no need for refresh or relog [DONE]
 - 
 
 # RECOMMENDATIONS AND REVISION
 - Is it possible instead of IP address the name of the place will be shown
-- Credibility Score: A user will be credible after he/she fill her/his personal details. ( put a message or something.)
+- Credibility Score: A user will be credible after he/she fill her/his personal details. ( put a message or something.) 
+- In the Profile Details, Current location or we just swap it to Permanent Location. 

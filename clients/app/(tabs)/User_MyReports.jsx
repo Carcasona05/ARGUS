@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   View,
   StyleSheet,
@@ -21,6 +21,8 @@ import ThemedText from "../../components/ThemedText";
 import MyUser_RepPost_Layout from "../../components/User_compo/MyUser_RepPost_Layout";
 import apiClient from "../../services/apiClient";
 import { uploadImage } from "../../services/imageUpload";
+import useAutoRefresh from "../../hooks/useAutoRefresh";
+import { getCache, setCache } from "../../services/dataStore";
 
 const PRIMARY = "#294880";
 
@@ -38,6 +40,24 @@ const statusOptions = [
   "Rejected",
   "Archived",
 ];
+
+const mapMyReports = (data) =>
+  (data?.reports || []).map((r) => ({
+    id: r.id,
+    userName: "You",
+    userAvatar: null,
+    location: r.location,
+    incidentCategory: r.incident_category,
+    incidentType: r.incident_type,
+    details: r.details,
+    status: r.status || "Pending Review",
+    verified: r.is_verified,
+    likes: r.likes ?? 0,
+    comments: r.comments ?? 0,
+    isLiked: r.is_liked ?? false,
+    images: Array.isArray(r.images) ? r.images : [],
+    commentList: [],
+  }));
 
 const DropdownFilter = ({
   label,
@@ -447,41 +467,26 @@ const User_MyReports = () => {
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [selectedReport, setSelectedReport] = useState(null);
 
-  useEffect(() => {
-    const loadMyReports = async () => {
-      try {
-        const token = await AsyncStorage.getItem("access_token");
-        if (!token) return;
+  const loadMyReports = useCallback(async () => {
+    try {
+      const token = await AsyncStorage.getItem("access_token");
+      if (!token) return;
 
-        const res = await apiClient.get("/reports/mine", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+      const cached = getCache("api:/reports/mine");
+      if (cached !== undefined) setMyReports(mapMyReports(cached));
 
-        const fetched = (res.data?.reports || []).map((r) => ({
-          id: r.id,
-          userName: "You",
-          userAvatar: null,
-          location: r.location,
-          incidentCategory: r.incident_category,
-          incidentType: r.incident_type,
-          details: r.details,
-          status: r.status || "Pending Review",
-          verified: r.is_verified,
-          likes: r.likes ?? 0,
-          comments: r.comments ?? 0,
-          isLiked: r.is_liked ?? false,
-          images: Array.isArray(r.images) ? r.images : [],
-          commentList: [],
-        }));
+      const res = await apiClient.get("/reports/mine", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-        setMyReports(fetched);
-      } catch {
-        // keep empty list on failure
-      }
-    };
-
-    loadMyReports();
+      setCache("api:/reports/mine", res.data ?? {});
+      setMyReports(mapMyReports(res.data));
+    } catch {
+      // keep empty list on failure
+    }
   }, []);
+
+  useAutoRefresh(loadMyReports, 30000);
 
   const filteredReports = useMemo(() => {
     if (selectedStatus === "All Status") {

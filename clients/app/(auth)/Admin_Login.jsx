@@ -15,8 +15,9 @@ import {
 } from "react-native";
 import { MaterialIcons, FontAwesome, Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../../services/apiClient";
+import { saveAuth, saveAdminInfo } from "../../services/auth";
+import { prefetchAllData } from "../../services/dataStore";
 
 const { width, height } = Dimensions.get("window");
 
@@ -107,13 +108,15 @@ export default function Admin_Login() {
         throw new Error("No access token received");
       }
 
-      await AsyncStorage.setItem("access_token", token);
+      await saveAuth({ token, role: user?.role || "admin" });
 
-      globalThis.adminAccount = {
+      await saveAdminInfo({
         fullName: user?.name || user?.email || "Admin",
         email: user?.email || cleanEmail,
         role: user?.role || "Admin",
-      };
+      });
+
+      prefetchAllData();
 
       if (user?.role === "super_admin") {
         router.replace("/(sadmin)/SAdmin_Dashboard");

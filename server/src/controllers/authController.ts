@@ -28,7 +28,7 @@ export const register = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Username, email, and password are required" });
     }
 
-    const { data, error } = await supabaseAdmin.auth.admin.createUser({
+    const { error } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
@@ -49,7 +49,7 @@ export const register = async (req: Request, res: Response) => {
       access_token: authData.session?.access_token ?? null,
       user: authData.user,
     });
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -85,7 +85,7 @@ export const login = async (req: Request, res: Response) => {
       access_token: data.session?.access_token ?? null,
       user: data.user,
     });
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -127,7 +127,7 @@ export const adminLogin = async (req: Request, res: Response) => {
       access_token: token,
       user: { ...data.user, name: profile.fullname, role: profile.role },
     });
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -154,7 +154,7 @@ export const adminRegister = async (
     if (result.error) return res.status(400).json({ error: result.error.message });
 
     res.json({ message: "Admin created successfully" });
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -192,6 +192,8 @@ export const getProfile = async (
     middle_name: data?.middle_name ?? meta.middleName ?? "",
     last_name: data?.last_name ?? meta.lastName ?? "",
     phone: data?.phone ?? meta.phone ?? "",
+    birthdate: data?.birthdate ?? null,
+    location: data?.location ?? "",
     role: data?.role ?? "user",
     email: user.email,
     credibility_score: credibilityScore,
@@ -231,7 +233,7 @@ export const changePassword = async (
     }
 
     res.json({ message: "Password updated successfully" });
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -245,7 +247,8 @@ export const updateProfile = async (
 
   await profileService.ensureProfile(user.id);
 
-  const { first_name, middle_name, last_name, user_name, phone } = req.body ?? {};
+  const { first_name, middle_name, last_name, user_name, phone, birthdate, location } =
+    req.body ?? {};
 
   const updates: Record<string, unknown> = {};
   if (first_name !== undefined) updates.first_name = first_name;
@@ -253,6 +256,8 @@ export const updateProfile = async (
   if (last_name !== undefined) updates.last_name = last_name;
   if (user_name !== undefined) updates.user_name = user_name;
   if (phone !== undefined) updates.phone = phone;
+  if (birthdate !== undefined) updates.birthdate = birthdate;
+  if (location !== undefined) updates.location = location;
 
   const { data, error } = await profileService.updateProfileFields(
     user.id,

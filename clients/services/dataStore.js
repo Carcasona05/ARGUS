@@ -1,0 +1,57 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import apiClient from "./apiClient";
+
+const cache = new Map();
+
+export const setCache = (key, value) => {
+  cache.set(key, value);
+};
+
+export const getCache = (key) => (cache.has(key) ? cache.get(key) : undefined);
+
+export const clearDataCache = () => {
+  cache.clear();
+};
+
+export const authHeaders = async () => {
+  const token = await AsyncStorage.getItem("access_token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+export const DEFAULT_FACILITY_ANCHOR = { lat: 9.8816, lng: 123.5953 };
+
+const ENDPOINTS = [
+  ["api:/reports", "/reports"],
+  ["api:/admin/posts", "/admin/posts"],
+  ["api:/reports/mine", "/reports/mine"],
+  ["api:/notifications", "/notifications"],
+  ["api:/notifications/login-activity", "/notifications/login-activity"],
+  ["api:/profile", "/profile"],
+  ["api:/incidents/options", "/incidents/options"],
+];
+
+export const prefetchAllData = async () => {
+  const token = await AsyncStorage.getItem("access_token");
+  if (!token) return;
+  const headers = { Authorization: `Bearer ${token}` };
+
+  await Promise.allSettled(
+    ENDPOINTS.map(async ([key, url]) => {
+      const res = await apiClient.get(url, { headers });
+      setCache(key, res.data ?? {});
+    })
+  );
+
+  try {
+    const res = await apiClient.get("/facilities/nearby", {
+      params: {
+        lat: DEFAULT_FACILITY_ANCHOR.lat,
+        lng: DEFAULT_FACILITY_ANCHOR.lng,
+        radius: 8000,
+      },
+      headers,
+      timeout: 20000,
+    });
+    setCache("api:/facilities/nearby", res.data ?? {});
+  } catch {}
+};

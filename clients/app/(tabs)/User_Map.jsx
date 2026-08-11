@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useRef, useEffect } from "react";
+import React, { useCallback, useMemo, useState, useRef, useEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -18,6 +18,8 @@ import ThemedView from "../../components/ThemedView";
 import ThemedText from "../../components/ThemedText";
 import MapView from "../../components/MapView";
 import apiClient from "../../services/apiClient";
+import useAutoRefresh from "../../hooks/useAutoRefresh";
+import { getCache, setCache } from "../../services/dataStore";
 
 const ARGUS_BLUE = "#294880";
 
@@ -89,49 +91,57 @@ const UserMap = () => {
     };
   }, []);
 
-  useEffect(() => {
-    let cancelled = false;
+  const hasLoadedFacilitiesRef = useRef(false);
 
-    const loadFacilities = async () => {
-      setFacilitiesLoading(true);
-      try {
-        const token = await AsyncStorage.getItem("access_token");
-        if (!token) return;
+  const loadFacilities = useCallback(async () => {
+    try {
+      if (!hasLoadedFacilitiesRef.current) setFacilitiesLoading(true);
 
-        const anchor = userPosition
-          ? clampToCebu(userPosition[0], userPosition[1])
-          : [DEFAULT_ARGAO.lat, DEFAULT_ARGAO.lng];
+      const token = await AsyncStorage.getItem("access_token");
+      if (!token) return;
 
-        const res = await apiClient.get("/facilities/nearby", {
-          params: { lat: anchor[0], lng: anchor[1], radius: 8000 },
-          headers: { Authorization: `Bearer ${token}` },
-          timeout: 20000,
-        });
-
-        if (cancelled) return;
-
-        const list = res.data?.facilities ?? [];
-        setFacilities(list);
-
+      const cached = getCache("api:/facilities/nearby");
+      if (cached !== undefined) {
+        const cachedList = cached?.facilities ?? [];
+        setFacilities(cachedList);
         setSelectedFacility((prev) => {
-          if (prev && list.some((f) => f.id === prev.id)) return prev;
-          return list[0] ?? null;
+          if (prev && cachedList.some((f) => f.id === prev.id)) return prev;
+          return cachedList[0] ?? null;
         });
-      } catch (err) {
-        if (!cancelled) {
-          console.warn("Failed to load facilities:", err.message);
-        }
-      } finally {
-        if (!cancelled) setFacilitiesLoading(false);
       }
-    };
 
-    loadFacilities();
+      const anchor = userPosition
+        ? clampToCebu(userPosition[0], userPosition[1])
+        : [DEFAULT_ARGAO.lat, DEFAULT_ARGAO.lng];
 
-    return () => {
-      cancelled = true;
-    };
+      const res = await apiClient.get("/facilities/nearby", {
+        params: { lat: anchor[0], lng: anchor[1], radius: 8000 },
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 20000,
+      });
+
+      setCache("api:/facilities/nearby", res.data ?? {});
+
+      const list = res.data?.facilities ?? [];
+      setFacilities(list);
+
+      setSelectedFacility((prev) => {
+        if (prev && list.some((f) => f.id === prev.id)) return prev;
+        return list[0] ?? null;
+      });
+    } catch (err) {
+      console.warn("Failed to load facilities:", err.message);
+    } finally {
+      hasLoadedFacilitiesRef.current = true;
+      setFacilitiesLoading(false);
+    }
   }, [userPosition]);
+
+  useAutoRefresh(loadFacilities, 30000);
+
+  useEffect(() => {
+    if (userPosition) loadFacilities();
+  }, [userPosition, loadFacilities]);
 
   const filteredFacilities = useMemo(() => {
     const normalizedSearch = searchText.trim().toLowerCase();

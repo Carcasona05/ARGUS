@@ -15,6 +15,8 @@ authenticated user has exactly one row here, keyed by the same `uuid`.
 | `user_name`   | `text`      | NULL                       | Username (from the register form)          |
 | `role`        | `text`      | NOT NULL, DEFAULT `'user'` | `'user'` / `'admin'` / `'super_admin'`     |
 | `phone`       | `text`      | NULL                       | Optional contact number                    |
+| `birthdate`   | `date`      | NULL                       | User's date of birth                       |
+| `location`    | `text`      | NULL                       | User's address / current location          |
 | `department`  | `text`      | NULL                       | Optional department for admins             |
 | `status`      | `text`      | NOT NULL, DEFAULT `'Active'` | `'Active'` / `'Disabled'`                |
 | `created_at`  | `timestamptz`| NOT NULL, DEFAULT now()    | Set on creation                            |
@@ -40,7 +42,7 @@ The relation satisfies 3NF (and BCNF) without any extra splitting:
 
 - **Single key:** `id` is the only key.
 - **1NF:** all columns are atomic (phone is a single number, not a list, etc.).
-- **2NF:** every non-key column (`first_name`, `middle_name`, `last_name`, `user_name`, `phone`, `department`, `status`, timestamps) depends on the *entire* key `id`, not just part of it (there is only one column in the key).
+- **2NF:** every non-key column (`first_name`, `middle_name`, `last_name`, `user_name`, `phone`, `birthdate`, `location`, `department`, `status`, timestamps) depends on the *entire* key `id`, not just part of it (there is only one column in the key).
 - **3NF:** no non-key column depends on another non-key column. For example, `department` does not determine `role`, and `role` does not determine `department`. `status` is independent of `role`. `fullname` is auto-derived from the name parts by a trigger rather than stored redundantly by hand.
 
 Splitting `role` / `department` / `status` into lookup tables would only be for maintenance convenience, not a normalization requirement. Keeping the enums inline here is simpler and stays 3NF-compliant.

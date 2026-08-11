@@ -63,6 +63,7 @@ const MAP_HTML = `
     var facilityLayer = L.layerGroup().addTo(map);
     var follow = true;
     var lastSent = null;
+    var inited = false;
 
     function setInteractive(flag) {
       [
@@ -106,7 +107,10 @@ const MAP_HTML = `
         var clat = clampLat(c.lat);
         var clng = clampLng(c.lng);
         userMarker.setLatLng([clat, clng]);
-        map.setView([clat, clng], 15);
+        if (!inited) {
+          map.setView([clat, clng], 15);
+          inited = true;
+        }
         positionToHost(clat, clng);
       }
     };
@@ -122,12 +126,19 @@ const MAP_HTML = `
       }
     };
 
+    window.__argusSetUser = function (lat, lng) {
+      var clat = clampLat(lat);
+      var clng = clampLng(lng);
+      userMarker.setLatLng([clat, clng]);
+    };
+
     window.addEventListener("message", function (e) {
       try {
         var d = JSON.parse(e.data);
         if (d.type === "init") window.__argusInit(d);
         else if (d.type === "recenter") window.__argusRecenter(d.lat, d.lng);
         else if (d.type === "setFollow") follow = !!d.follow;
+        else if (d.type === "user") window.__argusSetUser(d.lat, d.lng);
       } catch (err) {}
     });
 
@@ -141,7 +152,7 @@ const MAP_HTML = `
         var lng = clampLng(p.coords.longitude);
         userMarker.setLatLng([lat, lng]);
         if (follow) map.setView([lat, lng], 15);
-        positionToHost(lat, lng);
+        if (follow) positionToHost(lat, lng);
       }
       navigator.geolocation.getCurrentPosition(report, function () {}, {
         enableHighAccuracy: true,
@@ -182,12 +193,17 @@ const MapView = React.forwardRef(
     const [loaded, setLoaded] = useState(false);
     const isWeb = Platform.OS === "web";
 
-    const buildConfig = useCallback(
-      () => ({
+    const positionRef = useRef(position);
+    positionRef.current = position;
+
+    const pushInit = useCallback(() => {
+      if (!mapRef.current) return;
+      const pos = positionRef.current;
+      const cfg = JSON.stringify({
         type: "init",
         interactive,
-        lat: position ? position[0] : undefined,
-        lng: position ? position[1] : undefined,
+        lat: pos ? pos[0] : undefined,
+        lng: pos ? pos[1] : undefined,
         markers: markers.map((m) => ({
           id: m.id,
           lat: m.lat,
@@ -195,13 +211,7 @@ const MapView = React.forwardRef(
           label: m.label,
           color: m.color,
         })),
-      }),
-      [position, markers, interactive]
-    );
-
-    const pushInit = useCallback(() => {
-      if (!mapRef.current) return;
-      const cfg = JSON.stringify(buildConfig());
+      });
       if (isWeb) {
         mapRef.current.contentWindow?.postMessage(cfg, "*");
       } else {
@@ -209,7 +219,25 @@ const MapView = React.forwardRef(
           `window.__argusInit && window.__argusInit(${cfg}); true;`
         );
       }
-    }, [buildConfig, isWeb]);
+    }, [interactive, markers, isWeb]);
+
+    const pushUser = useCallback(() => {
+      if (!mapRef.current || !position) return;
+      if (isWeb) {
+        mapRef.current.contentWindow?.postMessage(
+          JSON.stringify({
+            type: "user",
+            lat: position[0],
+            lng: position[1],
+          }),
+          "*"
+        );
+      } else {
+        mapRef.current.injectJavaScript(
+          `window.__argusSetUser && window.__argusSetUser(${position[0]}, ${position[1]}); true;`
+        );
+      }
+    }, [position, isWeb]);
 
     const recenter = useCallback(() => {
       if (!mapRef.current || !position) return;
@@ -232,7 +260,12 @@ const MapView = React.forwardRef(
     useEffect(() => {
       if (!loaded) return;
       pushInit();
-    }, [loaded, buildConfig, pushInit]);
+    }, [loaded, pushInit]);
+
+    useEffect(() => {
+      if (!loaded || !position) return;
+      pushUser();
+    }, [loaded, position, pushUser]);
 
     useEffect(() => {
       if (!isWeb) return undefined;
