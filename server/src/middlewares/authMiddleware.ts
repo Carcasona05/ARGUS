@@ -22,6 +22,13 @@ export const authenticate = async (
     return res.status(401).json({ error: "Invalid or expired token" });
   }
 
+  const profile = await profileService.getProfile(data.user.id);
+  if (profile.data?.status === "Disabled") {
+    return res
+      .status(403)
+      .json({ error: "Your account is disabled. Contact the super admin." });
+  }
+
   req.user = data.user;
   req.token = token;
   next();

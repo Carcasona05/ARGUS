@@ -14,6 +14,18 @@ export const clearDataCache = () => {
   cache.clear();
 };
 
+export const toReportCode = (id) => {
+  const raw = String(id || "").replace(/-/g, "");
+  if (!raw) return "";
+
+  let hash = 0;
+  for (let i = 0; i < raw.length; i++) {
+    hash = (hash * 31 + raw.charCodeAt(i)) >>> 0;
+  }
+
+  return String(hash % 100000000).padStart(8, "0");
+};
+
 export const authHeaders = async () => {
   const token = await AsyncStorage.getItem("access_token");
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -36,6 +48,7 @@ const ADMIN_ENDPOINTS = [
   ["api:/admin/analytics", "/admin/analytics"],
   ["api:/admin/logs", "/admin/logs"],
   ["api:/admin/notifications", "/admin/notifications"],
+  ["api:/admin/accounts", "/admin/accounts"],
 ];
 
 const fetchIntoCache = async (key, url, headers) => {

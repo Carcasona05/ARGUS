@@ -169,6 +169,7 @@ export default function Admin_Register() {
                   placeholderTextColor="#6E7FA5"
                   value={fullName}
                   onChangeText={setFullName}
+                  autoComplete="off"
                 />
               </View>
 
@@ -188,6 +189,7 @@ export default function Admin_Register() {
                   onChangeText={setEmail}
                   keyboardType="email-address"
                   autoCapitalize="none"
+                  autoComplete="off"
                 />
               </View>
 
@@ -206,6 +208,7 @@ export default function Admin_Register() {
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
+                  autoComplete="new-password"
                 />
 
                 <TouchableOpacity
@@ -235,6 +238,7 @@ export default function Admin_Register() {
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
                   secureTextEntry={!showConfirmPassword}
+                  autoComplete="new-password"
                 />
 
                 <TouchableOpacity

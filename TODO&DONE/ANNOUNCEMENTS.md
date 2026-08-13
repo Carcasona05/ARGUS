@@ -13,14 +13,12 @@
 - Credibility Score is done but only for the user's features (not included AI yet.)
 
 # USERS NEEDED LOGICS
-- Map NEEDS Heatmaps
 - Notification turn on turn off
 - Crime Alert Settings on and off
 
 # MINOR USERS NEEDED LOGIC
 - Session Key needed to be integrated for logging out and logging in. [DONE]
 - need the server to be update in real time so that data feels smooth no need for refresh or relog [DONE]
-- 
 
 # RECOMMENDATIONS AND REVISION
 - Is it possible instead of IP address the name of the place will be shown
@@ -37,11 +35,33 @@
 - Logs done with just fetching data for viewing activity from the Admins.
 - Notification Returning True to Is_read being Solved and done.
 
-# SUPER ADMIN TASKS DONE
+# LACKS
+- If accounts are disabled it should not be accessible.
+- 
 
 
 # CONCERNS
 - DASHBOARD has already map for the heatmaps of incidents, so in the Analytics what should I put? is it verified crimes or unverified. [REDUNDANT]
+
+
+# SUPER ADMIN TASKS DONE
+- Dashboard is [DONE]
+- Validation is [DONE]
+- Admin Accounts is [DONE]
+- Notification is [DONE] - needed reconsideration
+- Super admin profile and password [DONE]
+- AI treshold config [DONE] - needed confirmation
+- Map Settings [DONE] - needed confirmation
+- Notification preferences [DONE]
+
+# LACKINGS
+- API and Model Settings.
+
+
+# OVERALL
+- Session time out if there's no account logged in and will redirected to logins.
+- OTP for forget password not implemented yet.
+
 
 ### FRONTEND ###
 
@@ -67,11 +87,12 @@
 
 # LACKINGS and CORRECTION
 - Add Report is nowhere to be found only add announcement. Button are existing but it opened the announcement and function name are incorrect it should be announcement not reports
-- 
+- In Super Admin, View Reports is not found.
+-
 
 
 # MINOR ERRORS ( DOES NOT REALLY AFFECT THE SYSTEM BUT NEEDED TO BE FIXED) [-CRITICAL-]
-
+# TO run eslint just type npx eslint .
 C:\Users\Administrator\Desktop\ARGUS\clients\app\(admin)\Admin_Settings.jsx
   29:10  error  'InfoCard' is defined but never used  @typescript-eslint/no-unused-vars
 

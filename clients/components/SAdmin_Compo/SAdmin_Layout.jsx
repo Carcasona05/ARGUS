@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   View,
   Text,
@@ -9,9 +9,31 @@ import {
 import { Ionicons, Feather } from "@expo/vector-icons";
 import { useRouter, usePathname } from "expo-router";
 import { useFonts } from "expo-font";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { clearAuth } from "../../services/auth";
+import apiClient from "../../services/apiClient";
+import useAutoRefresh from "../../hooks/useAutoRefresh";
+import { getCache, setCache } from "../../services/dataStore";
 
 const ARGUS_BLUE = "#294880";
+
+const formatRelativeTime = (iso) => {
+  if (!iso) return "";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+
+  const diffMs = Date.now() - date.getTime();
+  const minutes = Math.floor(diffMs / 60000);
+
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes} minute${minutes === 1 ? "" : "s"} ago`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"} ago`;
+
+  const days = Math.floor(hours / 24);
+  return `${days} day${days === 1 ? "" : "s"} ago`;
+};
 
 export default function SAdmin_Layout({ children }) {
   const router = useRouter();
@@ -19,12 +41,44 @@ export default function SAdmin_Layout({ children }) {
 
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const [notifications, setNotifications] = useState([]);
 
   const [fontsLoaded] = useFonts({
     PoppinsRegular: require("../../assets/fonts/Poppins-Regular.ttf"),
     PoppinsMedium: require("../../assets/fonts/Poppins-Medium.ttf"),
     PoppinsSemiBold: require("../../assets/fonts/Poppins-SemiBold.ttf"),
   });
+
+  const loadNotifications = useCallback(async () => {
+    try {
+      const token = await AsyncStorage.getItem("access_token");
+      if (!token) return;
+
+      const applyNotifications = (list) =>
+        setNotifications(
+          list.map((item) => ({
+            ...item,
+            time: formatRelativeTime(item.time),
+          }))
+        );
+
+      const cached = getCache("api:/admin/notifications");
+      if (cached && Array.isArray(cached.notifications)) {
+        applyNotifications(cached.notifications);
+      }
+
+      const res = await apiClient.get("/admin/notifications", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      setCache("api:/admin/notifications", res.data ?? {});
+      applyNotifications(res.data?.notifications || []);
+    } catch {
+      // keep last loaded data on failure
+    }
+  }, []);
+
+  useAutoRefresh(loadNotifications, 30000);
 
   if (!fontsLoaded) {
     return null;
@@ -62,39 +116,6 @@ export default function SAdmin_Layout({ children }) {
       icon: "people-outline",
       iconType: "Ionicons",
       description: "Manage admin accounts, roles, and admin requests",
-    },
-  ];
-
-  const notifications = [
-    {
-      id: "SN-001",
-      type: "admin",
-      title: "Admin Account Request",
-      message: "A new admin account request needs review.",
-      time: "3 minutes ago",
-      priority: "High",
-      unread: true,
-      route: "/(sadmin)/SAdmin_AdminAccounts",
-    },
-    {
-      id: "SN-002",
-      type: "log",
-      title: "Report Deleted",
-      message: "A report was soft deleted and recorded in audit logs.",
-      time: "12 minutes ago",
-      priority: "Medium",
-      unread: true,
-      route: "/(sadmin)/SAdmin_AuditLogs",
-    },
-    {
-      id: "SN-003",
-      type: "system",
-      title: "AI Threshold Updated",
-      message: "System configuration was changed by SuperAdmin.",
-      time: "25 minutes ago",
-      priority: "Low",
-      unread: false,
-      route: "/(sadmin)/SAdmin_Settings",
     },
   ];
 
@@ -170,6 +191,14 @@ export default function SAdmin_Layout({ children }) {
   };
 
   const getNotificationIcon = (type) => {
+    if (type === "report") {
+      return <Ionicons name="document-text-outline" size={20} color={ARGUS_BLUE} />;
+    }
+
+    if (type === "ai") {
+      return <Ionicons name="sparkles-outline" size={20} color="#7C3AED" />;
+    }
+
     if (type === "admin") {
       return <Ionicons name="people-outline" size={20} color={ARGUS_BLUE} />;
     }
@@ -214,9 +243,29 @@ export default function SAdmin_Layout({ children }) {
     router.push(route);
   };
 
-  const handleNotificationPress = (item) => {
+  const handleNotificationPress = async (item) => {
     setShowNotifications(false);
     setShowProfileDropdown(false);
+
+    if (item.unread) {
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === item.id ? { ...n, unread: false } : n))
+      );
+
+      try {
+        const token = await AsyncStorage.getItem("access_token");
+        if (token) {
+          await apiClient.patch(
+            `/admin/notifications/${item.id}/read`,
+            {},
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+        }
+      } catch {
+        // keep local read state even if the call fails
+      }
+    }
+
     router.push(item.route);
   };
 

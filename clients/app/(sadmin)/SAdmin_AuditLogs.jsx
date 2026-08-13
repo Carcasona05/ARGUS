@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -10,8 +10,12 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFonts } from "expo-font";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import SAdmin_Layout from "../../components/SAdmin_Compo/SAdmin_Layout";
+import apiClient from "../../services/apiClient";
+import useAutoRefresh from "../../hooks/useAutoRefresh";
+import { getCache, setCache, toReportCode } from "../../services/dataStore";
 
 function LogBadge({ type }) {
   const getStyle = () => {
@@ -132,7 +136,7 @@ function AuditLogRow({ log, isLast }) {
         <View style={styles.logInfoGrid}>
           <View style={styles.logInfoItem}>
             <Text style={styles.logInfoLabel}>Report ID</Text>
-            <Text style={styles.logInfoValue}>{log.reportId || "N/A"}</Text>
+            <Text style={styles.logInfoValue}>{log.reportId}</Text>
           </View>
 
           <View style={styles.logInfoItem}>
@@ -160,82 +164,71 @@ export default function SAdmin_AuditLogs() {
     PoppinsSemiBold: require("../../assets/fonts/Poppins-SemiBold.ttf"),
   });
 
+  const [logs, setLogs] = useState([]);
+
+  const formatLogTime = (iso) => {
+    if (!iso) return "";
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) return "";
+
+    return (
+      date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "2-digit",
+        year: "numeric",
+      }) +
+      " • " +
+      date.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      })
+    );
+  };
+
+  const loadLogs = useCallback(async () => {
+    try {
+      const token = await AsyncStorage.getItem("access_token");
+      if (!token) return;
+
+      const applyLogs = (list) =>
+        setLogs(
+          list.map((log) => ({
+            id: log.id,
+            actionType: log.actionType || "",
+            title: log.title || "",
+            actor: log.actor || "System",
+            reportId: toReportCode(log.reportId || log.id),
+            details: log.details || "",
+            oldValue: log.oldStatus || "",
+            newValue: log.newStatus || "",
+            dateTime: formatLogTime(log.dateTime),
+          }))
+        );
+
+      const cached = getCache("api:/admin/logs");
+      if (cached && Array.isArray(cached.logs)) {
+        applyLogs(cached.logs);
+      }
+
+      const res = await apiClient.get("/admin/logs", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      setCache("api:/admin/logs", res.data ?? {});
+      applyLogs(res.data?.logs || []);
+    } catch {
+      // keep last loaded data on failure
+    }
+  }, []);
+
+  useAutoRefresh(loadLogs, 30000);
+
   if (!fontsLoaded) {
     return null;
   }
 
-  const auditLogs = [
-    {
-      id: "LOG-001",
-      title: "Report verified and mapped",
-      actor: "Admin R. Ramos",
-      actionType: "Report Verified",
-      details:
-        "Report #ARG-2031 was verified and displayed on the Argao incident map.",
-      reportId: "ARG-2031",
-      oldValue: "Pending",
-      newValue: "Verified",
-      dateTime: "Apr 29, 2026 • 10:30 AM",
-    },
-    {
-      id: "LOG-002",
-      title: "Report soft deleted",
-      actor: "Admin C. Lim",
-      actionType: "Report Deleted",
-      details:
-        "Report #ARG-2024 was soft deleted. Reason: duplicate incident report.",
-      reportId: "ARG-2024",
-      oldValue: "Active",
-      newValue: "Deleted",
-      dateTime: "Apr 29, 2026 • 10:12 AM",
-    },
-    {
-      id: "LOG-003",
-      title: "AI analysis completed",
-      actor: "System",
-      actionType: "AI Analysis Completed",
-      details:
-        "AI credibility analysis was completed for Report #ARG-2032 with high credibility.",
-      reportId: "ARG-2032",
-      oldValue: "Not analyzed",
-      newValue: "Score 92%",
-      dateTime: "Apr 29, 2026 • 9:58 AM",
-    },
-    {
-      id: "LOG-004",
-      title: "Admin account added",
-      actor: "SuperAdmin",
-      actionType: "Admin Added",
-      details: "A new normal admin account was added to the system.",
-      reportId: null,
-      oldValue: "N/A",
-      newValue: "Admin Created",
-      dateTime: "Apr 29, 2026 • 9:30 AM",
-    },
-    {
-      id: "LOG-005",
-      title: "Map details corrected",
-      actor: "Admin J. Reyes",
-      actionType: "Report Mapped",
-      details:
-        "Report location was corrected from Poblacion to Talaga after verification review.",
-      reportId: "ARG-2019",
-      oldValue: "Barangay Poblacion",
-      newValue: "Barangay Talaga",
-      dateTime: "Apr 29, 2026 • 8:42 AM",
-    },
-    {
-      id: "LOG-006",
-      title: "System settings updated",
-      actor: "SuperAdmin",
-      actionType: "System Settings Updated",
-      details: "AI high credibility threshold was updated from 85% to 90%.",
-      reportId: null,
-      oldValue: "85%",
-      newValue: "90%",
-      dateTime: "Apr 28, 2026 • 5:21 PM",
-    },
-  ];
+  const auditLogs = logs;
 
   const filters = [
     "All",
@@ -264,7 +257,7 @@ export default function SAdmin_AuditLogs() {
 
       return matchesFilter && matchesSearch;
     });
-  }, [searchText, selectedFilter]);
+  }, [searchText, selectedFilter, logs]);
 
   const deletedCount = auditLogs.filter(
     (log) => log.actionType === "Report Deleted"

@@ -228,6 +228,7 @@ export default function UserLogin() {
                   onChangeText={setEmail}
                   keyboardType="email-address"
                   autoCapitalize="none"
+                  autoComplete="off"
                 />
               </View>
 
@@ -243,6 +244,7 @@ export default function UserLogin() {
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry
+                  autoComplete="new-password"
                 />
               </View>
 
@@ -328,6 +330,7 @@ export default function UserLogin() {
                     onChangeText={setResetEmail}
                     keyboardType="email-address"
                     autoCapitalize="none"
+                    autoComplete="off"
                   />
                 </View>
 

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback, useState } from "react";
 import {
   View,
   Text,
@@ -9,7 +9,80 @@ import {
 import { Ionicons, MaterialIcons, Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useFonts } from "expo-font";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import SAdmin_Layout from "../../components/SAdmin_Compo/SAdmin_Layout";
+import apiClient from "../../services/apiClient";
+import useAutoRefresh from "../../hooks/useAutoRefresh";
+import { getCache, setCache } from "../../services/dataStore";
+
+const formatRelativeTime = (iso) => {
+  if (!iso) return "";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+
+  const diffMs = Date.now() - date.getTime();
+  const minutes = Math.floor(diffMs / 60000);
+
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes} minute${minutes === 1 ? "" : "s"} ago`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"} ago`;
+
+  const days = Math.floor(hours / 24);
+  return `${days} day${days === 1 ? "" : "s"} ago`;
+};
+
+const getActivityStyle = (actionType = "") => {
+  if (actionType.includes("Deleted")) {
+    return {
+      icon: "trash-outline",
+      color: "#DC2626",
+      bg: "#FEE2E2",
+    };
+  }
+
+  if (actionType.includes("Verified")) {
+    return {
+      icon: "shield-checkmark-outline",
+      color: "#059669",
+      bg: "#D1FAE5",
+    };
+  }
+
+  if (actionType.includes("Mapped")) {
+    return {
+      icon: "map-outline",
+      color: "#059669",
+      bg: "#D1FAE5",
+    };
+  }
+
+  if (actionType.includes("Admin")) {
+    return {
+      icon: "person-circle-outline",
+      color: "#2563EB",
+      bg: "#DBEAFE",
+    };
+  }
+
+  if (actionType.includes("AI")) {
+    return {
+      icon: "sparkles-outline",
+      color: "#7C3AED",
+      bg: "#EDE9FE",
+    };
+  }
+
+  return {
+    icon: "document-text-outline",
+    color: "#D97706",
+    bg: "#FFF4E5",
+  };
+};
+
+const formatCount = (value) =>
+  String(value ?? 0).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
 export default function SAdmin_Dashboard() {
   const router = useRouter();
@@ -20,14 +93,112 @@ export default function SAdmin_Dashboard() {
     PoppinsSemiBold: require("../../assets/fonts/Poppins-SemiBold.ttf"),
   });
 
+  const [summary, setSummary] = useState({
+    total: 0,
+    pending: 0,
+    verified: 0,
+    rejected: 0,
+  });
+  const [accounts, setAccounts] = useState([]);
+  const [logs, setLogs] = useState([]);
+
+  const fetchDashboard = useCallback(async () => {
+    try {
+      const token = await AsyncStorage.getItem("access_token");
+      if (!token) return;
+
+      const cached = getCache("api:/admin/dashboard");
+      if (cached?.summary) {
+        setSummary(cached.summary);
+      }
+
+      const res = await apiClient.get("/admin/dashboard", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      setCache("api:/admin/dashboard", res.data ?? {});
+      setSummary(res.data?.summary ?? {});
+    } catch {
+      // keep last loaded data on failure
+    }
+  }, []);
+
+  const fetchAccounts = useCallback(async () => {
+    try {
+      const token = await AsyncStorage.getItem("access_token");
+      if (!token) return;
+
+      const cached = getCache("api:/admin/accounts");
+      if (cached && Array.isArray(cached.accounts)) {
+        setAccounts(cached.accounts);
+      }
+
+      const res = await apiClient.get("/admin/accounts", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      setCache("api:/admin/accounts", res.data ?? {});
+      setAccounts(res.data?.accounts || []);
+    } catch {
+      // keep last loaded data on failure
+    }
+  }, []);
+
+  const fetchLogs = useCallback(async () => {
+    try {
+      const token = await AsyncStorage.getItem("access_token");
+      if (!token) return;
+
+      const cached = getCache("api:/admin/logs");
+      if (cached && Array.isArray(cached.logs)) {
+        setLogs(cached.logs);
+      }
+
+      const res = await apiClient.get("/admin/logs", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      setCache("api:/admin/logs", res.data ?? {});
+      setLogs(res.data?.logs || []);
+    } catch {
+      // keep last loaded data on failure
+    }
+  }, []);
+
+  const loadDashboard = useCallback(async () => {
+    await Promise.all([fetchDashboard(), fetchAccounts(), fetchLogs()]);
+  }, [fetchDashboard, fetchAccounts, fetchLogs]);
+
+  useAutoRefresh(loadDashboard, 30000);
+
   if (!fontsLoaded) {
     return null;
   }
 
+  const totalReports = summary.total || 0;
+  const pendingReports = summary.pending || 0;
+  const verifiedReports = summary.verified || 0;
+  const rejectedReports = summary.rejected || 0;
+
+  const activeAdmins = accounts.filter(
+    (a) => a.role === "admin" && a.status === "Active"
+  ).length;
+
+  const auditLogsToday = logs.filter((log) => {
+    const date = new Date(log.dateTime);
+    return (
+      !Number.isNaN(date.getTime()) &&
+      date.toDateString() === new Date().toDateString()
+    );
+  }).length;
+
+  const pct = (value) =>
+    totalReports ? Math.round((value / totalReports) * 100) : 0;
+
   const overviewCards = [
     {
       title: "Total Reports",
-      value: "1,248",
+      value: formatCount(totalReports),
       note: "All submitted incident reports",
       icon: "document-text-outline",
       iconType: "Ionicons",
@@ -36,7 +207,7 @@ export default function SAdmin_Dashboard() {
     },
     {
       title: "Pending Reports",
-      value: "86",
+      value: formatCount(pendingReports),
       note: "Waiting for validation",
       icon: "time-outline",
       iconType: "Ionicons",
@@ -45,7 +216,7 @@ export default function SAdmin_Dashboard() {
     },
     {
       title: "Verified Reports",
-      value: "924",
+      value: formatCount(verifiedReports),
       note: "Mapped and verified reports",
       icon: "shield-checkmark-outline",
       iconType: "Ionicons",
@@ -54,7 +225,7 @@ export default function SAdmin_Dashboard() {
     },
     {
       title: "Rejected Reports",
-      value: "42",
+      value: formatCount(rejectedReports),
       note: "Reports marked as invalid",
       icon: "close-circle-outline",
       iconType: "Ionicons",
@@ -63,7 +234,7 @@ export default function SAdmin_Dashboard() {
     },
     {
       title: "Active Admins",
-      value: "12",
+      value: formatCount(activeAdmins),
       note: "Normal admins currently registered",
       icon: "people-outline",
       iconType: "Ionicons",
@@ -72,7 +243,7 @@ export default function SAdmin_Dashboard() {
     },
     {
       title: "Audit Logs Today",
-      value: "39",
+      value: formatCount(auditLogsToday),
       note: "System and admin activities",
       icon: "list-outline",
       iconType: "Ionicons",
@@ -84,75 +255,48 @@ export default function SAdmin_Dashboard() {
   const adminSummary = [
     {
       label: "SuperAdmin Accounts",
-      value: "1",
+      value: formatCount(
+        accounts.filter((a) => a.role === "super_admin").length
+      ),
       icon: "star-outline",
       color: "#294880",
     },
     {
       label: "Normal Admin Accounts",
-      value: "12",
+      value: formatCount(accounts.filter((a) => a.role === "admin").length),
       icon: "person-outline",
       color: "#2563EB",
     },
     {
       label: "Pending Admin Requests",
-      value: "3",
+      value: "0",
       icon: "person-add-outline",
       color: "#D97706",
     },
     {
       label: "Disabled Accounts",
-      value: "1",
+      value: formatCount(
+        accounts.filter((a) => a.status === "Disabled").length
+      ),
       icon: "person-remove-outline",
       color: "#DC2626",
     },
   ];
 
-  const recentActivities = [
-    {
-      id: "LOG-001",
-      title: "Report verified and mapped",
-      description:
-        "Admin R. Ramos verified Report #ARG-2031 and displayed it on the map.",
-      time: "5 minutes ago",
-      type: "Report Verified",
-      icon: "shield-checkmark-outline",
-      color: "#059669",
-      bg: "#D1FAE5",
-    },
-    {
-      id: "LOG-002",
-      title: "Report soft deleted",
-      description:
-        "Report #ARG-2024 was soft deleted with reason: duplicate report.",
-      time: "14 minutes ago",
-      type: "Report Deleted",
-      icon: "trash-outline",
-      color: "#DC2626",
-      bg: "#FEE2E2",
-    },
-    {
-      id: "LOG-003",
-      title: "AI threshold updated",
-      description:
-        "SuperAdmin updated high credibility threshold from 85 to 90.",
-      time: "32 minutes ago",
-      type: "System Settings",
-      icon: "settings-outline",
-      color: "#7C3AED",
-      bg: "#EDE9FE",
-    },
-    {
-      id: "LOG-004",
-      title: "New admin request submitted",
-      description: "A pending admin registration request needs review.",
-      time: "1 hour ago",
-      type: "Admin Request",
-      icon: "person-add-outline",
-      color: "#2563EB",
-      bg: "#DBEAFE",
-    },
-  ];
+  const recentActivities = logs.slice(0, 5).map((log) => {
+    const style = getActivityStyle(log.actionType);
+
+    return {
+      id: log.id,
+      title: log.title || log.actionType || "Activity",
+      description: log.details || "",
+      time: formatRelativeTime(log.dateTime),
+      type: log.actionType || "Activity",
+      icon: style.icon,
+      color: style.color,
+      bg: style.bg,
+    };
+  });
 
   const aiSettings = [
     {
@@ -180,17 +324,17 @@ export default function SAdmin_Dashboard() {
   const reportBreakdown = [
     {
       label: "Verified",
-      value: 74,
+      value: pct(verifiedReports),
       color: "#059669",
     },
     {
       label: "Pending",
-      value: 18,
+      value: pct(pendingReports),
       color: "#D97706",
     },
     {
       label: "Rejected",
-      value: 8,
+      value: pct(rejectedReports),
       color: "#DC2626",
     },
   ];

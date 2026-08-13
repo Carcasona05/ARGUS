@@ -170,6 +170,7 @@ export default function SendOTP() {
                 value={newPassword}
                 onChangeText={setNewPassword}
                 secureTextEntry
+                autoComplete="new-password"
               />
             </View>
 
@@ -187,6 +188,7 @@ export default function SendOTP() {
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
                 secureTextEntry
+                autoComplete="new-password"
               />
             </View>
 

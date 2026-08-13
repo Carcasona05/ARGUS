@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -12,9 +12,11 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFonts } from "expo-font";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import SAdmin_Layout from "../../components/SAdmin_Compo/SAdmin_Layout";
 import { saveAdminInfo } from "../../services/auth";
+import apiClient from "../../services/apiClient";
 
 function StatusBadge({ label, tone = "primary" }) {
   const toneMap = {
@@ -129,14 +131,57 @@ export default function SAdmin_Settings() {
   const [mediumThreshold, setMediumThreshold] = useState("60");
   const [defaultMapZoom, setDefaultMapZoom] = useState("13");
   const [mapCenter, setMapCenter] = useState("Argao, Cebu");
-  const [modelVersion, setModelVersion] = useState("ARGUS-AI v4.3.01");
+  const [modelVersion, setModelVersion] = useState("ARGUS-AI v1.0");
   const [apiEndpoint, setApiEndpoint] = useState("https://api.argus.local/v1");
+  const [initialEmail, setInitialEmail] = useState("");
 
   const [fontsLoaded] = useFonts({
     PoppinsRegular: require("../../assets/fonts/Poppins-Regular.ttf"),
     PoppinsMedium: require("../../assets/fonts/Poppins-Medium.ttf"),
     PoppinsSemiBold: require("../../assets/fonts/Poppins-SemiBold.ttf"),
   });
+
+  const loadAccountData = useCallback(async () => {
+    try {
+      const token = await AsyncStorage.getItem("access_token");
+      if (!token) return;
+
+      const [profileRes, settingsRes] = await Promise.all([
+        apiClient.get("/profile", {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        apiClient.get("/admin/settings", {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ]);
+
+      const profile = profileRes.data ?? {};
+      setFullName(profile.name || profile.fullname || "ARGUS SuperAdmin");
+      setEmailAddress(profile.email || "");
+      setPhoneNumber(profile.phone || "");
+      setInitialEmail(profile.email || "");
+
+      const settings = settingsRes.data?.settings ?? {};
+      setAutoMapVerified(settings.map_auto_map_verified !== "false");
+      setAiCredibilityEnabled(settings.ai_scoring_enabled !== "false");
+      setEmailNotifications(settings.notification_email !== "false");
+      setPushNotifications(settings.notification_push === "true");
+      setClusterOverlay(settings.map_cluster_overlay !== "false");
+      setHeatmapOverlay(settings.map_heatmap_overlay !== "false");
+      setHighThreshold(settings.ai_high_threshold || "85");
+      setMediumThreshold(settings.ai_medium_threshold || "60");
+      setDefaultMapZoom(settings.map_default_zoom || "13");
+      setMapCenter(settings.map_center || "Argao, Cebu");
+      setModelVersion(settings.ai_model_version || "ARGUS-AI v1.0");
+      setApiEndpoint(settings.ai_api_endpoint || "");
+    } catch {
+      // keep existing defaults on failure
+    }
+  }, []);
+
+  useEffect(() => {
+    loadAccountData();
+  }, [loadAccountData]);
 
   if (!fontsLoaded) {
     return null;
@@ -161,7 +206,7 @@ export default function SAdmin_Settings() {
     Alert.alert(title, message);
   };
 
-  const handleSaveProfile = () => {
+  const handleSaveProfile = async () => {
     if (!fullName.trim() || !emailAddress.trim() || !phoneNumber.trim()) {
       showMessage("Missing Information", "Please fill in all profile fields.");
       return;
@@ -172,21 +217,55 @@ export default function SAdmin_Settings() {
       return;
     }
 
-    saveAdminInfo({
-      ...(globalThis.adminAccount || {}),
-      fullName: fullName.trim(),
-      email: emailAddress.trim().toLowerCase(),
-      phone: phoneNumber.trim(),
-      role: "SuperAdmin",
-    });
+    try {
+      const token = await AsyncStorage.getItem("access_token");
+      if (!token) return;
 
-    showMessage(
-      "Profile Updated",
-      "Your SuperAdmin profile information has been updated."
-    );
+      const changes = [
+        apiClient.put(
+          "/profile",
+          { first_name: fullName.trim(), phone: phoneNumber.trim() },
+          { headers: { Authorization: `Bearer ${token}` } }
+        ),
+      ];
+
+      const cleanEmail = emailAddress.trim().toLowerCase();
+
+      if (initialEmail && cleanEmail !== initialEmail.toLowerCase()) {
+        changes.push(
+          apiClient.put(
+            "/profile/email",
+            { currentEmail: initialEmail, newEmail: cleanEmail },
+            { headers: { Authorization: `Bearer ${token}` } }
+          )
+        );
+      }
+
+      await Promise.all(changes);
+
+      saveAdminInfo({
+        ...(globalThis.adminAccount || {}),
+        fullName: fullName.trim(),
+        email: cleanEmail,
+        phone: phoneNumber.trim(),
+        role: "SuperAdmin",
+      });
+
+      setInitialEmail(cleanEmail);
+
+      showMessage(
+        "Profile Updated",
+        "Your SuperAdmin profile information has been updated."
+      );
+    } catch (error) {
+      showMessage(
+        "Update Failed",
+        error.response?.data?.error || "Could not update your profile."
+      );
+    }
   };
 
-  const handleChangePassword = () => {
+  const handleChangePassword = async () => {
     if (!currentPassword || !newPassword || !confirmNewPassword) {
       showMessage("Missing Password", "Please fill in all password fields.");
       return;
@@ -205,36 +284,74 @@ export default function SAdmin_Settings() {
       return;
     }
 
-    saveAdminInfo({
-      ...(globalThis.adminAccount || {}),
-      password: newPassword,
-    });
+    try {
+      const token = await AsyncStorage.getItem("access_token");
+      if (!token) return;
 
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmNewPassword("");
+      await apiClient.put(
+        "/profile/password",
+        { currentPassword, newPassword },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-    showMessage("Password Updated", "Your SuperAdmin password has been changed.");
+      saveAdminInfo({
+        ...(globalThis.adminAccount || {}),
+        password: newPassword,
+      });
+
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmNewPassword("");
+
+      showMessage("Password Updated", "Your SuperAdmin password has been changed.");
+    } catch (error) {
+      showMessage(
+        "Update Failed",
+        error.response?.data?.error || "Could not update your password."
+      );
+    }
   };
 
-  const handleSaveSettings = () => {
-    showMessage("Settings Saved", "System settings have been saved successfully.");
+  const handleSaveSettings = async () => {
+    try {
+      const token = await AsyncStorage.getItem("access_token");
+      if (!token) return;
+
+      await apiClient.put(
+        "/admin/settings",
+        {
+          settings: {
+            map_auto_map_verified: String(autoMapVerified),
+            map_cluster_overlay: String(clusterOverlay),
+            map_heatmap_overlay: String(heatmapOverlay),
+            map_default_zoom: defaultMapZoom,
+            map_center: mapCenter,
+            notification_email: String(emailNotifications),
+            notification_push: String(pushNotifications),
+            ai_model_version: modelVersion,
+            ai_api_endpoint: apiEndpoint,
+            ai_scoring_enabled: String(aiCredibilityEnabled),
+            ai_high_threshold: highThreshold,
+            ai_medium_threshold: mediumThreshold,
+          },
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      showMessage(
+        "Settings Saved",
+        "System settings have been saved successfully."
+      );
+    } catch (error) {
+      showMessage(
+        "Save Failed",
+        error.response?.data?.error || "Could not save system settings."
+      );
+    }
   };
 
   const handleResetSettings = () => {
-    setAutoMapVerified(true);
-    setAiCredibilityEnabled(true);
-    setEmailNotifications(true);
-    setPushNotifications(false);
-    setClusterOverlay(true);
-    setHeatmapOverlay(true);
-    setHighThreshold("85");
-    setMediumThreshold("60");
-    setDefaultMapZoom("13");
-    setMapCenter("Argao, Cebu");
-    setModelVersion("ARGUS-AI v4.3.01");
-    setApiEndpoint("https://api.argus.local/v1");
-
+    loadAccountData();
     showMessage(
       "Settings Reset",
       "System settings have been restored to default values."

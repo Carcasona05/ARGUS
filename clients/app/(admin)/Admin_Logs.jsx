@@ -15,7 +15,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import Admin_Layout from "../../components/Admin_compo/Admin_Layout";
 import apiClient from "../../services/apiClient";
 import useAutoRefresh from "../../hooks/useAutoRefresh";
-import { getCache, setCache } from "../../services/dataStore";
+import { getCache, setCache, toReportCode } from "../../services/dataStore";
 
 export default function Admin_Logs() {
   const [searchText, setSearchText] = useState("");
@@ -62,6 +62,7 @@ export default function Admin_Logs() {
         setLogs(
           list.map((log) => ({
             ...log,
+            reportId: toReportCode(log.reportId || log.id),
             dateTime: formatLogTime(log.dateTime),
           }))
         );

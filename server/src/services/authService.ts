@@ -12,7 +12,7 @@ export const profileService = {
   async getProfile(userId: string) {
     const result = await supabaseAdmin
       .from("profiles")
-      .select("fullname, user_name, first_name, last_name, middle_name, phone, role, birthdate, location, department")
+      .select("fullname, user_name, first_name, last_name, middle_name, phone, role, status, birthdate, location, department")
       .eq("id", userId)
       .maybeSingle();
 
@@ -22,7 +22,7 @@ export const profileService = {
 
     return await supabaseAdmin
       .from("profiles")
-      .select("fullname, user_name, first_name, last_name, middle_name, phone, role, birthdate, location, department")
+      .select("fullname, user_name, first_name, last_name, middle_name, phone, role, status, birthdate, location, department")
       .eq("id", userId)
       .maybeSingle();
   },

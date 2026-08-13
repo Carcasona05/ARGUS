@@ -169,6 +169,7 @@ export default function Register() {
                   placeholderTextColor="#6E7FA5"
                   value={userName}
                   onChangeText={setUserName}
+                  autoComplete="off"
                 />
               </View>
 
@@ -185,6 +186,7 @@ export default function Register() {
                   onChangeText={setEmail}
                   keyboardType="email-address"
                   autoCapitalize="none"
+                  autoComplete="off"
                 />
               </View>
 
@@ -200,6 +202,7 @@ export default function Register() {
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry
+                  autoComplete="new-password"
                 />
               </View>
 
@@ -215,6 +218,7 @@ export default function Register() {
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
                   secureTextEntry
+                  autoComplete="new-password"
                 />
               </View>
 

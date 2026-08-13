@@ -118,6 +118,10 @@ export const adminLogin = async (req: Request, res: Response) => {
       return res.status(403).json({ error: "No profile found for this account. Contact super admin." });
     }
 
+    if (profile.status === "Disabled") {
+      return res.status(403).json({ error: "Your account is disabled. Contact the super admin." });
+    }
+
     if (profile.role === "user") {
       return res.status(403).json({ error: "Admin access only. Your role is set to 'user'." });
     }

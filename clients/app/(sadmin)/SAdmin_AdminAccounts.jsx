@@ -13,6 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFonts } from "expo-font";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../../services/apiClient";
+import { getCache, setCache } from "../../services/dataStore";
 
 import SAdmin_Layout from "../../components/SAdmin_Compo/SAdmin_Layout";
 import Admin_AddAdmin from "../../components/modals/Admin_AddAdmin";
@@ -130,7 +131,6 @@ export default function SAdmin_AdminAccounts() {
   }
 
   const [adminAccounts, setAdminAccounts] = useState([]);
-  const [loading, setLoading] = useState(true);
 
   const currentAdminEmail = (globalThis.adminAccount?.email || "").toLowerCase();
 
@@ -143,15 +143,19 @@ export default function SAdmin_AdminAccounts() {
       const token = await AsyncStorage.getItem("access_token");
       if (!token) return;
 
+      const cached = getCache("api:/admin/accounts");
+      if (cached && Array.isArray(cached.accounts)) {
+        setAdminAccounts(cached.accounts);
+      }
+
       const res = await apiClient.get("/admin/accounts", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
+      setCache("api:/admin/accounts", res.data ?? {});
       setAdminAccounts(res.data?.accounts || []);
     } catch {
       // silent fail
-    } finally {
-      setLoading(false);
     }
   }, []);
 

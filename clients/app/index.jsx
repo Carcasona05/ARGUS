@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { View, StyleSheet, ActivityIndicator } from "react-native";
+import { View, StyleSheet, ActivityIndicator, Platform } from "react-native";
 import { router } from "expo-router";
 import ThemedView from "../components/ThemedView";
 import ThemedText from "../components/ThemedText";
@@ -15,7 +15,11 @@ const LoadingScreen = () => {
       if (!active) return;
 
       if (!token) {
-        router.replace("/(auth)/User_Login");
+        if (Platform.OS === "web") {
+          router.replace("/(auth)/Admin_Login");
+        } else {
+          router.replace("/(auth)/User_Login");
+        }
         return;
       }
 

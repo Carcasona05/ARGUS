@@ -263,6 +263,7 @@ export default function Admin_Login() {
               onChangeText={setForgotEmail}
               keyboardType="email-address"
               autoCapitalize="none"
+              autoComplete="off"
             />
           </View>
 
@@ -301,6 +302,7 @@ export default function Admin_Login() {
               onChangeText={setEnteredOtp}
               keyboardType="number-pad"
               maxLength={6}
+              autoComplete="off"
             />
           </View>
 
@@ -345,6 +347,7 @@ export default function Admin_Login() {
             value={newPassword}
             onChangeText={setNewPassword}
             secureTextEntry={!showNewPassword}
+            autoComplete="new-password"
           />
 
           <TouchableOpacity
@@ -374,6 +377,7 @@ export default function Admin_Login() {
             value={confirmNewPassword}
             onChangeText={setConfirmNewPassword}
             secureTextEntry={!showConfirmNewPassword}
+            autoComplete="new-password"
           />
 
           <TouchableOpacity
@@ -484,6 +488,7 @@ export default function Admin_Login() {
                   onChangeText={setEmail}
                   keyboardType="email-address"
                   autoCapitalize="none"
+                  autoComplete="off"
                 />
               </View>
 
@@ -502,6 +507,7 @@ export default function Admin_Login() {
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
+                  autoComplete="new-password"
                 />
 
                 <TouchableOpacity

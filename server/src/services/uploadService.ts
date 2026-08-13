@@ -18,7 +18,7 @@ export const uploadService = {
 
     await ensureBucket();
 
-    const raw = (filename || "photo").replace(/[^\w.\-]/g, "_");
+    const raw = (filename || "photo").replace(/[^\w.-]/g, "_");
     const ext = /\.(png|jpg|jpeg|webp|gif)$/i.test(raw)
       ? raw.match(/\.(\w+)$/)?.[1] ?? "jpg"
       : "jpg";
@@ -26,7 +26,7 @@ export const uploadService = {
 
     const buffer = Buffer.from(base64, "base64");
 
-    const { data, error } = await supabaseAdmin.storage
+    const { error } = await supabaseAdmin.storage
       .from(BUCKET)
       .upload(path, buffer, {
         contentType: contentType || `image/${ext}`,

@@ -40,7 +40,7 @@ export const getAccounts = async (req: AuthRequest, res: Response) => {
     );
 
     res.json({ accounts });
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -80,7 +80,7 @@ export const updateAccount = async (req: AuthRequest, res: Response) => {
     }
 
     res.json({ message: "Account updated successfully" });
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -100,7 +100,7 @@ export const deleteAccount = async (req: AuthRequest, res: Response) => {
     if (error) return res.status(500).json({ error: error.message });
 
     res.json({ message: "Account deleted successfully" });
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -133,7 +133,7 @@ export const toggleStatus = async (req: AuthRequest, res: Response) => {
     if (error) return res.status(500).json({ error: error.message });
 
     res.json({ message: `Account ${newStatus.toLowerCase()}`, status: newStatus });
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: "Internal server error" });
   }
 };
