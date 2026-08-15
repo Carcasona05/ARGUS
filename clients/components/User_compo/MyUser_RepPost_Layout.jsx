@@ -11,6 +11,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useFonts } from "expo-font";
 import { useRouter } from "expo-router";
+import FullscreenImageViewer from "../FullscreenImageViewer";
 
 const PRIMARY = "#294880";
 
@@ -42,6 +43,7 @@ const MyUser_RepPost_Layout = ({
 }) => {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [viewerIndex, setViewerIndex] = useState(null);
 
   const [fontsLoaded] = useFonts({
     "Poppins-Regular": require("../../assets/fonts/Poppins-Regular.ttf"),
@@ -57,8 +59,8 @@ const MyUser_RepPost_Layout = ({
   const iconSize = isSmallScreen ? 18 : 20;
   const mediaHeight = isSmallScreen ? 140 : 165;
 
-  const firstImage = images?.[0] || null;
-  const secondImage = images?.[1] || null;
+  const imageList = Array.isArray(images) ? images.filter(Boolean) : [];
+  const imageCount = imageList.length;
 
   if (!fontsLoaded) {
     return (
@@ -201,43 +203,30 @@ const MyUser_RepPost_Layout = ({
   };
 
   const renderImages = () => {
-    const firstSource = getImageSource(firstImage);
-    const secondSource = getImageSource(secondImage);
-
-    if (!firstSource && !secondSource) {
-      return (
-        <View style={[styles.singleImagePlaceholder, { height: mediaHeight }]}>
-          <Ionicons name="image-outline" size={24} color="#9CA3AF" />
-          <Text style={styles.placeholderText}>No image attached</Text>
-        </View>
-      );
+    if (imageCount === 0) {
+      return null;
     }
 
-    if (firstSource && !secondSource) {
-      return (
-        <Image
-          source={firstSource}
-          style={[styles.singleImage, { height: mediaHeight }]}
-        />
-      );
-    }
+    const remainingCount = imageCount - 1;
 
     return (
-      <View style={styles.imageRow}>
-        {firstSource ? (
-          <Image
-            source={firstSource}
-            style={[styles.doubleImage, { height: mediaHeight }]}
-          />
-        ) : null}
+      <TouchableOpacity
+        activeOpacity={0.95}
+        onPress={() => setViewerIndex(0)}
+        style={[styles.singleImage, { height: mediaHeight }]}
+      >
+        <Image
+          source={getImageSource(imageList[0])}
+          style={[styles.singleImage, { height: mediaHeight }]}
+        />
 
-        {secondSource ? (
-          <Image
-            source={secondSource}
-            style={[styles.doubleImage, { height: mediaHeight }]}
-          />
+        {remainingCount > 0 ? (
+          <View style={styles.imageCountOverlay}>
+            <Ionicons name="images" size={15} color="#FFFFFF" />
+            <Text style={styles.imageCountText}>+{remainingCount}</Text>
+          </View>
         ) : null}
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -353,6 +342,15 @@ const MyUser_RepPost_Layout = ({
           <Text style={styles.actionCount}>{comments}</Text>
         </TouchableOpacity>
       </View>
+
+      {viewerIndex !== null && imageCount > 0 ? (
+        <FullscreenImageViewer
+          images={imageList}
+          initialIndex={viewerIndex}
+          visible
+          onClose={() => setViewerIndex(null)}
+        />
+      ) : null}
     </View>
   );
 };
@@ -540,36 +538,26 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     resizeMode: "cover",
     backgroundColor: "#E4EBF7",
+    overflow: "hidden",
   },
 
-  singleImagePlaceholder: {
-    width: "100%",
-    borderRadius: 16,
-    backgroundColor: "#F3F6FB",
-    borderWidth: 1,
-    borderStyle: "dashed",
-    borderColor: "#D7E0F0",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  placeholderText: {
-    fontFamily: FONT.regular,
-    marginTop: 5,
-    fontSize: 12,
-    color: "#9CA3AF",
-  },
-
-  imageRow: {
+  imageCountOverlay: {
+    position: "absolute",
+    top: 10,
+    right: 10,
     flexDirection: "row",
-    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "rgba(15, 23, 42, 0.72)",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
   },
 
-  doubleImage: {
-    width: "48.5%",
-    borderRadius: 16,
-    resizeMode: "cover",
-    backgroundColor: "#E4EBF7",
+  imageCountText: {
+    fontFamily: FONT.medium,
+    marginLeft: 4,
+    fontSize: 12,
+    color: "#FFFFFF",
   },
 
   actionBar: {

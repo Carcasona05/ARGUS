@@ -1,9 +1,10 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   View,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  RefreshControl,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -15,6 +16,7 @@ import ReportPost_Layout from "../../components/ReportPost_Layout";
 import ReportByAdmin from "../../components/ReportByAdmin";
 import apiClient from "../../services/apiClient";
 import useAutoRefresh from "../../hooks/useAutoRefresh";
+import { subscribeRefresh } from "../../services/refreshBus";
 import { getCache, setCache } from "../../services/dataStore";
 
 const PRIMARY = "#294880";
@@ -215,6 +217,7 @@ const User_Home = () => {
   const [openDropdown, setOpenDropdown] = useState(null);
   const [reports, setReports] = useState([]);
   const [, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   const loadReports = useCallback(async () => {
     try {
@@ -243,10 +246,18 @@ const User_Home = () => {
       // keep empty feed on failure
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, []);
 
   useAutoRefresh(loadReports, 30000);
+
+  useEffect(() => subscribeRefresh(loadReports), [loadReports]);
+
+  const handleRefresh = useCallback(() => {
+    setRefreshing(true);
+    loadReports();
+  }, [loadReports]);
 
   const filteredReports = useMemo(() => {
     return reports.filter((report) => {
@@ -330,6 +341,14 @@ const User_Home = () => {
         style={styles.scrollContainer}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            colors={[PRIMARY]}
+            tintColor={PRIMARY}
+          />
+        }
       >
         <View style={styles.topHeader}>
           <View>

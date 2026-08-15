@@ -8,8 +8,8 @@ import {
   Modal,
   TextInput,
   Image,
+  RefreshControl,
 } from "react-native";
-import { Picker } from "@react-native-picker/picker";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useFonts } from "expo-font";
@@ -18,10 +18,13 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import ThemedView from "../../components/ThemedView";
 import ThemedText from "../../components/ThemedText";
+import Dropdown from "../../components/Dropdown";
+import ToastProvider, { useToast } from "../../components/Toast";
 import MyUser_RepPost_Layout from "../../components/User_compo/MyUser_RepPost_Layout";
 import apiClient from "../../services/apiClient";
 import { uploadImage } from "../../services/imageUpload";
 import useAutoRefresh from "../../hooks/useAutoRefresh";
+import { subscribeRefresh } from "../../services/refreshBus";
 import { getCache, setCache } from "../../services/dataStore";
 
 const PRIMARY = "#294880";
@@ -39,6 +42,57 @@ const statusOptions = [
   "Resolved",
   "Rejected",
   "Archived",
+];
+
+const FALLBACK_CATEGORIES = [
+  {
+    category: "Public Safety Incidents",
+    types: [
+      "Public Disturbance",
+      "Harassment",
+      "Loitering / Suspicious Presence",
+      "Trespassing",
+    ],
+  },
+  {
+    category: "Property-Related Incidents",
+    types: ["Theft", "Lost Property", "Vandalism / Property Damage", "Shoplifting"],
+  },
+  {
+    category: "Traffic and Road Incidents",
+    types: ["Vehicular Accident", "Reckless Driving", "Illegal Parking", "Road Obstruction"],
+  },
+  {
+    category: "Community and Environmental Concerns",
+    types: [
+      "Fire Incident",
+      "Flooding",
+      "Blocked Drainage",
+      "Garbage / Sanitation Issues",
+      "Streetlight Outage",
+    ],
+  },
+  {
+    category: "Suspicious Activities",
+    types: [
+      "Suspicious Person",
+      "Suspicious Vehicle",
+      "Unattended / Abandoned Object",
+      "Unusual Behavior",
+    ],
+  },
+  {
+    category: "Public Assistance / Community Reports",
+    types: ["Missing Pet", "Lost Item", "Request for Assistance", "General Safety Concern"],
+  },
+  {
+    category: "Cyber and Online Incidents (Non-sensitive)",
+    types: [
+      "Online Scam / Suspicious Message",
+      "Cyberbullying",
+      "Fake Information / Misinformation",
+    ],
+  },
 ];
 
 const mapMyReports = (data) =>
@@ -155,10 +209,11 @@ const DropdownFilter = ({
 };
 
 const EditReportModal = ({ visible, report, onClose, onSave }) => {
+  const toast = useToast();
   const [location, setLocation] = useState("");
   const [incidentCategory, setIncidentCategory] = useState("");
   const [incidentType, setIncidentType] = useState("");
-  const [categoryOptions, setCategoryOptions] = useState([]);
+  const [categoryOptions, setCategoryOptions] = useState(FALLBACK_CATEGORIES);
   const [details, setDetails] = useState("");
   const [photos, setPhotos] = useState([]);
 
@@ -204,17 +259,14 @@ const EditReportModal = ({ visible, report, onClose, onSave }) => {
 
   const handlePickPhoto = async () => {
     if (photos.length >= 3) {
-      Alert.alert("Maximum Reached", "You can only upload up to 3 photos.");
+      toast.error("You can only upload up to 3 photos.");
       return;
     }
 
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (!permission.granted) {
-      Alert.alert(
-        "Permission Needed",
-        "Please allow access to your photo library."
-      );
+      toast.error("Please allow access to your photo library.");
       return;
     }
 
@@ -236,10 +288,7 @@ const EditReportModal = ({ visible, report, onClose, onSave }) => {
 
   const handleSaveChanges = () => {
     if (!incidentCategory || !incidentType || !details.trim()) {
-      Alert.alert(
-        "Incomplete Report",
-        "Please complete the category, incident type, and details."
-      );
+      toast.error("Please complete the category, incident type, and details.");
       return;
     }
 
@@ -322,48 +371,34 @@ const EditReportModal = ({ visible, report, onClose, onSave }) => {
             <View style={styles.fieldContainer}>
               <ThemedText style={styles.label}>Incident Category</ThemedText>
 
-              <View style={styles.pickerContainer}>
-                <Picker
-                  selectedValue={incidentCategory}
-                  onValueChange={(itemValue) => setIncidentCategory(itemValue)}
-                  style={styles.picker}
-                >
-                  <Picker.Item label="Select Incident Category" value="" />
-
-                  {categoryOptions.map((option) => (
-                    <Picker.Item
-                      key={option.category}
-                      label={option.category}
-                      value={option.category}
-                    />
-                  ))}
-                </Picker>
-              </View>
+              <Dropdown
+                placeholder="Select Incident Category"
+                selectedValue={incidentCategory}
+                options={categoryOptions.map((option) => ({
+                  label: option.category,
+                  value: option.category,
+                }))}
+                onChange={setIncidentCategory}
+              />
             </View>
 
             <View style={styles.fieldContainer}>
               <ThemedText style={styles.label}>Incident Type</ThemedText>
 
-              <View style={styles.pickerContainer}>
-                <Picker
-                  selectedValue={incidentType}
-                  onValueChange={(itemValue) => setIncidentType(itemValue)}
-                  style={styles.picker}
-                >
-                  <Picker.Item
-                    label={
-                      incidentCategory
-                        ? "Select Incident Type"
-                        : "Select category first"
-                    }
-                    value=""
-                  />
-
-                  {incidentTypes.map((type) => (
-                    <Picker.Item key={type} label={type} value={type} />
-                  ))}
-                </Picker>
-              </View>
+              <Dropdown
+                placeholder={
+                  incidentCategory
+                    ? "Select Incident Type"
+                    : "Select category first"
+                }
+                selectedValue={incidentType}
+                options={incidentTypes.map((type) => ({
+                  label: type,
+                  value: type,
+                }))}
+                onChange={setIncidentType}
+                disabled={!incidentCategory}
+              />
             </View>
 
             <View style={styles.fieldContainer}>
@@ -452,6 +487,15 @@ const EditReportModal = ({ visible, report, onClose, onSave }) => {
 };
 
 const User_MyReports = () => {
+  return (
+    <ToastProvider>
+      <MyReportsInner />
+    </ToastProvider>
+  );
+};
+
+const MyReportsInner = () => {
+  const toast = useToast();
   const router = useRouter();
 
   const [fontsLoaded] = useFonts({
@@ -463,6 +507,7 @@ const User_MyReports = () => {
   const [selectedStatus, setSelectedStatus] = useState("All Status");
   const [openDropdown, setOpenDropdown] = useState(null);
   const [myReports, setMyReports] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
 
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [selectedReport, setSelectedReport] = useState(null);
@@ -483,10 +528,19 @@ const User_MyReports = () => {
       setMyReports(mapMyReports(res.data));
     } catch {
       // keep empty list on failure
+    } finally {
+      setRefreshing(false);
     }
   }, []);
 
   useAutoRefresh(loadMyReports, 30000);
+
+  useEffect(() => subscribeRefresh(loadMyReports), [loadMyReports]);
+
+  const handleRefresh = useCallback(() => {
+    setRefreshing(true);
+    loadMyReports();
+  }, [loadMyReports]);
 
   const filteredReports = useMemo(() => {
     if (selectedStatus === "All Status") {
@@ -601,10 +655,9 @@ const User_MyReports = () => {
       setEditModalVisible(false);
       setSelectedReport(null);
 
-      Alert.alert("Report Updated", "Your report has been updated successfully.");
+      toast.success("Your report has been updated successfully.");
     } catch (error) {
-      Alert.alert(
-        "Update Failed",
+      toast.error(
         error.response?.data?.error || "Could not update the report."
       );
     }
@@ -631,9 +684,10 @@ const User_MyReports = () => {
             setMyReports((prevReports) =>
               prevReports.filter((report) => report.id !== reportId)
             );
+
+            toast.success("Report deleted successfully.");
           } catch (error) {
-            Alert.alert(
-              "Delete Failed",
+            toast.error(
               error.response?.data?.error || "Could not delete the report."
             );
           }
@@ -652,6 +706,14 @@ const User_MyReports = () => {
         style={styles.scrollContainer}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            colors={[PRIMARY]}
+            tintColor={PRIMARY}
+          />
+        }
       >
         <View style={styles.heroSection}>
           <View style={styles.statsRow}>
@@ -1116,20 +1178,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 14,
     top: 15,
-  },
-
-  pickerContainer: {
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#D8E0EB",
-    borderRadius: 14,
-    overflow: "hidden",
-  },
-
-  picker: {
-    height: 52,
-    color: "#1F2A37",
-    fontFamily: FONT.regular,
   },
 
   textArea: {

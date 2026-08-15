@@ -1,9 +1,10 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   View,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  RefreshControl,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFonts } from "expo-font";
@@ -13,6 +14,7 @@ import ThemedView from "../../components/ThemedView";
 import ThemedText from "../../components/ThemedText";
 import apiClient from "../../services/apiClient";
 import useAutoRefresh from "../../hooks/useAutoRefresh";
+import { subscribeRefresh } from "../../services/refreshBus";
 import { getCache, setCache } from "../../services/dataStore";
 
 const ARGUS_BLUE = "#294880";
@@ -268,6 +270,7 @@ const User_Notification = () => {
   const [userReports, setUserReports] = useState([]);
   const [nearbyIncidents, setNearbyIncidents] = useState([]);
   const [loginActivity, setLoginActivity] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
 
   const loadNotifications = useCallback(async () => {
     try {
@@ -301,10 +304,19 @@ const User_Notification = () => {
       setLoginActivity(mapped.loginActivity);
     } catch {
       // leave lists empty on failure
+    } finally {
+      setRefreshing(false);
     }
   }, []);
 
   useAutoRefresh(loadNotifications, 30000);
+
+  useEffect(() => subscribeRefresh(loadNotifications), [loadNotifications]);
+
+  const handleRefresh = useCallback(() => {
+    setRefreshing(true);
+    loadNotifications();
+  }, [loadNotifications]);
 
   if (!fontsLoaded) {
     return null;
@@ -316,6 +328,14 @@ const User_Notification = () => {
         style={styles.scrollContainer}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            colors={[ARGUS_BLUE]}
+            tintColor={ARGUS_BLUE}
+          />
+        }
       >
         <View style={styles.sectionBlock}>
           <SectionHeader title="Your Reports" action="See All" />

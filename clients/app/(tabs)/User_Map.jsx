@@ -10,6 +10,7 @@ import {
   Dimensions,
   Platform,
   Linking,
+  RefreshControl,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
@@ -19,6 +20,7 @@ import ThemedText from "../../components/ThemedText";
 import MapView from "../../components/MapView";
 import apiClient from "../../services/apiClient";
 import useAutoRefresh from "../../hooks/useAutoRefresh";
+import { subscribeRefresh } from "../../services/refreshBus";
 import { getCache, setCache } from "../../services/dataStore";
 
 const ARGUS_BLUE = "#294880";
@@ -63,6 +65,7 @@ const UserMap = () => {
   const [selectedFacility, setSelectedFacility] = useState(null);
   const [facilities, setFacilities] = useState([]);
   const [facilitiesLoading, setFacilitiesLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [userPosition, setUserPosition] = useState(null);
   const mapViewRef = useRef(null);
 
@@ -134,10 +137,18 @@ const UserMap = () => {
     } finally {
       hasLoadedFacilitiesRef.current = true;
       setFacilitiesLoading(false);
+      setRefreshing(false);
     }
   }, [userPosition]);
 
   useAutoRefresh(loadFacilities, 30000);
+
+  useEffect(() => subscribeRefresh(loadFacilities), [loadFacilities]);
+
+  const handleRefresh = useCallback(() => {
+    setRefreshing(true);
+    loadFacilities();
+  }, [loadFacilities]);
 
   useEffect(() => {
     if (userPosition) loadFacilities();
@@ -205,6 +216,14 @@ const UserMap = () => {
         style={styles.screenScroll}
         contentContainerStyle={styles.screenContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            colors={[ARGUS_BLUE]}
+            tintColor={ARGUS_BLUE}
+          />
+        }
       >
         <View style={styles.mapWrapper}>
           <MapView
