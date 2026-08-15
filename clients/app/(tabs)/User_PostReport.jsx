@@ -5,10 +5,8 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Alert,
   Image,
 } from "react-native";
-import { Picker } from "@react-native-picker/picker";
 import * as Location from "expo-location";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
@@ -18,6 +16,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import ThemedView from "../../components/ThemedView";
 import ThemedText from "../../components/ThemedText";
+import Dropdown from "../../components/Dropdown";
+import ToastProvider, { useToast } from "../../components/Toast";
 import apiClient from "../../services/apiClient";
 import { uploadImages } from "../../services/imageUpload";
 import { getCache, setCache } from "../../services/dataStore";
@@ -76,6 +76,15 @@ const FALLBACK_CATEGORIES = [
 ];
 
 export default function User_PostReport() {
+  return (
+    <ToastProvider>
+      <UserPostReportInner />
+    </ToastProvider>
+  );
+}
+
+function UserPostReportInner() {
+  const toast = useToast();
   const router = useRouter();
 
   const [fontsLoaded] = useFonts({
@@ -213,17 +222,14 @@ export default function User_PostReport() {
 
   const handlePickPhoto = async () => {
     if (photos.length >= 3) {
-      Alert.alert("Maximum Reached", "You can only upload up to 3 photos.");
+      toast.error("You can only upload up to 3 photos.");
       return;
     }
 
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (!permission.granted) {
-      Alert.alert(
-        "Permission Needed",
-        "Please allow access to your photo library."
-      );
+      toast.error("Please allow access to your photo library.");
       return;
     }
 
@@ -255,8 +261,7 @@ export default function User_PostReport() {
       !incidentType ||
       !details.trim()
     ) {
-      Alert.alert(
-        "Incomplete Report",
+      toast.error(
         "Please complete the display name, location, category, incident type, and details."
       );
       return;
@@ -265,7 +270,7 @@ export default function User_PostReport() {
     try {
       const token = await AsyncStorage.getItem("access_token");
       if (!token) {
-        Alert.alert("Not Signed In", "Please sign in to post a report.");
+        toast.error("Please sign in to post a report.");
         return;
       }
 
@@ -290,22 +295,33 @@ export default function User_PostReport() {
         }
       );
 
-      Alert.alert(
-        "Report Posted",
-        "Your report has been submitted successfully. It is now pending review.",
-        [
-          {
-            text: "OK",
-            onPress: () => router.replace("/User_Home"),
-          },
-        ]
+      resetForm();
+
+      toast.success(
+        "Report submitted successfully. It is now pending review."
       );
+
+      setTimeout(() => {
+        router.replace("/User_Home");
+      }, 1200);
     } catch (error) {
-      Alert.alert(
-        "Submission Failed",
+      toast.error(
         error.response?.data?.error || "Could not submit your report. Please try again."
       );
     }
+  };
+
+  const resetForm = () => {
+    setDisplayNameType("Fullname");
+    setLocation("");
+    setLatitude("");
+    setLongitude("");
+    setIncidentCategory("");
+    setIncidentType("");
+    setDetails("");
+    setPhotos([]);
+    setLoadingLocation(true);
+    getCurrentLocation();
   };
 
   if (!fontsLoaded) {
@@ -462,48 +478,34 @@ export default function User_PostReport() {
           <View style={styles.fieldContainer}>
             <ThemedText style={styles.label}>Incident Category</ThemedText>
 
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={incidentCategory}
-                onValueChange={(itemValue) => setIncidentCategory(itemValue)}
-                style={styles.picker}
-              >
-                <Picker.Item label="Select Incident Category" value="" />
-
-                {incidentOptions.map((option) => (
-                  <Picker.Item
-                    key={option.category}
-                    label={option.category}
-                    value={option.category}
-                  />
-                ))}
-              </Picker>
-            </View>
+            <Dropdown
+              placeholder="Select Incident Category"
+              selectedValue={incidentCategory}
+              options={incidentOptions.map((option) => ({
+                label: option.category,
+                value: option.category,
+              }))}
+              onChange={setIncidentCategory}
+            />
           </View>
 
           <View style={styles.fieldContainer}>
             <ThemedText style={styles.label}>Incident Type</ThemedText>
 
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={incidentType}
-                onValueChange={(itemValue) => setIncidentType(itemValue)}
-                style={styles.picker}
-              >
-                <Picker.Item
-                  label={
-                    incidentCategory
-                      ? "Select Incident Type"
-                      : "Select category first"
-                  }
-                  value=""
-                />
-
-                {incidentTypes.map((type) => (
-                  <Picker.Item key={type} label={type} value={type} />
-                ))}
-              </Picker>
-            </View>
+            <Dropdown
+              placeholder={
+                incidentCategory
+                  ? "Select Incident Type"
+                  : "Select category first"
+              }
+              selectedValue={incidentType}
+              options={incidentTypes.map((type) => ({
+                label: type,
+                value: type,
+              }))}
+              onChange={setIncidentType}
+              disabled={!incidentCategory}
+            />
           </View>
 
           <View style={styles.fieldContainer}>
@@ -702,20 +704,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: "PoppinsRegular",
     color: "#1F2A37",
-  },
-
-  pickerContainer: {
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#D8E0EB",
-    borderRadius: 14,
-    overflow: "hidden",
-  },
-
-  picker: {
-    height: 52,
-    color: "#1F2A37",
-    fontFamily: "PoppinsRegular",
   },
 
   textArea: {

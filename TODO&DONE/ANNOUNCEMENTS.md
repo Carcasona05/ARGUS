@@ -73,6 +73,12 @@
 - No go back to top after scrolling downward too much.
 - MUCH BETTER TO USE TOAST FOR BETTER UI ON SUCCESS/FAIL MESSAGE
 
+# FIXES MADE (MIKA)
+- added toast in user_postreport and user_myreports
+- made the posts swipable and zoomable (also fixed the layout)
+- add refresh (to be fixed)
+- 
+
 # FOR DESKTOP
 - The responsiveness of everything.
 - In validation page: Fitler Reports - status should be reconsider if [all] really be needed.
