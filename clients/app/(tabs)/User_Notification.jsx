@@ -63,7 +63,7 @@ const formatLoginTime = (iso) => {
   })}`;
 };
 
-const mapNotifications = (notifData, activities) => ({
+const mapNotifications = (notifData, loginData) => ({
   userReports: (notifData?.reportStatuses || []).map((item) => ({
     ...item,
     time: formatRelativeTime(item.time),
@@ -72,7 +72,7 @@ const mapNotifications = (notifData, activities) => ({
     ...item,
     time: formatRelativeTime(item.time),
   })),
-  loginActivity: (activities || []).map((item) => ({
+  loginActivity: (loginData?.activities || []).map((item) => ({
     ...item,
     time: formatLoginTime(item.time),
   })),
@@ -340,9 +340,13 @@ const User_Notification = () => {
         <View style={styles.sectionBlock}>
           <SectionHeader title="Your Reports" action="See All" />
 
-          {userReports.map((item) => (
-            <ReportStatusCard key={item.id} item={item} />
-          ))}
+          {userReports.length === 0 ? (
+            <ThemedText style={styles.emptyText}>No report updates yet.</ThemedText>
+          ) : (
+            userReports.map((item) => (
+              <ReportStatusCard key={item.id} item={item} />
+            ))
+          )}
         </View>
 
         <View style={styles.sectionBlock}>
@@ -351,17 +355,25 @@ const User_Notification = () => {
             action="Open Map"
           />
 
-          {nearbyIncidents.map((item) => (
-            <NearbyIncidentCard key={item.id} item={item} />
-          ))}
+          {nearbyIncidents.length === 0 ? (
+            <ThemedText style={styles.emptyText}>No nearby incidents at this time.</ThemedText>
+          ) : (
+            nearbyIncidents.map((item) => (
+              <NearbyIncidentCard key={item.id} item={item} />
+            ))
+          )}
         </View>
 
         <View style={styles.sectionBlock}>
           <SectionHeader title="Recent Account Login" action="Manage" />
 
-          {loginActivity.map((item) => (
-            <LoginCard key={item.id} item={item} />
-          ))}
+          {loginActivity.length === 0 ? (
+            <ThemedText style={styles.emptyText}>No login activity found.</ThemedText>
+          ) : (
+            loginActivity.map((item) => (
+              <LoginCard key={item.id} item={item} />
+            ))
+          )}
         </View>
       </ScrollView>
     </ThemedView>
@@ -497,6 +509,14 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: "PoppinsMedium",
     color: "#1E5EFF",
+  },
+
+  emptyText: {
+    fontSize: 13,
+    fontFamily: "PoppinsRegular",
+    color: "#9CA3AF",
+    textAlign: "center",
+    paddingVertical: 16,
   },
 });
 
