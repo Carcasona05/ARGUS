@@ -34,10 +34,9 @@
 - Validation Done, Viewing similar posts, Viewing sentiment from gathering comments, AI Score (no ai yet just seed data), and do actions such as reject, resolve, under verification
 - Logs done with just fetching data for viewing activity from the Admins.
 - Notification Returning True to Is_read being Solved and done.
+- Accounst is not accessible if disabled.
 
 # LACKS
-- If accounts are disabled it should not be accessible.
-- 
 
 
 # CONCERNS
