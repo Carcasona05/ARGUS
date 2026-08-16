@@ -6,12 +6,15 @@ import {
   StyleSheet,
   ScrollView,
   Image,
+  useWindowDimensions,
+  Platform,
 } from "react-native";
 import * as Location from "expo-location";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useFonts } from "expo-font";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import ThemedView from "../../components/ThemedView";
@@ -86,6 +89,15 @@ export default function User_PostReport() {
 function UserPostReportInner() {
   const toast = useToast();
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+
+  const navHeight = width < 340 ? 62 : width < 390 ? 66 : 70;
+  const bottomSpace =
+    Platform.OS === "ios"
+      ? Math.max(insets.bottom, 10) + 6
+      : Math.max(insets.bottom, 8) + 8;
+  const bottomPadding = navHeight + bottomSpace + 24;
 
   const [fontsLoaded] = useFonts({
     PoppinsRegular: require("../../assets/fonts/Poppins-Regular.ttf"),
@@ -331,7 +343,10 @@ function UserPostReportInner() {
   return (
     <ThemedView style={styles.container}>
       <ScrollView
-        contentContainerStyle={styles.scrollContainer}
+        contentContainerStyle={[
+          styles.scrollContainer,
+          { paddingBottom: bottomPadding },
+        ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
@@ -589,7 +604,6 @@ const styles = StyleSheet.create({
   scrollContainer: {
     paddingHorizontal: 14,
     paddingTop: 14,
-    paddingBottom: 34,
   },
 
   formCard: {

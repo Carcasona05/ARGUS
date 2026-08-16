@@ -118,6 +118,7 @@ const DropdownFilter = ({
   label,
   value,
   options,
+  counts,
   isOpen,
   onToggle,
   onSelect,
@@ -162,6 +163,9 @@ const DropdownFilter = ({
               numberOfLines={1}
             >
               {value}
+              {counts && counts[value] !== undefined
+                ? ` (${counts[value]})`
+                : ""}
             </ThemedText>
           </View>
         </View>
@@ -196,6 +200,12 @@ const DropdownFilter = ({
                 >
                   {option}
                 </ThemedText>
+
+                {counts && counts[option] !== undefined ? (
+                  <ThemedText style={styles.dropdownOptionCount}>
+                    {counts[option]}
+                  </ThemedText>
+                ) : null}
 
                 {isActive ? (
                   <Ionicons name="checkmark-circle" size={16} color={PRIMARY} />
@@ -552,15 +562,19 @@ const MyReportsInner = () => {
     return myReports.filter((report) => report.status === selectedStatus);
   }, [selectedStatus, myReports]);
 
-  const totalReports = myReports.length;
+  const statusCounts = useMemo(() => {
+    const counts = { "All Status": myReports.length };
 
-  const totalPending = myReports.filter(
-    (report) => report.status === "Pending Review"
-  ).length;
+    statusOptions.forEach((status) => {
+      if (status !== "All Status") {
+        counts[status] = myReports.filter(
+          (report) => report.status === status
+        ).length;
+      }
+    });
 
-  const totalResolved = myReports.filter(
-    (report) => report.status === "Resolved"
-  ).length;
+    return counts;
+  }, [myReports]);
 
   const handleDropdownToggle = (dropdownName) => {
     setOpenDropdown((current) =>
@@ -718,51 +732,13 @@ const MyReportsInner = () => {
           />
         }
       >
-        <View style={styles.heroSection}>
-          <View style={styles.statsRow}>
-            <View style={styles.statCard}>
-              <View style={styles.statIcon}>
-                <Ionicons
-                  name="document-text-outline"
-                  size={17}
-                  color={PRIMARY}
-                />
-              </View>
-
-              <ThemedText style={styles.statNumber}>{totalReports}</ThemedText>
-              <ThemedText style={styles.statLabel}>Total Reports</ThemedText>
-            </View>
-
-            <View style={styles.statCard}>
-              <View style={styles.statIcon}>
-                <Ionicons name="time-outline" size={17} color={PRIMARY} />
-              </View>
-
-              <ThemedText style={styles.statNumber}>{totalPending}</ThemedText>
-              <ThemedText style={styles.statLabel}>Pending</ThemedText>
-            </View>
-
-            <View style={styles.statCard}>
-              <View style={styles.statIcon}>
-                <Ionicons
-                  name="checkmark-circle-outline"
-                  size={17}
-                  color={PRIMARY}
-                />
-              </View>
-
-              <ThemedText style={styles.statNumber}>{totalResolved}</ThemedText>
-              <ThemedText style={styles.statLabel}>Resolved</ThemedText>
-            </View>
-          </View>
-        </View>
-
         <View style={styles.sectionBlock}>
           <View style={styles.filterCard}>
             <DropdownFilter
               label="Status"
               value={selectedStatus}
               options={statusOptions}
+              counts={statusCounts}
               icon="filter-outline"
               isOpen={openDropdown === "status"}
               onToggle={() => handleDropdownToggle("status")}
@@ -840,52 +816,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingTop: 14,
     paddingBottom: 110,
-  },
-
-  heroSection: {
-    marginBottom: 14,
-  },
-
-  statsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-
-  statCard: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    paddingVertical: 13,
-    paddingHorizontal: 8,
-    marginHorizontal: 4,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#E7ECF3",
-  },
-
-  statIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "#E8EEF9",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 8,
-  },
-
-  statNumber: {
-    fontFamily: FONT.semiBold,
-    fontSize: 20,
-    color: PRIMARY,
-  },
-
-  statLabel: {
-    fontFamily: FONT.regular,
-    marginTop: 3,
-    fontSize: 10.5,
-    textAlign: "center",
-    color: "#6B7280",
-    lineHeight: 15,
   },
 
   sectionBlock: {
@@ -995,6 +925,7 @@ const styles = StyleSheet.create({
     fontFamily: FONT.regular,
     fontSize: 13,
     color: "#374151",
+    flex: 1,
   },
 
   activeDropdownOptionText: {
@@ -1002,8 +933,15 @@ const styles = StyleSheet.create({
     color: PRIMARY,
   },
 
+  dropdownOptionCount: {
+    fontFamily: FONT.medium,
+    fontSize: 13,
+    color: PRIMARY,
+    marginRight: 10,
+  },
+
   reportCardSpacing: {
-    marginBottom: 12,
+    marginBottom: 6,
   },
 
   emptyCard: {

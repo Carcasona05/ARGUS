@@ -675,7 +675,7 @@ const styles = StyleSheet.create({
   },
 
   reportCardSpacing: {
-    marginBottom: 12,
+    marginBottom: 6,
   },
 });
 

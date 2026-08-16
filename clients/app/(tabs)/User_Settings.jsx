@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
 
   profileCard: {
     alignItems: "center",
-    marginBottom: 18,
+    marginBottom: 8,
   },
 
   avatarCircle: {
@@ -277,7 +277,7 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
     borderWidth: 1,
     borderColor: "#E7ECF3",
-    marginBottom: 14,
+    marginBottom: 8,
   },
 
   sectionTitle: {
