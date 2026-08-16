@@ -46,7 +46,7 @@ export default function TabLayout() {
     if (pathname.includes("MyUser_RepPostView")) return "My Report";
     if (pathname.includes("User_Notification")) return "Notifications";
 
-    if (pathname.includes("User_Home")) return "Home";
+    if (pathname.includes("User_Home")) return "CommuniShield";
     if (pathname.includes("User_Map")) return "Map";
     if (pathname.includes("User_MyReports")) return "My Reports";
     if (pathname.includes("User_Settings")) return "Settings";

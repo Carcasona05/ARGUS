@@ -279,20 +279,6 @@ const User_Home = () => {
     });
   }, [reports, selectedTimeRange, selectedStatus, selectedSource]);
 
-  const totalUserReports = reports.filter(
-    (report) =>
-      report.postSource === "User" && isWithinPastWeek(report.datePosted)
-  ).length;
-
-  const totalAdminReports = reports.filter(
-    (report) =>
-      report.postSource === "Admin" && isWithinPastWeek(report.datePosted)
-  ).length;
-
-  const totalPast24Hours = reports.filter((report) =>
-    isWithinPastHours(report.datePosted, 24)
-  ).length;
-
   const handleDropdownToggle = (dropdownName) => {
     setOpenDropdown((current) =>
       current === dropdownName ? null : dropdownName
@@ -353,64 +339,7 @@ const User_Home = () => {
           />
         }
       >
-        <View style={styles.topHeader}>
-          <View>
-            <ThemedText style={styles.headerTitle}>Community Feed</ThemedText>
-            <ThemedText style={styles.headerSubtitle}>
-              Recent safety reports and official admin updates.
-            </ThemedText>
-          </View>
-        </View>
-
         <MapPreview style={styles.mapSpacing} />
-
-        <View style={styles.summaryRow}>
-          <View style={styles.summaryCard}>
-            <View style={styles.summaryIcon}>
-              <Ionicons name="document-text-outline" size={17} color={PRIMARY} />
-            </View>
-            <ThemedText style={styles.summaryNumber}>
-              {totalUserReports}
-            </ThemedText>
-            <ThemedText style={styles.summaryLabel}>User Reports</ThemedText>
-          </View>
-
-          <View style={styles.summaryCard}>
-            <View style={styles.summaryIcon}>
-              <Ionicons name="megaphone-outline" size={17} color={PRIMARY} />
-            </View>
-            <ThemedText style={styles.summaryNumber}>
-              {totalAdminReports}
-            </ThemedText>
-            <ThemedText style={styles.summaryLabel}>Admin Posts</ThemedText>
-          </View>
-
-          <View style={styles.summaryCard}>
-            <View style={styles.summaryIcon}>
-              <Ionicons name="time-outline" size={17} color={PRIMARY} />
-            </View>
-            <ThemedText style={styles.summaryNumber}>
-              {totalPast24Hours}
-            </ThemedText>
-            <ThemedText style={styles.summaryLabel}>Past 24H</ThemedText>
-          </View>
-        </View>
-
-        <View style={styles.feedHeader}>
-          <View>
-            <ThemedText style={styles.feedTitle}>Latest Updates</ThemedText>
-            <ThemedText style={styles.feedSubtitle}>
-              Showing posts within the selected time range.
-            </ThemedText>
-          </View>
-
-          <View style={styles.resultPill}>
-            <ThemedText style={styles.resultPillText}>
-              {filteredReports.length} result
-              {filteredReports.length === 1 ? "" : "s"}
-            </ThemedText>
-          </View>
-        </View>
 
         <View style={styles.filterCard}>
           <DropdownFilter
@@ -540,24 +469,6 @@ const styles = StyleSheet.create({
     paddingBottom: 110,
   },
 
-  topHeader: {
-    marginBottom: 14,
-  },
-
-  headerTitle: {
-    fontFamily: FONT.semiBold,
-    fontSize: 24,
-    color: "#1F2A37",
-  },
-
-  headerSubtitle: {
-    fontFamily: FONT.regular,
-    marginTop: 4,
-    fontSize: 13,
-    color: "#6B7280",
-    lineHeight: 19,
-  },
-
   mapSpacing: {
     marginBottom: 12,
   },
@@ -612,87 +523,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 18,
     color: "#6B7280",
-  },
-
-  summaryRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 14,
-  },
-
-  summaryCard: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    paddingVertical: 13,
-    paddingHorizontal: 8,
-    marginHorizontal: 4,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#E7ECF3",
-  },
-
-  summaryIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "#E8EEF9",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 8,
-  },
-
-  summaryNumber: {
-    fontFamily: FONT.semiBold,
-    fontSize: 20,
-    color: PRIMARY,
-  },
-
-  summaryLabel: {
-    fontFamily: FONT.regular,
-    marginTop: 3,
-    fontSize: 10.5,
-    textAlign: "center",
-    color: "#6B7280",
-    lineHeight: 15,
-  },
-
-  feedHeader: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    padding: 14,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: "#E7ECF3",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-
-  feedTitle: {
-    fontFamily: FONT.semiBold,
-    fontSize: 18,
-    color: "#1F2A37",
-  },
-
-  feedSubtitle: {
-    fontFamily: FONT.regular,
-    fontSize: 11,
-    color: "#7B8794",
-    marginTop: 3,
-  },
-
-  resultPill: {
-    backgroundColor: "#E8EEF9",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-  },
-
-  resultPillText: {
-    fontFamily: FONT.medium,
-    fontSize: 11,
-    color: PRIMARY,
   },
 
   filterCard: {

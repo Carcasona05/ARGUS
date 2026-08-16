@@ -10,6 +10,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, usePathname } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { scrollToTop } from "../services/scrollToTopBus";
 
 const ARGUS_BLUE = "#294880";
 const INACTIVE = "#6C7A96";
@@ -94,6 +95,20 @@ const BottomNavBar = () => {
     return pathname === route || pathname.startsWith(route + "/");
   };
 
+  const handleTabPress = (tab) => {
+    const isActive = isActiveRoute(tab.route);
+
+    if (
+      (tab.route === "/User_Home" || tab.route === "/User_MyReports") &&
+      isActive
+    ) {
+      scrollToTop();
+      return;
+    }
+
+    router.push(tab.route);
+  };
+
   const renderTab = (tab) => {
     const isActive = isActiveRoute(tab.route);
 
@@ -102,7 +117,7 @@ const BottomNavBar = () => {
         key={tab.name}
         style={styles.tab}
         activeOpacity={0.75}
-        onPress={() => router.push(tab.route)}
+        onPress={() => handleTabPress(tab)}
       >
         <Ionicons
           name={isActive ? tab.icon : `${tab.icon}-outline`}

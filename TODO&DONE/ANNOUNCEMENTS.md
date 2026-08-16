@@ -11,6 +11,7 @@
 - Password and Security is Done.
 - Integrate the MAP API is DONE - Added a Datbase of storing coordination than relying on leaflets and openmap.
 - Credibility Score is done but only for the user's features (not included AI yet.)
+- All the posts are just now
 
 # USERS NEEDED LOGICS
 - Notification turn on turn off
@@ -73,11 +74,12 @@
 - No go back to top after scrolling downward too much.
 - MUCH BETTER TO USE TOAST FOR BETTER UI ON SUCCESS/FAIL MESSAGE
 
+
 # FIXES MADE (MIKA)
 - added toast in user_postreport and user_myreports
 - made the posts swipable and zoomable (also fixed the layout)
-- add refresh (to be fixed)
-- 
+- added refresh
+- minor layout changes in user_home and user_settings
 
 # FOR DESKTOP
 - The responsiveness of everything.

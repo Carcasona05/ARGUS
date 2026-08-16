@@ -232,45 +232,41 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 14,
     paddingTop: 14,
-    paddingBottom: 28,
+    paddingBottom: 120,
   },
 
   profileCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 22,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#E7ECF3",
-    flexDirection: "row",
     alignItems: "center",
-    marginBottom: 14,
+    marginBottom: 18,
   },
 
   avatarCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     backgroundColor: "#EEF3FF",
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 12,
+    marginBottom: 10,
   },
 
   profileInfo: {
-    flex: 1,
+    alignItems: "center",
   },
 
   profileName: {
-    fontSize: 16,
+    fontSize: 17,
     fontFamily: "PoppinsSemiBold",
     color: "#1F2A37",
     marginBottom: 3,
+    textAlign: "center",
   },
 
   profileEmail: {
     fontSize: 12,
     fontFamily: "PoppinsRegular",
     color: "#6B7280",
+    textAlign: "center",
   },
 
   sectionCard: {

@@ -758,23 +758,6 @@ const MyReportsInner = () => {
         </View>
 
         <View style={styles.sectionBlock}>
-          <View style={styles.feedHeader}>
-            <View style={styles.feedHeaderText}>
-              <ThemedText style={styles.feedTitle}>My Reports</ThemedText>
-
-              <ThemedText style={styles.feedSubtitle}>
-                View your submitted reports and current status.
-              </ThemedText>
-            </View>
-
-            <View style={styles.resultPill}>
-              <ThemedText style={styles.resultPillText}>
-                {filteredReports.length} result
-                {filteredReports.length === 1 ? "" : "s"}
-              </ThemedText>
-            </View>
-          </View>
-
           <View style={styles.filterCard}>
             <DropdownFilter
               label="Status"
@@ -907,50 +890,6 @@ const styles = StyleSheet.create({
 
   sectionBlock: {
     marginBottom: 14,
-  },
-
-  feedHeader: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    padding: 14,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: "#E7ECF3",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-
-  feedHeaderText: {
-    flex: 1,
-    paddingRight: 10,
-  },
-
-  feedTitle: {
-    fontFamily: FONT.semiBold,
-    fontSize: 18,
-    color: "#1F2A37",
-  },
-
-  feedSubtitle: {
-    fontFamily: FONT.regular,
-    fontSize: 11,
-    color: "#7B8794",
-    marginTop: 3,
-    lineHeight: 16,
-  },
-
-  resultPill: {
-    backgroundColor: "#E8EEF9",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-  },
-
-  resultPillText: {
-    fontFamily: FONT.medium,
-    fontSize: 11,
-    color: PRIMARY,
   },
 
   filterCard: {
