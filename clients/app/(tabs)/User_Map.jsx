@@ -20,6 +20,7 @@ import ThemedText from "../../components/ThemedText";
 import MapView from "../../components/MapView";
 import apiClient from "../../services/apiClient";
 import useAutoRefresh from "../../hooks/useAutoRefresh";
+import useScrollToTop from "../../hooks/useScrollToTop";
 import { subscribeRefresh } from "../../services/refreshBus";
 import { getCache, setCache } from "../../services/dataStore";
 
@@ -66,6 +67,7 @@ const UserMap = () => {
   const [facilities, setFacilities] = useState([]);
   const [facilitiesLoading, setFacilitiesLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const scrollRef = useScrollToTop();
   const [userPosition, setUserPosition] = useState(null);
   const mapViewRef = useRef(null);
 
@@ -213,6 +215,7 @@ const UserMap = () => {
   return (
     <ThemedView style={styles.container}>
       <ScrollView
+        ref={scrollRef}
         style={styles.screenScroll}
         contentContainerStyle={styles.screenContent}
         showsVerticalScrollIndicator={false}

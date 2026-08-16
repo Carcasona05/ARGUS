@@ -16,6 +16,7 @@ import ReportPost_Layout from "../../components/ReportPost_Layout";
 import ReportByAdmin from "../../components/ReportByAdmin";
 import apiClient from "../../services/apiClient";
 import useAutoRefresh from "../../hooks/useAutoRefresh";
+import useScrollToTop from "../../hooks/useScrollToTop";
 import { subscribeRefresh } from "../../services/refreshBus";
 import { getCache, setCache } from "../../services/dataStore";
 
@@ -218,6 +219,7 @@ const User_Home = () => {
   const [reports, setReports] = useState([]);
   const [, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const scrollRef = useScrollToTop();
 
   const loadReports = useCallback(async () => {
     try {
@@ -338,6 +340,7 @@ const User_Home = () => {
   return (
     <ThemedView style={styles.container}>
       <ScrollView
+        ref={scrollRef}
         style={styles.scrollContainer}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}

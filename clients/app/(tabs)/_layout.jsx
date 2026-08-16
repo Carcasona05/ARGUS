@@ -11,7 +11,7 @@ import { Tabs, usePathname, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useFonts } from "expo-font";
 import BottomNavBar from "../../components/BottomNavBar";
-import { triggerRefresh } from "../../services/refreshBus";
+import { scrollToTop } from "../../services/scrollToTopBus";
 
 const ARGUS_BLUE = "#294880";
 
@@ -86,20 +86,16 @@ export default function TabLayout() {
 
     return (
       <View style={styles.majorHeader}>
-        <View style={styles.majorTitleWrap}>
-          <Text style={styles.majorTitle}>{title}</Text>
-        </View>
-
         <TouchableOpacity
-          style={styles.notificationButton}
-          activeOpacity={0.75}
-          onPress={triggerRefresh}
+          style={styles.majorTitleWrap}
+          activeOpacity={0.7}
+          onPress={scrollToTop}
         >
-          <Ionicons name="refresh" size={22} color={ARGUS_BLUE} />
+          <Text style={styles.majorTitle}>{title}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.notificationButton, styles.headerButtonGap]}
+          style={styles.notificationButton}
           activeOpacity={0.75}
           onPress={handleNotification}
         >
@@ -297,9 +293,5 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 10,
     elevation: 4,
-  },
-
-  headerButtonGap: {
-    marginLeft: 8,
   },
 });

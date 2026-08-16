@@ -24,6 +24,7 @@ import MyUser_RepPost_Layout from "../../components/User_compo/MyUser_RepPost_La
 import apiClient from "../../services/apiClient";
 import { uploadImage } from "../../services/imageUpload";
 import useAutoRefresh from "../../hooks/useAutoRefresh";
+import useScrollToTop from "../../hooks/useScrollToTop";
 import { subscribeRefresh } from "../../services/refreshBus";
 import { getCache, setCache } from "../../services/dataStore";
 
@@ -508,6 +509,7 @@ const MyReportsInner = () => {
   const [openDropdown, setOpenDropdown] = useState(null);
   const [myReports, setMyReports] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
+  const scrollRef = useScrollToTop();
 
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [selectedReport, setSelectedReport] = useState(null);
@@ -703,6 +705,7 @@ const MyReportsInner = () => {
   return (
     <ThemedView style={styles.container}>
       <ScrollView
+        ref={scrollRef}
         style={styles.scrollContainer}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}

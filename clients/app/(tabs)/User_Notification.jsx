@@ -14,6 +14,7 @@ import ThemedView from "../../components/ThemedView";
 import ThemedText from "../../components/ThemedText";
 import apiClient from "../../services/apiClient";
 import useAutoRefresh from "../../hooks/useAutoRefresh";
+import useScrollToTop from "../../hooks/useScrollToTop";
 import { subscribeRefresh } from "../../services/refreshBus";
 import { getCache, setCache } from "../../services/dataStore";
 
@@ -271,6 +272,7 @@ const User_Notification = () => {
   const [nearbyIncidents, setNearbyIncidents] = useState([]);
   const [loginActivity, setLoginActivity] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
+  const scrollRef = useScrollToTop();
 
   const loadNotifications = useCallback(async () => {
     try {
@@ -325,6 +327,7 @@ const User_Notification = () => {
   return (
     <ThemedView style={styles.container}>
       <ScrollView
+        ref={scrollRef}
         style={styles.scrollContainer}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
