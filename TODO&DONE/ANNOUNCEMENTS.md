@@ -80,6 +80,10 @@
 - made the posts swipable and zoomable (also fixed the layout)
 - added refresh
 - minor layout changes in user_home and user_settings
+- added eye toggle for all password inputs 
+- added password validation
+- added avoid keyboard (to be checked in all ui)
+- added 
 
 # FOR DESKTOP
 - The responsiveness of everything.

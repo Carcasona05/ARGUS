@@ -28,6 +28,27 @@ const COLORS = {
   danger: "#E45757",
 };
 
+const validateNewPassword = (value) => {
+  if (!value) return "Password is required.";
+  if (value.length < 6) return "Password must be at least 6 characters.";
+  if (!/[A-Z]/.test(value))
+    return "Password must contain at least one capital letter.";
+  if (!/[\d\W_]/.test(value))
+    return "Password must contain at least one number or symbol.";
+  return "";
+};
+
+const validateConfirmPassword = (value, newPasswordValue) => {
+  if (!value) return "Please confirm your password.";
+  if (value !== newPasswordValue) return "Passwords do not match.";
+  return "";
+};
+
+const validateCurrentPassword = (value) => {
+  if (!value) return "Current password is required.";
+  return "";
+};
+
 function FormSection({ icon, title, description, children }) {
   return (
     <View style={styles.sectionCard}>
@@ -57,23 +78,41 @@ function InputField({
   secureTextEntry,
   keyboardType,
   icon,
+  error,
 }) {
+  const [showPassword, setShowPassword] = useState(false);
+
   return (
     <View style={styles.inputGroup}>
       <Text style={styles.inputLabel}>{label}</Text>
 
-      <View style={styles.inputWrap}>
+      <View style={[styles.inputWrap, error && styles.inputWrapError]}>
         <Ionicons name={icon} size={18} color={COLORS.textMuted} />
         <TextInput
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
           placeholderTextColor={COLORS.textMuted}
-          secureTextEntry={secureTextEntry}
+          secureTextEntry={secureTextEntry && !showPassword}
           keyboardType={keyboardType}
           style={styles.textInput}
         />
+        {secureTextEntry ? (
+          <TouchableOpacity
+            onPress={() => setShowPassword(!showPassword)}
+            activeOpacity={0.7}
+            style={styles.eyeButton}
+          >
+            <Ionicons
+              name={showPassword ? "eye-off-outline" : "eye-outline"}
+              size={20}
+              color={COLORS.textMuted}
+            />
+          </TouchableOpacity>
+        ) : null}
       </View>
+
+      {error ? <Text style={styles.fieldErrorText}>{error}</Text> : null}
     </View>
   );
 }
@@ -97,6 +136,27 @@ export default function Admin_Settings() {
     newPassword: "",
     confirmPassword: "",
   });
+
+  const [passwordSubmitted, setPasswordSubmitted] = useState(false);
+  const [currentPasswordError, setCurrentPasswordError] = useState("");
+  const [newPasswordError, setNewPasswordError] = useState("");
+  const [confirmPasswordError, setConfirmPasswordError] = useState("");
+
+  const updatePasswordField = (key, value) => {
+    setPasswordData((prev) => {
+      const next = { ...prev, [key]: value };
+
+      if (passwordSubmitted) {
+        setCurrentPasswordError(validateCurrentPassword(next.currentPassword));
+        setNewPasswordError(validateNewPassword(next.newPassword));
+        setConfirmPasswordError(
+          validateConfirmPassword(next.newPassword, next.confirmPassword)
+        );
+      }
+
+      return next;
+    });
+  };
 
   const [fontsLoaded] = useFonts({
     PoppinsRegular: require("../../assets/fonts/Poppins-Regular.ttf"),
@@ -228,27 +288,20 @@ export default function Admin_Settings() {
   };
 
   const handlePasswordSave = async () => {
-    if (
-      !passwordData.currentPassword ||
-      !passwordData.newPassword ||
-      !passwordData.confirmPassword
-    ) {
-      showMessage("Missing Password", "Please complete all password fields.");
-      return;
-    }
+    setPasswordSubmitted(true);
 
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      showMessage(
-        "Password Mismatch",
-        "New password and confirm password do not match."
-      );
-      return;
-    }
+    const currentError = validateCurrentPassword(passwordData.currentPassword);
+    const newError = validateNewPassword(passwordData.newPassword);
+    const confirmError = validateConfirmPassword(
+      passwordData.newPassword,
+      passwordData.confirmPassword
+    );
 
-    if (passwordData.newPassword.length < 6) {
-      showMessage("Weak Password", "Password must be at least 6 characters.");
-      return;
-    }
+    setCurrentPasswordError(currentError);
+    setNewPasswordError(newError);
+    setConfirmPasswordError(confirmError);
+
+    if (currentError || newError || confirmError) return;
 
     try {
       const token = await AsyncStorage.getItem("access_token");
@@ -268,6 +321,11 @@ export default function Admin_Settings() {
         newPassword: "",
         confirmPassword: "",
       });
+
+      setPasswordSubmitted(false);
+      setCurrentPasswordError("");
+      setNewPasswordError("");
+      setConfirmPasswordError("");
 
       showMessage(
         "Password Updated",
@@ -407,33 +465,34 @@ export default function Admin_Settings() {
                 label="Current Password"
                 value={passwordData.currentPassword}
                 onChangeText={(text) =>
-                  setPasswordData({ ...passwordData, currentPassword: text })
+                  updatePasswordField("currentPassword", text)
                 }
                 placeholder="Enter current password"
                 secureTextEntry
                 icon="key-outline"
+                error={currentPasswordError}
               />
 
               <InputField
                 label="New Password"
                 value={passwordData.newPassword}
-                onChangeText={(text) =>
-                  setPasswordData({ ...passwordData, newPassword: text })
-                }
+                onChangeText={(text) => updatePasswordField("newPassword", text)}
                 placeholder="Enter new password"
                 secureTextEntry
                 icon="lock-closed-outline"
+                error={newPasswordError}
               />
 
               <InputField
                 label="Confirm New Password"
                 value={passwordData.confirmPassword}
                 onChangeText={(text) =>
-                  setPasswordData({ ...passwordData, confirmPassword: text })
+                  updatePasswordField("confirmPassword", text)
                 }
                 placeholder="Confirm new password"
                 secureTextEntry
                 icon="shield-checkmark-outline"
+                error={confirmPasswordError}
               />
             </View>
 
@@ -444,7 +503,8 @@ export default function Admin_Settings() {
                 color={COLORS.primary}
               />
               <Text style={styles.passwordNoteText}>
-                Password must be at least 6 characters.
+                Password must be at least 6 characters with a capital letter,
+                and a number or symbol.
               </Text>
             </View>
 
@@ -643,6 +703,25 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: "PoppinsRegular",
     outlineStyle: Platform.OS === "web" ? "none" : undefined,
+  },
+
+  eyeButton: {
+    marginLeft: 8,
+    padding: 4,
+  },
+
+  inputWrapError: {
+    borderColor: "#C0392B",
+  },
+
+  fieldErrorText: {
+    width: "100%",
+    color: "#C0392B",
+    fontSize: 13,
+    lineHeight: 18,
+    fontFamily: "PoppinsRegular",
+    marginTop: 6,
+    paddingHorizontal: 2,
   },
 
   passwordNote: {

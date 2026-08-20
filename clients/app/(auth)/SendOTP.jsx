@@ -17,6 +17,22 @@ import { router } from "expo-router";
 
 const { width, height } = Dimensions.get("window");
 
+const validateNewPassword = (value) => {
+  if (!value) return "Password is required.";
+  if (value.length < 6) return "Password must be at least 6 characters.";
+  if (!/[A-Z]/.test(value))
+    return "Password must contain at least one capital letter.";
+  if (!/[\d\W_]/.test(value))
+    return "Password must contain at least one number or symbol.";
+  return "";
+};
+
+const validateConfirmPassword = (value, newPasswordValue) => {
+  if (!value) return "Please confirm your password.";
+  if (value !== newPasswordValue) return "Passwords do not match.";
+  return "";
+};
+
 if (!globalThis.demoAccount) {
   globalThis.demoAccount = {
     email: "demo@argus.com",
@@ -32,6 +48,11 @@ export default function SendOTP() {
   const [otpDigits, setOtpDigits] = useState(["", "", "", "", "", ""]);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [newPasswordError, setNewPasswordError] = useState("");
+  const [confirmPasswordError, setConfirmPasswordError] = useState("");
 
   const otpRefs = useRef([]);
 
@@ -73,21 +94,30 @@ export default function SendOTP() {
     setStep("reset");
   };
 
+  const handleNewPasswordChange = (text) => {
+    setNewPassword(text);
+    if (submitted) {
+      setNewPasswordError(validateNewPassword(text));
+      setConfirmPasswordError(validateConfirmPassword(text, confirmPassword));
+    }
+  };
+
+  const handleConfirmPasswordChange = (text) => {
+    setConfirmPassword(text);
+    if (submitted) {
+      setConfirmPasswordError(validateConfirmPassword(newPassword, text));
+    }
+  };
+
   const handleSavePassword = () => {
-    if (!newPassword || !confirmPassword) {
-      Alert.alert("Error", "Please fill in both password fields.");
-      return;
-    }
+    setSubmitted(true);
 
-    if (newPassword.length < 6) {
-      Alert.alert("Error", "Password must be at least 6 characters.");
-      return;
-    }
+    const pwError = validateNewPassword(newPassword);
+    const confirmError = validateConfirmPassword(newPassword, confirmPassword);
+    setNewPasswordError(pwError);
+    setConfirmPasswordError(confirmError);
 
-    if (newPassword !== confirmPassword) {
-      Alert.alert("Error", "Passwords do not match.");
-      return;
-    }
+    if (pwError || confirmError) return;
 
     globalThis.demoAccount.email = email.trim().toLowerCase();
     globalThis.demoAccount.password = newPassword;
@@ -156,7 +186,12 @@ export default function SendOTP() {
           </>
         ) : (
           <>
-            <View style={styles.inputWrapper}>
+            <View
+              style={[
+                styles.inputWrapper,
+                newPasswordError && styles.inputWrapperError,
+              ]}
+            >
               <FontAwesome
                 name="lock"
                 size={20}
@@ -168,13 +203,32 @@ export default function SendOTP() {
                 placeholder="New Password"
                 placeholderTextColor="#6E7FA5"
                 value={newPassword}
-                onChangeText={setNewPassword}
-                secureTextEntry
+                onChangeText={handleNewPasswordChange}
+                secureTextEntry={!showNewPassword}
                 autoComplete="new-password"
               />
-            </View>
 
-            <View style={styles.inputWrapper}>
+              <TouchableOpacity
+                onPress={() => setShowNewPassword(!showNewPassword)}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name={showNewPassword ? "eye-off-outline" : "eye-outline"}
+                  size={20}
+                  color="#5A6F9E"
+                />
+              </TouchableOpacity>
+            </View>
+            {newPasswordError ? (
+              <Text style={styles.errorText}>{newPasswordError}</Text>
+            ) : null}
+
+            <View
+              style={[
+                styles.inputWrapper,
+                confirmPasswordError && styles.inputWrapperError,
+              ]}
+            >
               <FontAwesome
                 name="lock"
                 size={20}
@@ -186,11 +240,27 @@ export default function SendOTP() {
                 placeholder="Confirm New Password"
                 placeholderTextColor="#6E7FA5"
                 value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                secureTextEntry
+                onChangeText={handleConfirmPasswordChange}
+                secureTextEntry={!showConfirmPassword}
                 autoComplete="new-password"
               />
+
+              <TouchableOpacity
+                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name={
+                    showConfirmPassword ? "eye-off-outline" : "eye-outline"
+                  }
+                  size={20}
+                  color="#5A6F9E"
+                />
+              </TouchableOpacity>
             </View>
+            {confirmPasswordError ? (
+              <Text style={styles.errorText}>{confirmPasswordError}</Text>
+            ) : null}
 
             <TouchableOpacity
               style={styles.primaryButton}
@@ -294,6 +364,18 @@ const styles = StyleSheet.create({
     height: "100%",
     color: "#294880",
     fontSize: 14,
+  },
+  inputWrapperError: {
+    borderColor: "#C0392B",
+  },
+  errorText: {
+    width: "100%",
+    color: "#C0392B",
+    fontSize: 13,
+    lineHeight: 18,
+    marginTop: 2,
+    marginBottom: 12,
+    paddingHorizontal: 2,
   },
   primaryButton: {
     width: "100%",

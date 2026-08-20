@@ -26,6 +26,22 @@ if (!globalThis.adminAccount) {
   };
 }
 
+const validatePassword = (value) => {
+  if (!value) return "Password is required.";
+  if (value.length < 6) return "Password must be at least 6 characters.";
+  if (!/[A-Z]/.test(value))
+    return "Password must contain at least one capital letter.";
+  if (!/[\d\W_]/.test(value))
+    return "Password must contain at least one number or symbol.";
+  return "";
+};
+
+const validateConfirmPassword = (value, passwordValue) => {
+  if (!value) return "Please confirm your password.";
+  if (value !== passwordValue) return "Passwords do not match.";
+  return "";
+};
+
 export default function Admin_Register() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -34,6 +50,24 @@ export default function Admin_Register() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+  const [confirmPasswordError, setConfirmPasswordError] = useState("");
+
+  const handlePasswordChange = (text) => {
+    setPassword(text);
+    if (submitted) {
+      setPasswordError(validatePassword(text));
+      setConfirmPasswordError(validateConfirmPassword(text, confirmPassword));
+    }
+  };
+
+  const handleConfirmPasswordChange = (text) => {
+    setConfirmPassword(text);
+    if (submitted) {
+      setConfirmPasswordError(validateConfirmPassword(password, text));
+    }
+  };
 
   const handleRegister = async () => {
     if (Platform.OS !== "web") {
@@ -44,7 +78,16 @@ export default function Admin_Register() {
     const cleanName = fullName.trim();
     const cleanEmail = email.trim().toLowerCase();
 
-    if (!cleanName || !cleanEmail || !password || !confirmPassword) {
+    setSubmitted(true);
+
+    const pwError = validatePassword(password);
+    const confirmError = validateConfirmPassword(password, confirmPassword);
+    setPasswordError(pwError);
+    setConfirmPasswordError(confirmError);
+
+    if (pwError || confirmError) return;
+
+    if (!cleanName || !cleanEmail) {
       Alert.alert("Error", "Please fill in all fields.");
       return;
     }
@@ -53,16 +96,6 @@ export default function Admin_Register() {
 
     if (!emailRegex.test(cleanEmail)) {
       Alert.alert("Error", "Please enter a valid email address.");
-      return;
-    }
-
-    if (password.length < 6) {
-      Alert.alert("Error", "Password must be at least 6 characters.");
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      Alert.alert("Error", "Passwords do not match.");
       return;
     }
 
@@ -193,7 +226,12 @@ export default function Admin_Register() {
                 />
               </View>
 
-              <View style={styles.inputWrapper}>
+              <View
+                style={[
+                  styles.inputWrapper,
+                  passwordError && styles.inputWrapperError,
+                ]}
+              >
                 <FontAwesome
                   name="lock"
                   size={20}
@@ -206,7 +244,7 @@ export default function Admin_Register() {
                   placeholder="Admin Password"
                   placeholderTextColor="#6E7FA5"
                   value={password}
-                  onChangeText={setPassword}
+                  onChangeText={handlePasswordChange}
                   secureTextEntry={!showPassword}
                   autoComplete="new-password"
                 />
@@ -222,8 +260,16 @@ export default function Admin_Register() {
                   />
                 </TouchableOpacity>
               </View>
+              {passwordError ? (
+                <Text style={styles.errorText}>{passwordError}</Text>
+              ) : null}
 
-              <View style={styles.inputWrapper}>
+              <View
+                style={[
+                  styles.inputWrapper,
+                  confirmPasswordError && styles.inputWrapperError,
+                ]}
+              >
                 <FontAwesome
                   name="lock"
                   size={20}
@@ -236,7 +282,7 @@ export default function Admin_Register() {
                   placeholder="Confirm Admin Password"
                   placeholderTextColor="#6E7FA5"
                   value={confirmPassword}
-                  onChangeText={setConfirmPassword}
+                  onChangeText={handleConfirmPasswordChange}
                   secureTextEntry={!showConfirmPassword}
                   autoComplete="new-password"
                 />
@@ -254,6 +300,9 @@ export default function Admin_Register() {
                   />
                 </TouchableOpacity>
               </View>
+              {confirmPasswordError ? (
+                <Text style={styles.errorText}>{confirmPasswordError}</Text>
+              ) : null}
 
               <TouchableOpacity
                 style={styles.registerButton}
@@ -404,6 +453,20 @@ const styles = StyleSheet.create({
     color: "#294880",
     fontSize: 14,
     outlineStyle: "none",
+  },
+
+  inputWrapperError: {
+    borderColor: "#C0392B",
+  },
+
+  errorText: {
+    width: "100%",
+    color: "#C0392B",
+    fontSize: 13,
+    lineHeight: 18,
+    marginTop: 2,
+    marginBottom: 12,
+    paddingHorizontal: 2,
   },
 
   registerButton: {

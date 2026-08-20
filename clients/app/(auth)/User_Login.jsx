@@ -20,6 +20,11 @@ import apiClient from "../../services/apiClient";
 import { saveAuth } from "../../services/auth";
 import { prefetchAllData } from "../../services/dataStore";
 
+const validateLoginPassword = (value) => {
+  if (!value) return "Password incorrect.";
+  return "";
+};
+
 if (!globalThis.demoAccount) {
   globalThis.demoAccount = {
     email: "demo@argus.com",
@@ -37,7 +42,10 @@ export default function UserLogin() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  
+  const [showPassword, setShowPassword] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+
   const [showForgotModal, setShowForgotModal] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [, setAdminTapCount] = useState(0);
@@ -64,10 +72,22 @@ export default function UserLogin() {
     });
   };
 
+  const handlePasswordChange = (text) => {
+    setPassword(text);
+    if (submitted) {
+      setPasswordError(validateLoginPassword(text));
+    }
+  };
+
   const handleLogin = async () => {
     const cleanEmail = email.trim().toLowerCase();
 
-    if (!cleanEmail || !password) {
+    setSubmitted(true);
+    const pwError = validateLoginPassword(password);
+    setPasswordError(pwError);
+    if (pwError) return;
+
+    if (!cleanEmail) {
       Alert.alert("Error", "Please fill in all fields.");
       return;
     }
@@ -232,7 +252,12 @@ export default function UserLogin() {
                 />
               </View>
 
-              <View style={styles.inputWrapper}>
+              <View
+                style={[
+                  styles.inputWrapper,
+                  passwordError && styles.inputWrapperError,
+                ]}
+              >
                 <View style={styles.iconBox}>
                   <FontAwesome name="lock" size={22} color="#2F4F8F" />
                 </View>
@@ -242,11 +267,25 @@ export default function UserLogin() {
                   placeholder="Password"
                   placeholderTextColor="#6E7FA5"
                   value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry
+                  onChangeText={handlePasswordChange}
+                  secureTextEntry={!showPassword}
                   autoComplete="new-password"
                 />
+
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons
+                    name={showPassword ? "eye-off-outline" : "eye-outline"}
+                    size={20}
+                    color="#5A6F9E"
+                  />
+                </TouchableOpacity>
               </View>
+              {passwordError ? (
+                <Text style={styles.errorText}>{passwordError}</Text>
+              ) : null}
 
               <TouchableOpacity
                 style={styles.forgotContainer}
@@ -419,6 +458,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     paddingVertical: Platform.OS === "web" ? 10 : 0,
     outlineStyle: "none",
+  },
+
+  inputWrapperError: {
+    borderColor: "#C0392B",
+  },
+
+  errorText: {
+    width: "100%",
+    color: "#C0392B",
+    fontSize: 13,
+    lineHeight: 18,
+    marginTop: 2,
+    marginBottom: 12,
+    paddingHorizontal: 2,
   },
 
   forgotContainer: {

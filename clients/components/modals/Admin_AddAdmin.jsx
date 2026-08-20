@@ -24,6 +24,16 @@ const COLORS = {
   dangerSoft: "#FFF5F5",
 };
 
+const validatePassword = (value) => {
+  if (!value) return "Password is required.";
+  if (value.length < 6) return "Password must be at least 6 characters.";
+  if (!/[A-Z]/.test(value))
+    return "Password must contain at least one capital letter.";
+  if (!/[0-9\W_]/.test(value))
+    return "Password must contain at least one number or symbol.";
+  return "";
+};
+
 function InputField({
   label,
   value,
@@ -32,12 +42,15 @@ function InputField({
   icon,
   keyboardType,
   secureTextEntry,
+  error,
 }) {
+  const [showPassword, setShowPassword] = useState(false);
+
   return (
     <View style={styles.inputGroup}>
       <Text style={styles.inputLabel}>{label}</Text>
 
-      <View style={styles.inputWrap}>
+      <View style={[styles.inputWrap, error && styles.inputWrapError]}>
         <Ionicons name={icon} size={18} color={COLORS.textMuted} />
 
         <TextInput
@@ -46,10 +59,26 @@ function InputField({
           placeholder={placeholder}
           placeholderTextColor={COLORS.textMuted}
           keyboardType={keyboardType}
-          secureTextEntry={secureTextEntry}
+          secureTextEntry={secureTextEntry && !showPassword}
           style={styles.textInput}
         />
+
+        {secureTextEntry ? (
+          <TouchableOpacity
+            onPress={() => setShowPassword(!showPassword)}
+            activeOpacity={0.7}
+            style={styles.eyeButton}
+          >
+            <Ionicons
+              name={showPassword ? "eye-off-outline" : "eye-outline"}
+              size={20}
+              color={COLORS.textMuted}
+            />
+          </TouchableOpacity>
+        ) : null}
       </View>
+
+      {error ? <Text style={styles.fieldErrorText}>{error}</Text> : null}
     </View>
   );
 }
@@ -63,6 +92,9 @@ export default function Admin_AddAdmin({ visible, onClose, onSubmit }) {
     phone: "",
     password: "",
   });
+
+  const [passwordSubmitted, setPasswordSubmitted] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
 
   const showMessage = (title, message) => {
     if (Platform.OS === "web") {
@@ -82,6 +114,15 @@ export default function Admin_AddAdmin({ visible, onClose, onSubmit }) {
       phone: "",
       password: "",
     });
+    setPasswordSubmitted(false);
+    setPasswordError("");
+  };
+
+  const handlePasswordChange = (value) => {
+    setFormData((prev) => ({ ...prev, password: value }));
+    if (passwordSubmitted) {
+      setPasswordError(validatePassword(value));
+    }
   };
 
   const handleClose = () => {
@@ -90,13 +131,18 @@ export default function Admin_AddAdmin({ visible, onClose, onSubmit }) {
   };
 
   const handleSubmit = () => {
+    setPasswordSubmitted(true);
+    const pwError = validatePassword(formData.password);
+    setPasswordError(pwError);
+
+    if (pwError) return;
+
     if (
       !formData.name ||
       !formData.email ||
       !formData.role ||
       !formData.department ||
-      !formData.phone ||
-      !formData.password
+      !formData.phone
     ) {
       showMessage("Missing Details", "Please complete all fields.");
       return;
@@ -104,11 +150,6 @@ export default function Admin_AddAdmin({ visible, onClose, onSubmit }) {
 
     if (!formData.email.includes("@")) {
       showMessage("Invalid Email", "Please enter a valid email address.");
-      return;
-    }
-
-    if (formData.password.length < 6) {
-      showMessage("Weak Password", "Password must be at least 6 characters.");
       return;
     }
 
@@ -241,15 +282,11 @@ export default function Admin_AddAdmin({ visible, onClose, onSubmit }) {
                 <InputField
                   label="Temporary Password"
                   value={formData.password}
-                  onChangeText={(text) =>
-                    setFormData({
-                      ...formData,
-                      password: text,
-                    })
-                  }
+                  onChangeText={handlePasswordChange}
                   placeholder="Enter temporary password"
                   icon="lock-closed-outline"
                   secureTextEntry
+                  error={passwordError}
                 />
               </View>
 
@@ -436,6 +473,24 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     fontSize: 14,
     outlineStyle: Platform.OS === "web" ? "none" : undefined,
+  },
+
+  eyeButton: {
+    marginLeft: 8,
+    padding: 4,
+  },
+
+  inputWrapError: {
+    borderColor: "#C0392B",
+  },
+
+  fieldErrorText: {
+    width: "100%",
+    color: "#C0392B",
+    fontSize: 13,
+    lineHeight: 18,
+    marginTop: 6,
+    paddingHorizontal: 2,
   },
 
   noteBox: {

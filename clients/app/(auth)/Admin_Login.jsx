@@ -63,6 +63,27 @@ const getAdminByEmail = (email) => {
   );
 };
 
+const validateLoginPassword = (value) => {
+  if (!value) return "Password incorrect.";
+  return "";
+};
+
+const validateNewPassword = (value) => {
+  if (!value) return "Password is required.";
+  if (value.length < 6) return "Password must be at least 6 characters.";
+  if (!/[A-Z]/.test(value))
+    return "Password must contain at least one capital letter.";
+  if (!/[\d\W_]/.test(value))
+    return "Password must contain at least one number or symbol.";
+  return "";
+};
+
+const validateConfirmPassword = (value, newPasswordValue) => {
+  if (!value) return "Please confirm your password.";
+  if (value !== newPasswordValue) return "Passwords do not match.";
+  return "";
+};
+
 export default function Admin_Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -81,6 +102,35 @@ export default function Admin_Login() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
 
+  const [submitted, setSubmitted] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+
+  const [forgotSubmitted, setForgotSubmitted] = useState(false);
+  const [newPasswordError, setNewPasswordError] = useState("");
+  const [confirmNewPasswordError, setConfirmNewPasswordError] = useState("");
+
+  const handlePasswordChange = (text) => {
+    setPassword(text);
+    if (submitted) {
+      setPasswordError(validateLoginPassword(text));
+    }
+  };
+
+  const handleNewPasswordChange = (text) => {
+    setNewPassword(text);
+    if (forgotSubmitted) {
+      setNewPasswordError(validateNewPassword(text));
+      setConfirmNewPasswordError(validateConfirmPassword(text, confirmNewPassword));
+    }
+  };
+
+  const handleConfirmNewPasswordChange = (text) => {
+    setConfirmNewPassword(text);
+    if (forgotSubmitted) {
+      setConfirmNewPasswordError(validateConfirmPassword(newPassword, text));
+    }
+  };
+
   const handleLogin = async () => {
     if (Platform.OS !== "web") {
       Alert.alert("Restricted", "Admin login is available on web only.");
@@ -90,7 +140,12 @@ export default function Admin_Login() {
     const cleanEmail = email.trim().toLowerCase();
     const cleanPassword = password.trim();
 
-    if (!cleanEmail || !cleanPassword) {
+    setSubmitted(true);
+    const pwError = validateLoginPassword(password);
+    setPasswordError(pwError);
+    if (pwError) return;
+
+    if (!cleanEmail) {
       Alert.alert("Error", "Please enter both email and password.");
       return;
     }
@@ -140,6 +195,9 @@ export default function Admin_Login() {
     setConfirmNewPassword("");
     setShowNewPassword(false);
     setShowConfirmNewPassword(false);
+    setForgotSubmitted(false);
+    setNewPasswordError("");
+    setConfirmNewPasswordError("");
   };
 
   const openForgotPassword = () => {
@@ -195,20 +253,14 @@ export default function Admin_Login() {
   const handleResetPassword = () => {
     const cleanEmail = forgotEmail.trim().toLowerCase();
 
-    if (!newPassword || !confirmNewPassword) {
-      Alert.alert("Error", "Please fill in the new password fields.");
-      return;
-    }
+    setForgotSubmitted(true);
 
-    if (newPassword.length < 6) {
-      Alert.alert("Error", "Password must be at least 6 characters.");
-      return;
-    }
+    const pwError = validateNewPassword(newPassword);
+    const confirmError = validateConfirmPassword(newPassword, confirmNewPassword);
+    setNewPasswordError(pwError);
+    setConfirmNewPasswordError(confirmError);
 
-    if (newPassword !== confirmNewPassword) {
-      Alert.alert("Error", "Passwords do not match.");
-      return;
-    }
+    if (pwError || confirmError) return;
 
     const foundAdmin = getAdminByEmail(cleanEmail);
 
@@ -332,7 +384,12 @@ export default function Admin_Login() {
           Create a new password for your admin account.
         </Text>
 
-        <View style={styles.inputWrapper}>
+        <View
+          style={[
+            styles.inputWrapper,
+            newPasswordError && styles.inputWrapperError,
+          ]}
+        >
           <FontAwesome
             name="lock"
             size={20}
@@ -345,7 +402,7 @@ export default function Admin_Login() {
             placeholder="New Password"
             placeholderTextColor="#6E7FA5"
             value={newPassword}
-            onChangeText={setNewPassword}
+            onChangeText={handleNewPasswordChange}
             secureTextEntry={!showNewPassword}
             autoComplete="new-password"
           />
@@ -361,8 +418,16 @@ export default function Admin_Login() {
             />
           </TouchableOpacity>
         </View>
+        {newPasswordError ? (
+          <Text style={styles.errorText}>{newPasswordError}</Text>
+        ) : null}
 
-        <View style={styles.inputWrapper}>
+        <View
+          style={[
+            styles.inputWrapper,
+            confirmNewPasswordError && styles.inputWrapperError,
+          ]}
+        >
           <FontAwesome
             name="lock"
             size={20}
@@ -375,7 +440,7 @@ export default function Admin_Login() {
             placeholder="Confirm New Password"
             placeholderTextColor="#6E7FA5"
             value={confirmNewPassword}
-            onChangeText={setConfirmNewPassword}
+            onChangeText={handleConfirmNewPasswordChange}
             secureTextEntry={!showConfirmNewPassword}
             autoComplete="new-password"
           />
@@ -391,6 +456,9 @@ export default function Admin_Login() {
             />
           </TouchableOpacity>
         </View>
+        {confirmNewPasswordError ? (
+          <Text style={styles.errorText}>{confirmNewPasswordError}</Text>
+        ) : null}
 
         <TouchableOpacity
           style={styles.modalPrimaryButton}
@@ -492,7 +560,12 @@ export default function Admin_Login() {
                 />
               </View>
 
-              <View style={styles.inputWrapper}>
+              <View
+                style={[
+                  styles.inputWrapper,
+                  passwordError && styles.inputWrapperError,
+                ]}
+              >
                 <FontAwesome
                   name="lock"
                   size={20}
@@ -505,7 +578,7 @@ export default function Admin_Login() {
                   placeholder="Admin Password"
                   placeholderTextColor="#6E7FA5"
                   value={password}
-                  onChangeText={setPassword}
+                  onChangeText={handlePasswordChange}
                   secureTextEntry={!showPassword}
                   autoComplete="new-password"
                 />
@@ -521,6 +594,9 @@ export default function Admin_Login() {
                   />
                 </TouchableOpacity>
               </View>
+              {passwordError ? (
+                <Text style={styles.errorText}>{passwordError}</Text>
+              ) : null}
 
               <TouchableOpacity
                 style={styles.forgotButton}
@@ -678,6 +754,20 @@ const styles = StyleSheet.create({
     color: "#294880",
     fontSize: 14,
     outlineStyle: "none",
+  },
+
+  inputWrapperError: {
+    borderColor: "#C0392B",
+  },
+
+  errorText: {
+    width: "100%",
+    color: "#C0392B",
+    fontSize: 13,
+    lineHeight: 18,
+    marginTop: 2,
+    marginBottom: 12,
+    paddingHorizontal: 2,
   },
 
   forgotButton: {

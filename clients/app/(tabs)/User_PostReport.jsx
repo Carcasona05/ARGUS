@@ -6,6 +6,7 @@ import {
   StyleSheet,
   ScrollView,
   Image,
+  KeyboardAvoidingView,
   useWindowDimensions,
   Platform,
 } from "react-native";
@@ -342,7 +343,11 @@ function UserPostReportInner() {
 
   return (
     <ThemedView style={styles.container}>
-      <ScrollView
+      <KeyboardAvoidingView
+        style={styles.keyboardView}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
+        <ScrollView
         contentContainerStyle={[
           styles.scrollContainer,
           { paddingBottom: bottomPadding },
@@ -591,6 +596,7 @@ function UserPostReportInner() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+    </KeyboardAvoidingView>
     </ThemedView>
   );
 }
@@ -599,6 +605,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F3F6FB",
+  },
+
+  keyboardView: {
+    flex: 1,
   },
 
   scrollContainer: {

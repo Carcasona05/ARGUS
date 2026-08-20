@@ -18,6 +18,27 @@ import SAdmin_Layout from "../../components/SAdmin_Compo/SAdmin_Layout";
 import { saveAdminInfo } from "../../services/auth";
 import apiClient from "../../services/apiClient";
 
+const validateNewPassword = (value) => {
+  if (!value) return "Password is required.";
+  if (value.length < 6) return "Password must be at least 6 characters.";
+  if (!/[A-Z]/.test(value))
+    return "Password must contain at least one capital letter.";
+  if (!/[\d\W_]/.test(value))
+    return "Password must contain at least one number or symbol.";
+  return "";
+};
+
+const validateConfirmPassword = (value, newPasswordValue) => {
+  if (!value) return "Please confirm your password.";
+  if (value !== newPasswordValue) return "Passwords do not match.";
+  return "";
+};
+
+const validateCurrentPassword = (value) => {
+  if (!value) return "Current password is required.";
+  return "";
+};
+
 function StatusBadge({ label, tone = "primary" }) {
   const toneMap = {
     primary: {
@@ -119,6 +140,33 @@ export default function SAdmin_Settings() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
+
+  const [passwordSubmitted, setPasswordSubmitted] = useState(false);
+  const [currentPasswordError, setCurrentPasswordError] = useState("");
+  const [newPasswordError, setNewPasswordError] = useState("");
+  const [confirmNewPasswordError, setConfirmNewPasswordError] = useState("");
+
+  const handleCurrentPasswordChange = (value) => {
+    setCurrentPassword(value);
+    if (passwordSubmitted) {
+      setCurrentPasswordError(validateCurrentPassword(value));
+    }
+  };
+
+  const handleNewPasswordChange = (value) => {
+    setNewPassword(value);
+    if (passwordSubmitted) {
+      setNewPasswordError(validateNewPassword(value));
+      setConfirmNewPasswordError(validateConfirmPassword(value, confirmNewPassword));
+    }
+  };
+
+  const handleConfirmNewPasswordChange = (value) => {
+    setConfirmNewPassword(value);
+    if (passwordSubmitted) {
+      setConfirmNewPasswordError(validateConfirmPassword(newPassword, value));
+    }
+  };
 
   const [autoMapVerified, setAutoMapVerified] = useState(true);
   const [aiCredibilityEnabled, setAiCredibilityEnabled] = useState(true);
@@ -266,23 +314,17 @@ export default function SAdmin_Settings() {
   };
 
   const handleChangePassword = async () => {
-    if (!currentPassword || !newPassword || !confirmNewPassword) {
-      showMessage("Missing Password", "Please fill in all password fields.");
-      return;
-    }
+    setPasswordSubmitted(true);
 
-    if (newPassword.length < 6) {
-      showMessage("Weak Password", "New password must be at least 6 characters.");
-      return;
-    }
+    const currentError = validateCurrentPassword(currentPassword);
+    const newError = validateNewPassword(newPassword);
+    const confirmError = validateConfirmPassword(newPassword, confirmNewPassword);
 
-    if (newPassword !== confirmNewPassword) {
-      showMessage(
-        "Password Mismatch",
-        "New password and confirm password do not match."
-      );
-      return;
-    }
+    setCurrentPasswordError(currentError);
+    setNewPasswordError(newError);
+    setConfirmNewPasswordError(confirmError);
+
+    if (currentError || newError || confirmError) return;
 
     try {
       const token = await AsyncStorage.getItem("access_token");
@@ -302,6 +344,11 @@ export default function SAdmin_Settings() {
       setCurrentPassword("");
       setNewPassword("");
       setConfirmNewPassword("");
+
+      setPasswordSubmitted(false);
+      setCurrentPasswordError("");
+      setNewPasswordError("");
+      setConfirmNewPasswordError("");
 
       showMessage("Password Updated", "Your SuperAdmin password has been changed.");
     } catch (error) {
@@ -483,10 +530,15 @@ export default function SAdmin_Settings() {
                   <View style={styles.inputCard}>
                     <Text style={styles.inputLabel}>Current Password</Text>
 
-                    <View style={styles.passwordInputWrap}>
+                    <View
+                      style={[
+                        styles.passwordInputWrap,
+                        currentPasswordError && styles.passwordInputWrapError,
+                      ]}
+                    >
                       <TextInput
                         value={currentPassword}
-                        onChangeText={setCurrentPassword}
+                        onChangeText={handleCurrentPasswordChange}
                         style={styles.passwordInput}
                         placeholder="Current Password"
                         placeholderTextColor="#5D6F92"
@@ -508,15 +560,25 @@ export default function SAdmin_Settings() {
                         />
                       </TouchableOpacity>
                     </View>
+                    {currentPasswordError ? (
+                      <Text style={styles.fieldErrorText}>
+                        {currentPasswordError}
+                      </Text>
+                    ) : null}
                   </View>
 
                   <View style={styles.inputCard}>
                     <Text style={styles.inputLabel}>New Password</Text>
 
-                    <View style={styles.passwordInputWrap}>
+                    <View
+                      style={[
+                        styles.passwordInputWrap,
+                        newPasswordError && styles.passwordInputWrapError,
+                      ]}
+                    >
                       <TextInput
                         value={newPassword}
-                        onChangeText={setNewPassword}
+                        onChangeText={handleNewPasswordChange}
                         style={styles.passwordInput}
                         placeholder="New Password"
                         placeholderTextColor="#5D6F92"
@@ -534,15 +596,24 @@ export default function SAdmin_Settings() {
                         />
                       </TouchableOpacity>
                     </View>
+                    {newPasswordError ? (
+                      <Text style={styles.fieldErrorText}>{newPasswordError}</Text>
+                    ) : null}
                   </View>
 
                   <View style={styles.inputCard}>
                     <Text style={styles.inputLabel}>Confirm New Password</Text>
 
-                    <View style={styles.passwordInputWrap}>
+                    <View
+                      style={[
+                        styles.passwordInputWrap,
+                        confirmNewPasswordError &&
+                          styles.passwordInputWrapError,
+                      ]}
+                    >
                       <TextInput
                         value={confirmNewPassword}
-                        onChangeText={setConfirmNewPassword}
+                        onChangeText={handleConfirmNewPasswordChange}
                         style={styles.passwordInput}
                         placeholder="Confirm New Password"
                         placeholderTextColor="#5D6F92"
@@ -566,6 +637,11 @@ export default function SAdmin_Settings() {
                         />
                       </TouchableOpacity>
                     </View>
+                    {confirmNewPasswordError ? (
+                      <Text style={styles.fieldErrorText}>
+                        {confirmNewPasswordError}
+                      </Text>
+                    ) : null}
                   </View>
                 </View>
 
@@ -1263,6 +1339,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     flexDirection: "row",
     alignItems: "center",
+  },
+
+  passwordInputWrapError: {
+    borderColor: "#C0392B",
+  },
+
+  fieldErrorText: {
+    width: "100%",
+    color: "#C0392B",
+    fontSize: 13,
+    lineHeight: 18,
+    fontFamily: "PoppinsRegular",
+    marginTop: 6,
+    paddingHorizontal: 2,
   },
 
   passwordInput: {

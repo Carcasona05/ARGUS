@@ -5,6 +5,7 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
+  Text,
   KeyboardAvoidingView,
   Platform,
   Keyboard,
@@ -25,6 +26,27 @@ import apiClient from "../../services/apiClient";
 import { getCache, setCache } from "../../services/dataStore";
 
 const ARGUS_BLUE = "#294880";
+
+const validateNewPassword = (value) => {
+  if (!value) return "Password is required.";
+  if (value.length < 6) return "Password must be at least 6 characters.";
+  if (!/[A-Z]/.test(value))
+    return "Password must contain at least one capital letter.";
+  if (!/[\d\W_]/.test(value))
+    return "Password must contain at least one number or symbol.";
+  return "";
+};
+
+const validateConfirmPassword = (value, newPasswordValue) => {
+  if (!value) return "Please confirm your password.";
+  if (value !== newPasswordValue) return "Passwords do not match.";
+  return "";
+};
+
+const validateCurrentPassword = (value) => {
+  if (!value) return "Current password is required.";
+  return "";
+};
 
 const credibilityLevels = [
   {
@@ -223,6 +245,11 @@ const UserProfileSettings = () => {
     confirmPassword: "",
   });
 
+  const [passwordSubmitted, setPasswordSubmitted] = useState(false);
+  const [currentPasswordError, setCurrentPasswordError] = useState("");
+  const [newPasswordError, setNewPasswordError] = useState("");
+  const [confirmPasswordError, setConfirmPasswordError] = useState("");
+
   const applyProfile = useCallback((profile) => {
     let credibilityStatus = 3;
     const rawStatus = Number(profile.credibility_status);
@@ -368,23 +395,17 @@ const UserProfileSettings = () => {
   const handlePasswordSave = async () => {
     const { currentPassword, newPassword, confirmPassword } = passwordDetails;
 
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      Alert.alert("Error", "Please fill in all password fields.");
-      return;
-    }
+    setPasswordSubmitted(true);
 
-    if (newPassword.length < 6) {
-      Alert.alert(
-        "Error",
-        "New access code must be at least 6 characters long."
-      );
-      return;
-    }
+    const currentError = validateCurrentPassword(currentPassword);
+    const newError = validateNewPassword(newPassword);
+    const confirmError = validateConfirmPassword(newPassword, confirmPassword);
 
-    if (newPassword !== confirmPassword) {
-      Alert.alert("Error", "New access codes do not match.");
-      return;
-    }
+    setCurrentPasswordError(currentError);
+    setNewPasswordError(newError);
+    setConfirmPasswordError(confirmError);
+
+    if (currentError || newError || confirmError) return;
 
     try {
       const token = await AsyncStorage.getItem("access_token");
@@ -436,6 +457,10 @@ const UserProfileSettings = () => {
     setShowNewPassword(false);
     setShowConfirmPassword(false);
     setPasswordEditMode(false);
+    setPasswordSubmitted(false);
+    setCurrentPasswordError("");
+    setNewPasswordError("");
+    setConfirmPasswordError("");
   };
 
   const updateTempDetail = (key, value) => {
@@ -446,10 +471,19 @@ const UserProfileSettings = () => {
   };
 
   const updatePasswordDetail = (key, value) => {
-    setPasswordDetails((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
+    setPasswordDetails((prev) => {
+      const next = { ...prev, [key]: value };
+
+      if (passwordSubmitted) {
+        setCurrentPasswordError(validateCurrentPassword(next.currentPassword));
+        setNewPasswordError(validateNewPassword(next.newPassword));
+        setConfirmPasswordError(
+          validateConfirmPassword(next.newPassword, next.confirmPassword)
+        );
+      }
+
+      return next;
+    });
   };
 
   const handleBirthdateChange = (event, selectedDate) => {
@@ -675,7 +709,12 @@ const UserProfileSettings = () => {
 
               {passwordEditMode ? (
                 <View>
-                  <View style={styles.passwordInputWrap}>
+                  <View
+                    style={[
+                      styles.passwordInputWrap,
+                      currentPasswordError && styles.passwordInputWrapError,
+                    ]}
+                  >
                     <Ionicons
                       name="lock-closed-outline"
                       size={18}
@@ -708,8 +747,18 @@ const UserProfileSettings = () => {
                       />
                     </TouchableOpacity>
                   </View>
+                  {currentPasswordError ? (
+                    <Text style={styles.errorText}>
+                      {currentPasswordError}
+                    </Text>
+                  ) : null}
 
-                  <View style={styles.passwordInputWrap}>
+                  <View
+                    style={[
+                      styles.passwordInputWrap,
+                      newPasswordError && styles.passwordInputWrapError,
+                    ]}
+                  >
                     <Ionicons
                       name="key-outline"
                       size={18}
@@ -740,8 +789,16 @@ const UserProfileSettings = () => {
                       />
                     </TouchableOpacity>
                   </View>
+                  {newPasswordError ? (
+                    <Text style={styles.errorText}>{newPasswordError}</Text>
+                  ) : null}
 
-                  <View style={styles.passwordInputWrap}>
+                  <View
+                    style={[
+                      styles.passwordInputWrap,
+                      confirmPasswordError && styles.passwordInputWrapError,
+                    ]}
+                  >
                     <Ionicons
                       name="checkmark-circle-outline"
                       size={18}
@@ -776,6 +833,11 @@ const UserProfileSettings = () => {
                       />
                     </TouchableOpacity>
                   </View>
+                  {confirmPasswordError ? (
+                    <Text style={styles.errorText}>
+                      {confirmPasswordError}
+                    </Text>
+                  ) : null}
                 </View>
               ) : (
                 <View style={styles.securityPreview}>
@@ -1068,6 +1130,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: "PoppinsRegular",
     color: "#111827",
+  },
+
+  passwordInputWrapError: {
+    borderColor: "#C0392B",
+  },
+
+  errorText: {
+    width: "100%",
+    color: "#C0392B",
+    fontSize: 13,
+    lineHeight: 18,
+    fontFamily: "PoppinsRegular",
+    marginTop: -4,
+    marginBottom: 8,
+    paddingHorizontal: 2,
   },
 
   securityPreview: {
