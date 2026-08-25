@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Modal,
   View,
@@ -9,28 +9,86 @@ import {
   ScrollView,
   Image,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
-
+import * as Location from "expo-location";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { useFonts } from "expo-font";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+import Dropdown from "../../components/Dropdown";
+import apiClient from "../../services/apiClient";
+import { uploadImages } from "../../services/imageUpload";
+import { getCache, setCache } from "../../services/dataStore";
 
 const ARGUS_BLUE = "#294880";
 
-const announcementTypes = [
-  "Curfew",
-  "Road Closure",
-  "Emergency",
-  "Power Interruption",
-  "Water Interruption",
-  "Weather Advisory",
-  "Public Advisory",
-  "Medical Advisory",
-  "Flood Advisory",
-  "Fire Incident",
-  "Earthquake",
-  "Typhoon",
-  "Others",
+const FALLBACK_CATEGORIES = [
+  {
+    category: "Public Safety Incidents",
+    types: [
+      "Public Disturbance",
+      "Harassment",
+      "Loitering / Suspicious Presence",
+      "Trespassing",
+    ],
+  },
+  {
+    category: "Property-Related Incidents",
+    types: [
+      "Theft",
+      "Lost Property",
+      "Vandalism / Property Damage",
+      "Shoplifting",
+    ],
+  },
+  {
+    category: "Traffic and Road Incidents",
+    types: [
+      "Vehicular Accident",
+      "Reckless Driving",
+      "Illegal Parking",
+      "Road Obstruction",
+    ],
+  },
+  {
+    category: "Community and Environmental Concerns",
+    types: [
+      "Fire Incident",
+      "Flooding",
+      "Blocked Drainage",
+      "Garbage / Sanitation Issues",
+      "Streetlight Outage",
+    ],
+  },
+  {
+    category: "Suspicious Activities",
+    types: [
+      "Suspicious Person",
+      "Suspicious Vehicle",
+      "Unattended / Abandoned Object",
+      "Unusual Behavior",
+    ],
+  },
+  {
+    category: "Public Assistance / Community Reports",
+    types: [
+      "Missing Pet",
+      "Lost Item",
+      "Request for Assistance",
+      "General Safety Concern",
+    ],
+  },
+  {
+    category: "Cyber and Online Incidents (Non-sensitive)",
+    types: [
+      "Online Scam / Suspicious Message",
+      "Cyberbullying",
+      "Fake Information / Misinformation",
+    ],
+  },
 ];
 
 export default function Admin_AddReportModal({
@@ -44,287 +102,574 @@ export default function Admin_AddReportModal({
     PoppinsSemiBold: require("../../assets/fonts/Poppins-SemiBold.ttf"),
   });
 
-  const [announcementType, setAnnouncementType] = useState("");
+  const [adminName, setAdminName] = useState("");
   const [location, setLocation] = useState("");
+  const [latitude, setLatitude] = useState("");
+  const [longitude, setLongitude] = useState("");
+
+  const [incidentCategory, setIncidentCategory] = useState("");
+  const [incidentType, setIncidentType] = useState("");
+  const [categoryOptions, setCategoryOptions] = useState(FALLBACK_CATEGORIES);
   const [details, setDetails] = useState("");
 
-  const [image, setImage] = useState(null);
+  const [photos, setPhotos] = useState([]);
+  const [loadingLocation, setLoadingLocation] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const [showTypeList, setShowTypeList] = useState(false);
+  const incidentOptions = categoryOptions.length
+    ? categoryOptions
+    : FALLBACK_CATEGORIES;
 
-  if (!fontsLoaded) return null;
+  const incidentTypes = useMemo(() => {
+    const found = incidentOptions.find(
+      (option) => option.category === incidentCategory
+    );
+    return found?.types || [];
+  }, [incidentOptions, incidentCategory]);
 
-  const resetForm = () => {
-    setAnnouncementType("");
-    setLocation("");
-    setDetails("");
-    setImage(null);
-    setShowTypeList(false);
+  useEffect(() => {
+    if (!visible) return;
+
+    loadAdminProfile();
+    loadCategories();
+    getCurrentLocation();
+  }, [visible]);
+
+  useEffect(() => {
+    if (!incidentTypes.includes(incidentType)) {
+      setIncidentType("");
+    }
+  }, [incidentCategory, incidentType, incidentTypes]);
+
+  const loadAdminProfile = async () => {
+    try {
+      const token = await AsyncStorage.getItem("access_token");
+      if (!token) return;
+
+      const cached = getCache("api:/profile");
+
+      if (cached !== undefined) {
+        const cachedName =
+          cached.name ||
+          `${cached.first_name || ""} ${cached.last_name || ""}`.trim();
+
+        if (cachedName) {
+          setAdminName(cachedName);
+        }
+      }
+
+      const res = await apiClient.get("/profile", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const profile = res.data ?? {};
+      setCache("api:/profile", profile);
+
+      const fullName =
+        profile.name ||
+        `${profile.first_name || ""} ${profile.last_name || ""}`.trim();
+
+      if (fullName) {
+        setAdminName(fullName);
+      }
+    } catch {
+      // Keep cached/default admin name.
+    }
   };
 
-  const handleClose = () => {
-    resetForm();
-    onClose();
+  const loadCategories = async () => {
+    try {
+      const token = await AsyncStorage.getItem("access_token");
+      if (!token) return;
+
+      const cached = getCache("api:/incidents/options");
+
+      if (cached !== undefined) {
+        setCategoryOptions(cached?.categories || FALLBACK_CATEGORIES);
+      }
+
+      const res = await apiClient.get("/incidents/options", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const options = res.data?.categories || FALLBACK_CATEGORIES;
+
+      setCache("api:/incidents/options", res.data ?? {});
+      setCategoryOptions(options);
+    } catch {
+      // Keep fallback categories.
+    }
   };
 
-  const pickImage = async () => {
+  const getCurrentLocation = async () => {
+    try {
+      setLoadingLocation(true);
+
+      const { status } =
+        await Location.requestForegroundPermissionsAsync();
+
+      if (status !== "granted") {
+        setLocation("Location permission denied");
+        setLatitude("");
+        setLongitude("");
+        return;
+      }
+
+      const currentLocation =
+        await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.High,
+        });
+
+      const fetchedLatitude =
+        currentLocation.coords.latitude.toFixed(6);
+
+      const fetchedLongitude =
+        currentLocation.coords.longitude.toFixed(6);
+
+      setLatitude(fetchedLatitude);
+      setLongitude(fetchedLongitude);
+      setLocation(`${fetchedLatitude}, ${fetchedLongitude}`);
+    } catch {
+      setLocation("Unable to fetch current location");
+      setLatitude("");
+      setLongitude("");
+    } finally {
+      setLoadingLocation(false);
+    }
+  };
+
+  const handlePickPhoto = async () => {
+    if (photos.length >= 3) {
+      Alert.alert("Photo Limit", "You can only upload up to 3 photos.");
+      return;
+    }
+
     const permission =
       await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (!permission.granted) {
       Alert.alert(
         "Permission Required",
-        "Please allow photo access."
+        "Please allow access to your photo library."
       );
       return;
     }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 1,
-      allowsEditing: true,
-    });
+    const result =
+      await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 0.8,
+      });
 
-    if (!result.canceled) {
-      setImage(result.assets[0]);
+    if (!result.canceled && result.assets?.length) {
+      setPhotos((prev) => [
+        ...prev,
+        result.assets[0].uri,
+      ]);
     }
   };
 
-  const submit = () => {
-    if (!announcementType.trim()) {
-      Alert.alert("Required", "Please select announcement type.");
+  const handleRemovePhoto = (indexToRemove) => {
+    setPhotos((prev) =>
+      prev.filter((_, index) => index !== indexToRemove)
+    );
+  };
+
+  const resetForm = () => {
+    setLocation("");
+    setLatitude("");
+    setLongitude("");
+    setIncidentCategory("");
+    setIncidentType("");
+    setDetails("");
+    setPhotos([]);
+    setLoadingLocation(false);
+    setSubmitting(false);
+  };
+
+  const handleClose = () => {
+    if (submitting) return;
+
+    resetForm();
+    onClose();
+  };
+
+  const handleSubmit = async () => {
+    if (!adminName.trim()) {
+      Alert.alert(
+        "Required",
+        "Admin profile name could not be loaded."
+      );
       return;
     }
 
-    if (!location.trim()) {
-      Alert.alert("Required", "Please enter location.");
+    if (!latitude || !longitude) {
+      Alert.alert(
+        "Required",
+        "Please wait for the current location to load."
+      );
+      return;
+    }
+
+    if (!incidentCategory) {
+      Alert.alert(
+        "Required",
+        "Please select an incident category."
+      );
+      return;
+    }
+
+    if (!incidentType) {
+      Alert.alert(
+        "Required",
+        "Please select an incident type."
+      );
       return;
     }
 
     if (!details.trim()) {
-      Alert.alert("Required", "Please enter details.");
+      Alert.alert(
+        "Required",
+        "Please enter the report details."
+      );
       return;
     }
 
-    onSubmit({
-      id: Date.now().toString(),
+    try {
+      setSubmitting(true);
 
-      type: announcementType,
+      const token = await AsyncStorage.getItem("access_token");
 
-      location,
+      if (!token) {
+        Alert.alert(
+          "Sign In Required",
+          "Please sign in before posting a report."
+        );
+        return;
+      }
 
-      details,
+      const photoUrls = await uploadImages(photos);
 
-      image,
+      await apiClient.post(
+        "/reports",
+        {
+          poster_name: adminName.trim(),
+          display_name_type: "Fullname",
+          location,
+          latitude,
+          longitude,
+          incident_category: incidentCategory,
+          incident_type: incidentType,
+          details: details.trim(),
+          photos: photoUrls,
+          status: "Pending Review",
+          source: "Admin",
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
-      createdAt: new Date().toISOString(),
-    });
+      if (onSubmit) {
+        await onSubmit({
+          poster_name: adminName.trim(),
+          display_name_type: "Fullname",
+          location,
+          latitude,
+          longitude,
+          incident_category: incidentCategory,
+          incident_type: incidentType,
+          details: details.trim(),
+          photos: photoUrls,
+          status: "Pending Review",
+          source: "Admin",
+        });
+      }
 
-    resetForm();
+      Alert.alert(
+        "Report Submitted",
+        "The admin report has been submitted successfully."
+      );
+
+      resetForm();
+      onClose();
+    } catch (error) {
+      Alert.alert(
+        "Submit Failed",
+        error.response?.data?.error ||
+          "Could not submit the report. Please try again."
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
+
+  if (!fontsLoaded) return null;
 
   return (
     <Modal
       animationType="fade"
       transparent
       visible={visible}
+      onRequestClose={handleClose}
     >
       <View style={styles.overlay}>
-
         <View style={styles.modal}>
-
           {/* HEADER */}
-
           <View style={styles.header}>
-
             <View style={styles.headerLeft}>
-
               <View style={styles.headerIcon}>
-
                 <Ionicons
-                  name="add-circle-outline"
+                  name="document-text-outline"
                   size={22}
                   color={ARGUS_BLUE}
                 />
-
               </View>
 
               <View>
-
                 <Text style={styles.title}>
-                  Add Announcement
+                  Add Report
                 </Text>
 
                 <Text style={styles.subtitle}>
-                  Create a new public announcement
+                  Create a new incident report as an administrator
                 </Text>
-
               </View>
-
             </View>
 
-            <TouchableOpacity onPress={handleClose}>
+            <TouchableOpacity
+              onPress={handleClose}
+              disabled={submitting}
+            >
               <Ionicons
                 name="close"
                 size={24}
                 color="#555"
               />
             </TouchableOpacity>
-
           </View>
 
-          <ScrollView
-            showsVerticalScrollIndicator={false}
+          <KeyboardAvoidingView
+            behavior={
+              Platform.OS === "ios"
+                ? "padding"
+                : undefined
+            }
+            style={styles.keyboardView}
           >
-
-            {/* Announcement Type */}
-
-            <Text style={styles.label}>
-              Announcement Type
-            </Text>
-
-            <TouchableOpacity
-              style={styles.dropdown}
-              onPress={() =>
-                setShowTypeList(!showTypeList)
-              }
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={styles.scrollContent}
             >
+              {/* ADMIN NAME */}
+              <Text style={styles.label}>
+                Reported By
+              </Text>
 
-              <Text
+              <View
                 style={[
-                  styles.dropdownText,
-                  !announcementType && {
-                    color: "#999",
-                  },
+                  styles.input,
+                  styles.disabledInput,
+                  styles.nameInputWrap,
                 ]}
               >
-                {announcementType || "Select type"}
-              </Text>
+                <Ionicons
+                  name="person-outline"
+                  size={18}
+                  color={ARGUS_BLUE}
+                />
 
-              <Ionicons
-                name={
-                  showTypeList
-                    ? "chevron-up"
-                    : "chevron-down"
-                }
-                size={20}
-                color={ARGUS_BLUE}
-              />
-
-            </TouchableOpacity>
-
-            {showTypeList && (
-              <View style={styles.dropdownList}>
-
-                {announcementTypes.map((item) => (
-
-                  <TouchableOpacity
-                    key={item}
-                    style={styles.dropdownItem}
-                    onPress={() => {
-                      setAnnouncementType(item);
-                      setShowTypeList(false);
-                    }}
-                  >
-
-                    <Text style={styles.dropdownItemText}>
-                      {item}
-                    </Text>
-
-                  </TouchableOpacity>
-
-                ))}
-
+                <Text style={styles.nameInputText}>
+                  {adminName || "Loading admin name..."}
+                </Text>
               </View>
-            )}
 
-            {/* LOCATION */}
-
-            <Text style={styles.label}>
-              Location
-            </Text>
-
-            <TextInput
-              placeholder="Enter location"
-              value={location}
-              onChangeText={setLocation}
-              style={styles.input}
-            />
-
-            {/* DETAILS */}
-
-            <Text style={styles.label}>
-              Details
-            </Text>
-
-            <TextInput
-              multiline
-              numberOfLines={6}
-              placeholder="Describe the announcement..."
-              value={details}
-              onChangeText={setDetails}
-              textAlignVertical="top"
-              style={styles.textArea}
-            />
-
-            {/* PHOTO */}
-
-            <Text style={styles.label}>
-              Upload Photo
-            </Text>
-
-            <TouchableOpacity
-              style={styles.uploadButton}
-              onPress={pickImage}
-            >
-
-              <Ionicons
-                name="image-outline"
-                size={22}
-                color={ARGUS_BLUE}
-              />
-
-              <Text style={styles.uploadText}>
-                Choose Image
+              <Text style={styles.helperText}>
+                This report will be recorded under the logged-in
+                administrator.
               </Text>
 
-            </TouchableOpacity>
+              {/* LOCATION */}
+              <View style={styles.locationHeaderRow}>
+                <Text style={styles.label}>
+                  Current Location
+                </Text>
 
-            {image && (
+                <TouchableOpacity
+                  style={styles.refreshButton}
+                  activeOpacity={0.85}
+                  onPress={getCurrentLocation}
+                  disabled={loadingLocation || submitting}
+                >
+                  <Ionicons
+                    name="refresh-outline"
+                    size={14}
+                    color={ARGUS_BLUE}
+                  />
 
-  <View style={styles.previewCard}>
+                  <Text style={styles.refreshText}>
+                    {loadingLocation
+                      ? "Fetching"
+                      : "Refresh"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
 
-    <Image
-      source={{ uri: image.uri }}
-      style={styles.previewImage}
-    />
+              <View style={styles.locationInputWrap}>
+                <Ionicons
+                  name="location-outline"
+                  size={18}
+                  color={ARGUS_BLUE}
+                />
 
-    <TouchableOpacity
-      style={styles.removeButton}
-      onPress={() => setImage(null)}
-    >
+                <TextInput
+                  style={styles.locationInput}
+                  value={location}
+                  editable={false}
+                  placeholder={
+                    loadingLocation
+                      ? "Fetching current location..."
+                      : "Location will be fetched automatically"
+                  }
+                  placeholderTextColor="#8A94A6"
+                />
+              </View>
 
-      <Ionicons
-        name="trash-outline"
-        size={18}
-        color="#fff"
-      />
+              <Text style={styles.helperText}>
+                Location is automatically fetched and cannot be
+                edited manually.
+              </Text>
 
-    </TouchableOpacity>
+              {/* CATEGORY */}
+              <Text style={styles.label}>
+                Incident Category
+              </Text>
 
-  </View>
+              <Dropdown
+                placeholder="Select Incident Category"
+                selectedValue={incidentCategory}
+                options={incidentOptions.map((option) => ({
+                  label: option.category,
+                  value: option.category,
+                }))}
+                onChange={setIncidentCategory}
+                disabled={submitting}
+              />
 
-)}
+              {/* TYPE */}
+              <Text style={styles.label}>
+                Incident Type
+              </Text>
 
-</ScrollView>
+              <Dropdown
+                placeholder={
+                  incidentCategory
+                    ? "Select Incident Type"
+                    : "Select category first"
+                }
+                selectedValue={incidentType}
+                options={incidentTypes.map((type) => ({
+                  label: type,
+                  value: type,
+                }))}
+                onChange={setIncidentType}
+                disabled={
+                  !incidentCategory || submitting
+                }
+              />
 
-{/* FOOTER */}
+              {/* DETAILS */}
+              <Text style={styles.label}>
+                Report Details
+              </Text>
 
+              <TextInput
+                style={styles.textArea}
+                value={details}
+                onChangeText={setDetails}
+                placeholder="Describe what happened..."
+                placeholderTextColor="#8A94A6"
+                multiline
+                numberOfLines={6}
+                textAlignVertical="top"
+                editable={!submitting}
+              />
+
+              {/* PHOTOS */}
+              <View style={styles.photoHeaderRow}>
+                <Text style={styles.label}>
+                  Photo Evidence
+                </Text>
+
+                <Text style={styles.photoCount}>
+                  {photos.length}/3
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                style={styles.uploadButton}
+                activeOpacity={0.88}
+                onPress={handlePickPhoto}
+                disabled={submitting}
+              >
+                <Ionicons
+                  name="images-outline"
+                  size={18}
+                  color={ARGUS_BLUE}
+                />
+
+                <Text style={styles.uploadButtonText}>
+                  Choose from Album
+                </Text>
+              </TouchableOpacity>
+
+              <Text style={styles.helperText}>
+                Optional. You can upload up to 3 photos.
+              </Text>
+
+              {photos.length > 0 ? (
+                <View style={styles.photoGrid}>
+                  {photos.map((uri, index) => (
+                    <View
+                      key={`${uri}-${index}`}
+                      style={styles.photoCard}
+                    >
+                      <Image
+                        source={{ uri }}
+                        style={styles.photoPreview}
+                      />
+
+                      <TouchableOpacity
+                        style={styles.removePhotoButton}
+                        onPress={() =>
+                          handleRemovePhoto(index)
+                        }
+                        activeOpacity={0.85}
+                        disabled={submitting}
+                      >
+                        <Ionicons
+                          name="close"
+                          size={14}
+                          color="#FFFFFF"
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              ) : null}
+            </ScrollView>
+          </KeyboardAvoidingView>
+
+          {/* FOOTER */}
           <View style={styles.footer}>
-
             <TouchableOpacity
               style={styles.cancelButton}
               onPress={handleClose}
+              disabled={submitting}
             >
               <Text style={styles.cancelButtonText}>
                 Cancel
@@ -332,32 +677,35 @@ export default function Admin_AddReportModal({
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.submitButton}
-              onPress={submit}
+              style={[
+                styles.submitButton,
+                submitting && styles.submitButtonDisabled,
+              ]}
+              onPress={handleSubmit}
+              disabled={submitting}
             >
               <Ionicons
-                name="checkmark-circle-outline"
+                name={
+                  submitting
+                    ? "sync-outline"
+                    : "checkmark-circle-outline"
+                }
                 size={18}
                 color="#FFFFFF"
               />
 
               <Text style={styles.submitButtonText}>
-                Submit
+                {submitting ? "Submitting..." : "Post"}
               </Text>
             </TouchableOpacity>
-
           </View>
-
         </View>
-
       </View>
-
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-
   overlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.45)",
@@ -375,6 +723,10 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
 
+  keyboardView: {
+    flex: 1,
+  },
+
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -387,6 +739,7 @@ const styles = StyleSheet.create({
   headerLeft: {
     flexDirection: "row",
     alignItems: "center",
+    flex: 1,
   },
 
   headerIcon: {
@@ -412,6 +765,10 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 
+  scrollContent: {
+    paddingBottom: 8,
+  },
+
   label: {
     marginTop: 18,
     marginBottom: 8,
@@ -423,7 +780,7 @@ const styles = StyleSheet.create({
 
   input: {
     marginHorizontal: 20,
-    height: 50,
+    minHeight: 50,
     borderWidth: 1,
     borderColor: "#D9E2F0",
     borderRadius: 12,
@@ -431,6 +788,76 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: "PoppinsRegular",
     backgroundColor: "#FFFFFF",
+  },
+
+  disabledInput: {
+    backgroundColor: "#F8FAFD",
+  },
+
+  nameInputWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  nameInputText: {
+    marginLeft: 9,
+    fontSize: 14,
+    color: "#68758A",
+    fontFamily: "PoppinsMedium",
+  },
+
+  helperText: {
+    marginTop: 8,
+    marginHorizontal: 20,
+    fontSize: 12,
+    lineHeight: 18,
+    fontFamily: "PoppinsRegular",
+    color: "#68758A",
+  },
+
+  locationHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginRight: 20,
+  },
+
+  refreshButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#EEF3FF",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    marginTop: 18,
+    marginBottom: 8,
+  },
+
+  refreshText: {
+    marginLeft: 4,
+    fontSize: 11,
+    fontFamily: "PoppinsMedium",
+    color: ARGUS_BLUE,
+  },
+
+  locationInputWrap: {
+    minHeight: 50,
+    marginHorizontal: 20,
+    backgroundColor: "#F8FAFD",
+    borderWidth: 1,
+    borderColor: "#D8E0EB",
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  locationInput: {
+    flex: 1,
+    marginLeft: 8,
+    fontSize: 15,
+    fontFamily: "PoppinsRegular",
+    color: "#1F2A37",
   },
 
   textArea: {
@@ -443,48 +870,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: "PoppinsRegular",
     backgroundColor: "#FFFFFF",
+    color: "#1F2A37",
   },
 
-  dropdown: {
-    marginHorizontal: 20,
-    height: 50,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#D9E2F0",
-    paddingHorizontal: 15,
-    backgroundColor: "#FFFFFF",
+  photoHeaderRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
+    justifyContent: "space-between",
+    marginRight: 20,
   },
 
-  dropdownText: {
-    fontSize: 14,
-    color: "#111827",
-    fontFamily: "PoppinsRegular",
-  },
-
-  dropdownList: {
-    marginHorizontal: 20,
-    borderWidth: 1,
-    borderColor: "#D9E2F0",
-    borderRadius: 12,
-    backgroundColor: "#FFFFFF",
-    marginTop: 5,
-    overflow: "hidden",
-  },
-
-  dropdownItem: {
-    paddingVertical: 13,
-    paddingHorizontal: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: "#EDF2F7",
-  },
-
-  dropdownItemText: {
-    fontSize: 14,
-    color: "#374151",
-    fontFamily: "PoppinsRegular",
+  photoCount: {
+    fontSize: 12,
+    fontFamily: "PoppinsMedium",
+    color: "#68758A",
+    marginTop: 18,
+    marginBottom: 8,
   },
 
   uploadButton: {
@@ -498,37 +899,49 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     gap: 10,
-    marginBottom: 15,
+    marginBottom: 2,
   },
 
-  uploadText: {
+  uploadButtonText: {
     color: ARGUS_BLUE,
     fontSize: 14,
     fontFamily: "PoppinsSemiBold",
   },
 
-  previewCard: {
+  photoGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
     marginHorizontal: 20,
-    marginBottom: 20,
-    borderRadius: 12,
-    overflow: "hidden",
-    position: "relative",
+    marginTop: 12,
   },
 
-  previewImage: {
+  photoCard: {
+    width: 92,
+    height: 92,
+    borderRadius: 16,
+    overflow: "hidden",
+    marginRight: 10,
+    marginBottom: 10,
+    position: "relative",
+    backgroundColor: "#EEF2F7",
+    borderWidth: 1,
+    borderColor: "#D8E0EB",
+  },
+
+  photoPreview: {
     width: "100%",
-    height: 220,
+    height: "100%",
     resizeMode: "cover",
   },
 
-  removeButton: {
+  removePhotoButton: {
     position: "absolute",
-    top: 10,
-    right: 10,
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: "#E45757",
+    top: 6,
+    right: 6,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: "rgba(0,0,0,0.65)",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -568,11 +981,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 
+  submitButtonDisabled: {
+    opacity: 0.65,
+  },
+
   submitButtonText: {
     color: "#FFFFFF",
     marginLeft: 8,
     fontSize: 14,
     fontFamily: "PoppinsSemiBold",
   },
-
 });
