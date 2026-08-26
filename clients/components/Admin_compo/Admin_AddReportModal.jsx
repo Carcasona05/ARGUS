@@ -528,7 +528,11 @@ export default function Admin_AddReportModal({
 
                 <TextInput
                   style={styles.locationInput}
-                  value={location}
+                  value={
+                    location && location.includes(",") && !isNaN(Number(location.split(",")[0]))
+                      ? "Location fetched"
+                      : location
+                  }
                   editable={false}
                   placeholder={
                     loadingLocation

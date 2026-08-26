@@ -7,6 +7,7 @@ import {
   StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import formatDisplayLocation from "../../services/formatDisplayLocation";
 
 const ARGUS_BLUE = "#294880";
 
@@ -42,7 +43,7 @@ const User_RepPost_Layout = ({
           <View style={styles.locationRow}>
             <Ionicons name="location-outline" size={13} color="#6B7280" />
             <Text style={styles.locationText} numberOfLines={1}>
-              {location}
+              {formatDisplayLocation(location)}
             </Text>
           </View>
         </View>

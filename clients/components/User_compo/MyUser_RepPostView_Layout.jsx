@@ -11,6 +11,8 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFonts } from "expo-font";
+import formatRelativeTime from "../../services/formatRelativeTime";
+import formatDisplayLocation from "../../services/formatDisplayLocation";
 
 const PRIMARY = "#294880";
 
@@ -155,15 +157,16 @@ const MyUser_RepPostView_Layout = ({ report }) => {
               <View style={styles.locationRow}>
                 <Ionicons name="location-outline" size={13} color="#7B8794" />
                 <Text style={styles.locationText} numberOfLines={1}>
-                  {report.location || "No location provided"}
+                  {formatDisplayLocation(report.location) || "No location provided"}
                 </Text>
               </View>
 
               <View style={styles.dateRow}>
                 <Ionicons name="calendar-outline" size={12} color="#9CA3AF" />
-                <Text style={styles.dateText} numberOfLines={1}>
-                  {report.datePosted || report.createdAt || "Just now"}
-                </Text>
+              <Text style={styles.dateText} numberOfLines={1}>
+                {formatRelativeTime(report.datePosted || report.createdAt) ||
+                  "Just now"}
+              </Text>
               </View>
             </View>
           </View>
@@ -269,7 +272,7 @@ const MyUser_RepPostView_Layout = ({ report }) => {
                 </View>
 
                 <Text style={styles.commentDate}>
-                  {comment.datePosted || "Just now"}
+                  {formatRelativeTime(comment.datePosted) || "Just now"}
                 </Text>
               </View>
             </View>

@@ -10,6 +10,8 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFonts } from "expo-font";
+import formatRelativeTime from "../services/formatRelativeTime";
+import formatDisplayLocation from "../services/formatDisplayLocation";
 
 const PRIMARY = "#294880";
 
@@ -54,8 +56,9 @@ const ReportByAdmin = ({
 
   const finalAdminName = adminName || report?.adminName || "Admin";
   const finalType = type || report?.type || "Safety/Tips";
-  const finalLocation =
-    location || report?.location || "Location not specified";
+  const finalLocation = formatDisplayLocation(
+    location || report?.location || "Location not specified"
+  );
   const finalDetails = details || report?.details || "No details provided.";
   const finalDatePosted =
     datePosted ||
@@ -79,11 +82,7 @@ const ReportByAdmin = ({
       return dateValue;
     }
 
-    return date.toLocaleDateString("en-PH", {
-      month: "short",
-      day: "2-digit",
-      year: "numeric",
-    });
+    return formatRelativeTime(dateValue);
   };
 
   // const getTypeIcon = () => {
