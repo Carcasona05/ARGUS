@@ -29,37 +29,6 @@ const COLORS = {
   pendingSoft: "#EEF3FB",
 };
 
-function StatusBadge({ label }) {
-  const value = (label || "").toLowerCase();
-
-  let statusStyle = {
-    backgroundColor: COLORS.pendingSoft,
-    color: COLORS.primary,
-  };
-
-  if (value === "verified") {
-    statusStyle = {
-      backgroundColor: COLORS.successSoft,
-      color: COLORS.success,
-    };
-  } else if (value === "rejected") {
-    statusStyle = {
-      backgroundColor: COLORS.dangerSoft,
-      color: COLORS.danger,
-    };
-  } else if (value === "resolved") {
-    statusStyle = {
-      backgroundColor: COLORS.primarySoft,
-      color: COLORS.primary,
-    };
-  }
-
-  return (
-    <View style={[styles.statusBadge, { backgroundColor: statusStyle.backgroundColor }]}>
-      <Text style={[styles.statusBadgeText, { color: statusStyle.color }]}>{label}</Text>
-    </View>
-  );
-}
 
 function ScoreBadge({ label }) {
   const value = (label || "").toLowerCase();

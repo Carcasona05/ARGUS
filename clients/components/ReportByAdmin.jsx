@@ -86,19 +86,19 @@ const ReportByAdmin = ({
     });
   };
 
-  const getTypeIcon = () => {
-    const normalizedType = finalType.toLowerCase();
+  // const getTypeIcon = () => {
+  //   const normalizedType = finalType.toLowerCase();
 
-    if (normalizedType.includes("seminar")) {
-      return "people-outline";
-    }
+  //   if (normalizedType.includes("seminar")) {
+  //     return "people-outline";
+  //   }
 
-    if (normalizedType.includes("curfew")) {
-      return "moon-outline";
-    }
+  //   if (normalizedType.includes("curfew")) {
+  //     return "moon-outline";
+  //   }
 
-    return "shield-checkmark-outline";
-  };
+  //   return "shield-checkmark-outline";
+  // };
 
   return (
     <TouchableOpacity
