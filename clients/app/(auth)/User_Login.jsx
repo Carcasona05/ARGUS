@@ -25,14 +25,6 @@ const validateLoginPassword = (value) => {
   return "";
 };
 
-if (!globalThis.demoAccount) {
-  globalThis.demoAccount = {
-    email: "demo@argus.com",
-    password: "Argus123",
-    resetEmail: "",
-    otp: "123456",
-  };
-}
 
 export default function UserLogin() {
   const { width, height } = useWindowDimensions();
