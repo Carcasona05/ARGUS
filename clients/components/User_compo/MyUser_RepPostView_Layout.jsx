@@ -136,23 +136,25 @@ const MyUser_RepPostView_Layout = ({ report }) => {
       keyboardShouldPersistTaps="handled"
     >
       <View style={styles.card}>
-        <View style={styles.header}>
-          <View style={styles.userSection}>
-            {report.userAvatar ? (
-              <Image
-                source={getImageSource(report.userAvatar)}
-                style={styles.avatarImage}
-              />
-            ) : (
-              <View style={styles.avatarPlaceholder}>
-                <Ionicons name="person-outline" size={23} color={PRIMARY} />
-              </View>
-            )}
+<View style={styles.header}>
+            <View style={styles.userSection}>
+              {report.userAvatar ? (
+                <Image
+                  source={getImageSource(report.userAvatar)}
+                  style={styles.avatarImage}
+                />
+              ) : (
+                <View style={styles.avatarPlaceholder}>
+                  <Ionicons name="person-outline" size={23} color={PRIMARY} />
+                </View>
+              )}
 
-            <View style={styles.userTextWrap}>
-              <Text style={styles.userName} numberOfLines={1}>
-                {report.userName || "You"}
-              </Text>
+          
+
+              <View style={styles.userTextWrap}>
+                <Text style={styles.userName} numberOfLines={1}>
+                  {report.userName || "You"}
+                </Text>
 
               <View style={styles.locationRow}>
                 <Ionicons name="location-outline" size={13} color="#7B8794" />
@@ -160,6 +162,12 @@ const MyUser_RepPostView_Layout = ({ report }) => {
                   {formatDisplayLocation(report.location) || "No location provided"}
                 </Text>
               </View>
+                <View style={styles.locationRow}>
+                  <Ionicons name="location-outline" size={13} color="#7B8794" />
+                  <Text style={styles.locationText} numberOfLines={1}>
+                    {report.location || "No location provided"}
+                  </Text>
+                </View>
 
               <View style={styles.dateRow}>
                 <Ionicons name="calendar-outline" size={12} color="#9CA3AF" />
@@ -171,7 +179,7 @@ const MyUser_RepPostView_Layout = ({ report }) => {
             </View>
           </View>
 
-          <View style={styles.statusWrap}>
+            <View style={styles.statusWrap}>
             <Ionicons
               name={statusData.icon}
               size={14}
@@ -362,6 +370,20 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingRight: 10,
+  },
+
+  actionButtons: {
+    flexDirection: "row",
+    gap: 8,
+  },
+
+  actionButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#F8FAFD",
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   avatarImage: {
