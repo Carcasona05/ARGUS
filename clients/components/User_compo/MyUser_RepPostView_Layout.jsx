@@ -22,7 +22,7 @@ const FONT = {
   semiBold: "Poppins-SemiBold",
 };
 
-const MyUser_RepPostView_Layout = ({ report, onEdit, onDelete }) => {
+const MyUser_RepPostView_Layout = ({ report }) => {
   const [commentText, setCommentText] = useState("");
   const [comments, setComments] = useState([]);
 
