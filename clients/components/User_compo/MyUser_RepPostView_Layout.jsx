@@ -11,6 +11,8 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFonts } from "expo-font";
+import formatRelativeTime from "../../services/formatRelativeTime";
+import formatDisplayLocation from "../../services/formatDisplayLocation";
 
 const PRIMARY = "#294880";
 
@@ -154,6 +156,12 @@ const MyUser_RepPostView_Layout = ({ report, onEdit, onDelete }) => {
                   {report.userName || "You"}
                 </Text>
 
+              <View style={styles.locationRow}>
+                <Ionicons name="location-outline" size={13} color="#7B8794" />
+                <Text style={styles.locationText} numberOfLines={1}>
+                  {formatDisplayLocation(report.location) || "No location provided"}
+                </Text>
+              </View>
                 <View style={styles.locationRow}>
                   <Ionicons name="location-outline" size={13} color="#7B8794" />
                   <Text style={styles.locationText} numberOfLines={1}>
@@ -161,35 +169,15 @@ const MyUser_RepPostView_Layout = ({ report, onEdit, onDelete }) => {
                   </Text>
                 </View>
 
-                <View style={styles.dateRow}>
-                  <Ionicons name="calendar-outline" size={12} color="#9CA3AF" />
-                  <Text style={styles.dateText} numberOfLines={1}>
-                    {report.datePosted || report.createdAt || "Just now"}
-                  </Text>
-                </View>
+              <View style={styles.dateRow}>
+                <Ionicons name="calendar-outline" size={12} color="#9CA3AF" />
+              <Text style={styles.dateText} numberOfLines={1}>
+                {formatRelativeTime(report.datePosted || report.createdAt) ||
+                  "Just now"}
+              </Text>
               </View>
             </View>
-
-            <View style={styles.actionButtons}>
-              {onEdit && (
-                <TouchableOpacity
-                  style={styles.actionButton}
-                  onPress={onEdit}
-                  activeOpacity={0.8}
-                >
-                  <Ionicons name="create-outline" size={20} color={PRIMARY} />
-                </TouchableOpacity>
-              )}
-              {onDelete && (
-                <TouchableOpacity
-                  style={styles.actionButton}
-                  onPress={onDelete}
-                  activeOpacity={0.8}
-                >
-                  <Ionicons name="trash-outline" size={20} color="#C0392B" />
-                </TouchableOpacity>
-              )}
-            </View>
+          </View>
 
             <View style={styles.statusWrap}>
             <Ionicons
@@ -292,7 +280,7 @@ const MyUser_RepPostView_Layout = ({ report, onEdit, onDelete }) => {
                 </View>
 
                 <Text style={styles.commentDate}>
-                  {comment.datePosted || "Just now"}
+                  {formatRelativeTime(comment.datePosted) || "Just now"}
                 </Text>
               </View>
             </View>

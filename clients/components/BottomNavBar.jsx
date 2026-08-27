@@ -23,7 +23,7 @@ const BottomNavBar = () => {
 
   const isTinyScreen = width < 340;
   const isSmallScreen = width >= 340 && width < 390;
-  const isMediumScreen = width >= 390 && width < 430;
+  //const isMediumScreen = width >= 390 && width < 430;
 
   const sideMargin = isTinyScreen ? 10 : 14;
   const navWidth = Math.min(width - sideMargin * 2, 430);

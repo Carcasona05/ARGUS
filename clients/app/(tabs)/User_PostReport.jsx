@@ -478,7 +478,11 @@ function UserPostReportInner() {
 
               <TextInput
                 style={styles.locationInput}
-                value={location}
+                value={
+                  location && !location.startsWith("-") && location.includes(",")
+                    ? "Location fetched"
+                    : location
+                }
                 editable={false}
                 pointerEvents="none"
                 placeholder={

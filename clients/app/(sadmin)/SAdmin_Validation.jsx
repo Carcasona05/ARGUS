@@ -14,6 +14,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import SAdmin_Layout from "../../components/SAdmin_Compo/SAdmin_Layout";
 import Admin_ViewSimilarReportsModal from "../../components/Admin_compo/Admin_ViewSimilarReportsModal";
 import Admin_AddReportModal from "../../components/Admin_compo/Admin_AddReportModal";
+import Admin_AddAnnouncementModal from "../../components/Admin_compo/Admin_AddAnnouncementModal"; //fix
 import apiClient from "../../services/apiClient";
 import { uploadImage } from "../../services/imageUpload";
 import useAutoRefresh from "../../hooks/useAutoRefresh";
@@ -22,12 +23,14 @@ import { getCache, setCache } from "../../services/dataStore";
 
 const ARGUS_BLUE = "#294880";
 
-export default function Admin_Validation() {
+export default function SAdmin_Validation() {
   const [selectedStatus, setSelectedStatus] = useState("All");
   const [selectedWeekRange, setSelectedWeekRange] = useState("All Weeks");
   const [selectedCompiledGroup, setSelectedCompiledGroup] = useState(null);
   const [viewVisible, setViewVisible] = useState(false);
   const [addReportVisible, setAddReportVisible] = useState(false);
+
+  const [addAnnouncementVisible, setAddAnnouncementVisible] = useState(false); //notused
 
   const [fontsLoaded] = useFonts({
     PoppinsRegular: require("../../assets/fonts/Poppins-Regular.ttf"),
@@ -37,7 +40,11 @@ export default function Admin_Validation() {
 
   const handleAddReport = () => {
     setAddReportVisible(true);
-};
+  };
+
+  const handleAddAnnouncement = () => {
+    setAddAnnouncementVisible(true);
+  }; //care
 
 
 
@@ -561,6 +568,21 @@ export default function Admin_Validation() {
                 <Ionicons name="add-circle-outline" size={18} color="#FFFFFF" />
                 <Text style={styles.addReportButtonText}>Add Report</Text>
               </TouchableOpacity>
+
+
+              <TouchableOpacity
+                style={styles.addReportButton}
+                onPress={handleAddAnnouncement}
+                activeOpacity={0.85}
+              >
+                <Ionicons name="add-circle-outline" size={18} color="#FFFFFF" />
+                <Text style={styles.addReportButtonText}>Add Announcement</Text>
+              </TouchableOpacity>
+
+
+
+
+
             </View>
 
             <View style={styles.filterBody}>
@@ -837,6 +859,12 @@ export default function Admin_Validation() {
         onClose={() => setAddReportVisible(false)}
         onSubmit={handleAnnouncementSubmit}
     />
+
+    <Admin_AddAnnouncementModal
+  visible={addAnnouncementVisible}
+  onClose={() => setAddAnnouncementVisible(false)}
+  onSubmit={handleAnnouncementSubmit}
+/>
             
       </View>
     </SAdmin_Layout>

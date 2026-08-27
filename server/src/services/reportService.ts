@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "../config/supabaseAdmin.ts";
+import { reverseGeocode } from "../utils/geocode.ts";
 
 type ReportInput = {
   location?: string;
@@ -149,6 +150,18 @@ export const reportService = {
 
     if (error) return { error: error.message };
     if (!report) return { error: "Failed to create report" };
+
+    const latNum = input.latitude ? Number(input.latitude) : null;
+    const lngNum = input.longitude ? Number(input.longitude) : null;
+    if (latNum && lngNum) {
+      const resolved = await reverseGeocode(latNum, lngNum);
+      if (resolved) {
+        await supabaseAdmin
+          .from("reports")
+          .update({ location: resolved })
+          .eq("id", report.id);
+      }
+    }
 
     const images = Array.isArray(input.photos)
       ? input.photos.map((url, index) => ({
@@ -320,6 +333,19 @@ export const reportService = {
     if (input.details !== undefined) updates.details = (input.details || "").trim();
     if (input.location !== undefined) updates.location = input.location;
     if (input.poster_name !== undefined) updates.poster_name = input.poster_name;
+
+    const coordPattern = /^-?\d+(\.\d+)?\s*,\s*-?\d+(\.\d+)?/;
+    const latNum = input.latitude ? Number(input.latitude) : null;
+    const lngNum = input.longitude ? Number(input.longitude) : null;
+    if (
+      latNum &&
+      lngNum &&
+      (updates.location === undefined ||
+        (typeof updates.location === "string" && coordPattern.test(updates.location)))
+    ) {
+      const resolved = await reverseGeocode(latNum, lngNum);
+      if (resolved) updates.location = resolved;
+    }
 
     const category = (input.incident_category || "").trim();
     const type = (input.incident_type || "").trim();

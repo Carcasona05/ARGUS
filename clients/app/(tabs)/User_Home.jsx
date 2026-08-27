@@ -412,11 +412,12 @@ const User_Home = () => {
             }
 
             return (
-              <ReportPost_Layout
-                key={report.id}
-                userName={report.userName}
-                userAvatar={report.userAvatar}
-                location={report.location}
+                <ReportPost_Layout
+                  key={report.id}
+                  userName={report.userName}
+                  userAvatar={report.userAvatar}
+                  datePosted={report.datePosted}
+                  location={report.location}
                 incidentCategory={report.incidentCategory}
                 incidentType={report.incidentType}
                 details={report.details}

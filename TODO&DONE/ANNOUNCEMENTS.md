@@ -93,6 +93,11 @@
 - No First name, Middle name, Last name for the editing the admins accounts. It should have those columns because every users shares the same table. [FOR_PROFILES]
 - MUCH BETTER TO USE TOAST FOR BETTER UI ON SUCCESS/FAIL MESSAGE
 
+
+# FIXES MADE (SCARSAN)
+- Added the announcement in Admin in Admin_Violation
+- added the announcement in SAdmin in Sadmin_Violation
+
 # SUGGESTIONS
 - All confirm like password, new email, and etc. Should have an interactive design. 
 

@@ -11,6 +11,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useFonts } from "expo-font";
 import FullscreenImageViewer from "./FullscreenImageViewer";
+import formatRelativeTime from "../services/formatRelativeTime";
+import formatDisplayLocation from "../services/formatDisplayLocation";
 
 const PRIMARY = "#294880";
 
@@ -56,6 +58,9 @@ const ReportPost_Layout = ({
 
   const imageList = Array.isArray(images) ? images.filter(Boolean) : [];
   const imageCount = imageList.length;
+
+  const relativeDate = formatRelativeTime(datePosted);
+  const displayLocation = formatDisplayLocation(location);
 
   if (!fontsLoaded) {
     return (
@@ -207,14 +212,14 @@ const ReportPost_Layout = ({
             <View style={styles.locationRow}>
               <Ionicons name="location-outline" size={13} color="#7B8794" />
               <Text style={styles.locationText} numberOfLines={1}>
-                {location}
+                {displayLocation}
               </Text>
             </View>
 
             <View style={styles.dateRow}>
               <Ionicons name="calendar-outline" size={12} color="#9CA3AF" />
               <Text style={styles.dateText} numberOfLines={1}>
-                {datePosted}
+                {relativeDate}
               </Text>
             </View>
           </View>

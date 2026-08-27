@@ -105,6 +105,7 @@ const mapMyReports = (data) =>
     incidentCategory: r.incident_category,
     incidentType: r.incident_type,
     details: r.details,
+    datePosted: r.created_at,
     status: r.status || "Pending Review",
     verified: r.is_verified,
     likes: r.likes ?? 0,
@@ -763,11 +764,12 @@ const MyReportsInner = () => {
             </View>
           ) : (
             filteredReports.map((report, index) => (
-              <MyUser_RepPost_Layout
-                key={report.id}
-                userName={report.userName}
-                userAvatar={report.userAvatar}
-                location={report.location}
+                <MyUser_RepPost_Layout
+                  key={report.id}
+                  userName={report.userName}
+                  userAvatar={report.userAvatar}
+                  datePosted={report.datePosted}
+                  location={report.location}
                 incidentCategory={report.incidentCategory}
                 incidentType={report.incidentType}
                 details={report.details}

@@ -10,6 +10,7 @@ const User_RepPostView = () => {
   try {
     parsedPost = post ? JSON.parse(post) : null;
   } catch (error) {
+    console.error("Error parsing post:", error);
     parsedPost = null;
   }
 
