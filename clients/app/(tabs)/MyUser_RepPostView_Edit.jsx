@@ -391,8 +391,12 @@ function EditScreenInner() {
           </View>
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
     </ThemedView>
+    
+  
   );
+  
 }
 
 const styles = StyleSheet.create({
