@@ -54,6 +54,28 @@ export const validateReport = async (req: AuthRequest, res: Response) => {
       location: result.data.location,
       isVerified: verified,
     });
+
+    if (verified || newStatus === "Resolved") {
+      const { data: coords } = await reportService.getReportCoords(
+        result.data.id
+      );
+
+      await notificationService
+        .notifyNearbyUsers({
+          reportId: result.data.id,
+          latitude: coords?.latitude ?? null,
+          longitude: coords?.longitude ?? null,
+          title: verified
+            ? "Verified incident near you"
+            : "Resolved incident near you",
+          message: `An incident report near you was ${
+            verified ? "verified" : "resolved"
+          } by the admin.`,
+          level: "High",
+          excludeUserId: result.data.ownerId,
+        })
+        .catch(() => {});
+    }
   }
 
   res.json({
@@ -78,6 +100,21 @@ export const createReport = async (req: AuthRequest, res: Response) => {
       "Report submitted",
       result.data ?? null
     )
+    .catch(() => {});
+
+  const latNum = req.body?.latitude ? Number(req.body.latitude) : null;
+  const lngNum = req.body?.longitude ? Number(req.body.longitude) : null;
+
+  await notificationService
+    .notifyNearbyUsers({
+      reportId: result.data ?? "",
+      latitude: latNum,
+      longitude: lngNum,
+      title: req.body?.incident_type || "Incident report near you",
+      message: `A new "${req.body?.incident_type || "incident"}" report was filed near your location.`,
+      level: "Moderate",
+      excludeUserId: user.id,
+    })
     .catch(() => {});
 
   res.status(201).json({
