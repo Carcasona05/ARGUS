@@ -224,7 +224,7 @@ function EditScreenInner() {
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-      />
+      >
         <ScrollView
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
@@ -390,7 +390,7 @@ function EditScreenInner() {
             </TouchableOpacity>
           </View>
         </View>
-      </ScrollView>
+        </ScrollView>
       </KeyboardAvoidingView>
     </ThemedView>
     
