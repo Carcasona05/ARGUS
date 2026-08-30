@@ -87,6 +87,90 @@ export const notificationService = {
     return { data: inserted.id };
   },
 
+  haversineMeters(lat1: number, lng1: number, lat2: number, lng2: number) {
+    const R = 6371000;
+    const toRad = (d: number) => (d * Math.PI) / 180;
+    const dLat = toRad(lat2 - lat1);
+    const dLng = toRad(lng2 - lng1);
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+    return Math.round(2 * R * Math.asin(Math.sqrt(a)));
+  },
+
+  async notifyNearbyUsers(input: {
+    reportId: string;
+    latitude: number | null;
+    longitude: number | null;
+    title: string;
+    message?: string;
+    level?: "Low" | "Moderate" | "High";
+    radiusMeters?: number;
+    excludeUserId?: string;
+  }) {
+    const {
+      reportId,
+      latitude,
+      longitude,
+      title,
+      message,
+      level = "Moderate",
+      radiusMeters = 3000,
+      excludeUserId,
+    } = input;
+
+    if (latitude == null || longitude == null) return { data: 0, error: null };
+
+    const { data: reports, error: rError } = await supabaseAdmin
+      .from("reports")
+      .select("user_id, latitude, longitude, created_at")
+      .not("latitude", "is", null)
+      .not("longitude", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(500);
+
+    if (rError) return { data: null, error: rError.message };
+
+    const latestByUser = new Map<string, { lat: number; lng: number }>();
+    (reports || []).forEach(
+      (r: { user_id: string | null; latitude: number; longitude: number }) => {
+        if (!r.user_id) return;
+        if (!latestByUser.has(r.user_id)) {
+          latestByUser.set(r.user_id, {
+            lat: Number(r.latitude),
+            lng: Number(r.longitude),
+          });
+        }
+      }
+    );
+
+    let notified = 0;
+    for (const [userId, coords] of latestByUser.entries()) {
+      if (excludeUserId && userId === excludeUserId) continue;
+
+      const distance = this.haversineMeters(
+        latitude,
+        longitude,
+        coords.lat,
+        coords.lng
+      );
+      if (distance > radiusMeters) continue;
+
+      const { error } = await this.createNotification({
+        userId,
+        type: "nearby_incident",
+        title,
+        message: message ?? `A new incident was reported ${distance} m from you.`,
+        reportId,
+        distanceMeters: distance,
+        level,
+      });
+      if (!error) notified += 1;
+    }
+
+    return { data: notified, error: null };
+  },
+
   async createLoginActivity(input: {
     userId: string;
     device: string;
@@ -181,6 +265,7 @@ export const notificationService = {
         nearbyIncidents.push({
           ...base,
           type: n.title,
+          reportId: child?.report_id ?? null,
           distance: child?.distance_meters
             ? `${child.distance_meters} m away`
             : "",

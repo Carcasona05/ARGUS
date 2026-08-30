@@ -659,7 +659,7 @@ const UserProfileSettings = () => {
 
               <DetailRow
                 icon="location-outline"
-                label="Current Location"
+                label="Address"
                 value={userDetails.location}
                 editValue={tempDetails.location}
                 placeholder="Enter location"

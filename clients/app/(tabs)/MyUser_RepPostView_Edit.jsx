@@ -390,11 +390,9 @@ function EditScreenInner() {
             </TouchableOpacity>
           </View>
         </View>
-        </ScrollView>
+      </ScrollView>
       </KeyboardAvoidingView>
     </ThemedView>
-    
-  
   );
   
 }

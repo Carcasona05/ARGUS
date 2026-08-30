@@ -1018,6 +1018,25 @@ export const reportService = {
     };
   },
 
+  async getReportCoords(reportId: string) {
+    const { data, error } = await supabaseAdmin
+      .from("reports")
+      .select("latitude, longitude")
+      .eq("id", reportId)
+      .maybeSingle();
+
+    if (error) return { data: null, error: error.message };
+    if (!data) return { data: null, error: "Report not found" };
+
+    return {
+      data: {
+        latitude: data.latitude != null ? Number(data.latitude) : null,
+        longitude: data.longitude != null ? Number(data.longitude) : null,
+      },
+      error: null,
+    };
+  },
+
   async validateReport(reportId: string, input: {
     status?: string;
     is_verified?: boolean;

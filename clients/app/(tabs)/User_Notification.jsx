@@ -9,6 +9,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useFonts } from "expo-font";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useRouter } from "expo-router";
 
 import ThemedView from "../../components/ThemedView";
 import ThemedText from "../../components/ThemedText";
@@ -136,7 +137,7 @@ const ReportStatusCard = ({ item }) => {
   );
 };
 
-const NearbyIncidentCard = ({ item }) => {
+const NearbyIncidentCard = ({ item, onViewPost }) => {
   const high = item.level === "High";
 
   return (
@@ -187,8 +188,8 @@ const NearbyIncidentCard = ({ item }) => {
           <ThemedText style={styles.metaText}>{item.distance}</ThemedText>
         </View>
 
-        <TouchableOpacity activeOpacity={0.8}>
-          <ThemedText style={styles.linkText}>View Map</ThemedText>
+        <TouchableOpacity activeOpacity={0.8} onPress={() => onViewPost(item.reportId)}>
+          <ThemedText style={styles.linkText}>View Post</ThemedText>
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
@@ -247,13 +248,13 @@ const LoginCard = ({ item }) => {
   );
 };
 
-const SectionHeader = ({ title, action }) => {
+const SectionHeader = ({ title, action, onAction }) => {
   return (
     <View style={styles.sectionHeader}>
       <ThemedText style={styles.sectionTitle}>{title}</ThemedText>
 
       {action ? (
-        <TouchableOpacity activeOpacity={0.8}>
+        <TouchableOpacity activeOpacity={0.8} onPress={onAction}>
           <ThemedText style={styles.sectionAction}>{action}</ThemedText>
         </TouchableOpacity>
       ) : null}
@@ -272,7 +273,45 @@ const User_Notification = () => {
   const [nearbyIncidents, setNearbyIncidents] = useState([]);
   const [loginActivity, setLoginActivity] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [expandedSections, setExpandedSections] = useState({
+    reports: false,
+    nearby: false,
+    login: false,
+  });
   const scrollRef = useScrollToTop();
+  const router = useRouter();
+
+  const toggleSection = (key) =>
+    setExpandedSections((prev) => ({ ...prev, [key]: !prev[key] }));
+
+  const openNearbyPost = useCallback(
+    async (reportId) => {
+      if (!reportId) return;
+      try {
+        const token = await AsyncStorage.getItem("access_token");
+        if (!token) return;
+        const res = await apiClient.get("/reports", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const report = (res.data?.reports || []).find(
+          (r) => r.id === reportId
+        );
+        if (report) {
+          router.push({
+            pathname: "/User_RepPostView",
+            params: { post: JSON.stringify(report) },
+          });
+        }
+      } catch {
+        // ignore
+      }
+    },
+    [router]
+  );
+
+  const LIMIT = 5;
+  const sliceItems = (items, expanded) =>
+    expanded ? items : items.slice(0, LIMIT);
 
   const loadNotifications = useCallback(async () => {
     try {
@@ -341,12 +380,22 @@ const User_Notification = () => {
         }
       >
         <View style={styles.sectionBlock}>
-          <SectionHeader title="Your Reports" action="See All" />
+          <SectionHeader
+            title="Your Reports"
+            action={
+              userReports.length > LIMIT
+                ? expandedSections.reports
+                  ? "Show Less"
+                  : "See All"
+                : null
+            }
+            onAction={() => toggleSection("reports")}
+          />
 
           {userReports.length === 0 ? (
             <ThemedText style={styles.emptyText}>No report updates yet.</ThemedText>
           ) : (
-            userReports.map((item) => (
+            sliceItems(userReports, expandedSections.reports).map((item) => (
               <ReportStatusCard key={item.id} item={item} />
             ))
           )}
@@ -355,25 +404,46 @@ const User_Notification = () => {
         <View style={styles.sectionBlock}>
           <SectionHeader
             title="Incident Reports Near Your Location"
-            action="Open Map"
+            action={
+              nearbyIncidents.length > LIMIT
+                ? expandedSections.nearby
+                  ? "Show Less"
+                  : "See All"
+                : null
+            }
+            onAction={() => toggleSection("nearby")}
           />
 
           {nearbyIncidents.length === 0 ? (
             <ThemedText style={styles.emptyText}>No nearby incidents at this time.</ThemedText>
           ) : (
-            nearbyIncidents.map((item) => (
-              <NearbyIncidentCard key={item.id} item={item} />
+            sliceItems(nearbyIncidents, expandedSections.nearby).map((item) => (
+              <NearbyIncidentCard
+                key={item.id}
+                item={item}
+                onViewPost={openNearbyPost}
+              />
             ))
           )}
         </View>
 
         <View style={styles.sectionBlock}>
-          <SectionHeader title="Recent Account Login" action="Manage" />
+          <SectionHeader
+            title="Recent Account Login"
+            action={
+              loginActivity.length > LIMIT
+                ? expandedSections.login
+                  ? "Show Less"
+                  : "See All"
+                : null
+            }
+            onAction={() => toggleSection("login")}
+          />
 
           {loginActivity.length === 0 ? (
             <ThemedText style={styles.emptyText}>No login activity found.</ThemedText>
           ) : (
-            loginActivity.map((item) => (
+            sliceItems(loginActivity, expandedSections.login).map((item) => (
               <LoginCard key={item.id} item={item} />
             ))
           )}

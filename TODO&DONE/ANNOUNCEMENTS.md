@@ -22,9 +22,8 @@
 - need the server to be update in real time so that data feels smooth no need for refresh or relog [DONE]
 
 # RECOMMENDATIONS AND REVISION
-- Is it possible instead of IP address the name of the place will be shown
+- Is it possible instead of IP address the name of the place will be shown [TOBECHECKED]
 - Credibility Score: A user will be credible after he/she fill her/his personal details. ( put a message or something.) 
-- In the Profile Details, Current location or we just swap it to Permanent Location. 
 
 
 ### ADMIN FEATURES
