@@ -391,7 +391,6 @@ function EditScreenInner() {
           </View>
         </View>
       </ScrollView>
-      
     </ThemedView>
   );
   
