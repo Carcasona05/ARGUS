@@ -321,6 +321,20 @@ const UserProfileSettings = () => {
     return null;
   }
 
+  const hasChanges = () => {
+    const fields = [
+      "firstName",
+      "middleName",
+      "lastName",
+      "username",
+      "birthdate",
+      "contactNumber",
+      "location",
+      "email",
+    ];
+    return fields.some((field) => tempDetails[field] !== userDetails[field]);
+  };
+
   const handleEdit = () => {
     setTempDetails(userDetails);
     setEditMode(true);
@@ -463,12 +477,12 @@ const UserProfileSettings = () => {
     setConfirmPasswordError("");
   };
 
-  const updateTempDetail = (key, value) => {
+  const updateTempDetail = useCallback((key, value) => {
     setTempDetails((prev) => ({
       ...prev,
       [key]: value,
     }));
-  };
+  }, []);
 
   const updatePasswordDetail = (key, value) => {
     setPasswordDetails((prev) => {
@@ -496,41 +510,6 @@ const UserProfileSettings = () => {
     }
   };
 
-  const DetailRow = ({
-    icon,
-    label,
-    value,
-    editValue,
-    placeholder,
-    fieldKey,
-    keyboardType = "default",
-    autoCapitalize = "sentences",
-    isLast = false,
-  }) => {
-    return (
-      <View style={[styles.detailsRow, isLast && styles.noBorder]}>
-        <View style={styles.detailLabelWrap}>
-          <Ionicons name={icon} size={18} color={ARGUS_BLUE} />
-          <ThemedText style={styles.label}>{label}</ThemedText>
-        </View>
-
-        {editMode ? (
-          <TextInput
-            style={styles.input}
-            value={editValue}
-            onChangeText={(text) => updateTempDetail(fieldKey, text)}
-            placeholder={placeholder}
-            placeholderTextColor="#9CA3AF"
-            keyboardType={keyboardType}
-            autoCapitalize={autoCapitalize}
-          />
-        ) : (
-          <ThemedText style={styles.value}>{value}</ThemedText>
-        )}
-      </View>
-    );
-  };
-
   return (
     <ThemedView style={styles.container}>
       <KeyboardAvoidingView
@@ -538,12 +517,13 @@ const UserProfileSettings = () => {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
       >
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <TouchableWithoutFeedback>
           <ScrollView
             style={styles.scrollView}
             contentContainerStyle={styles.content}
             showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
+            keyboardShouldPersistTaps="always"
+            keyboardDismissMode="none"
           >
             <Divboxwhite style={styles.detailsCard}>
               <View style={styles.cardHeader}>
@@ -557,8 +537,12 @@ const UserProfileSettings = () => {
                       <ThemedText style={styles.cancelText}>Cancel</ThemedText>
                     </TouchableOpacity>
 
-                    <TouchableOpacity onPress={handleSave}>
-                      <ThemedText style={styles.saveText}>Save</ThemedText>
+                    <TouchableOpacity
+                      onPress={handleSave}
+                      disabled={!hasChanges()}
+                      style={[styles.saveButton, !hasChanges() && styles.saveButtonDisabled]}
+                    >
+                      <ThemedText style={[styles.saveText, !hasChanges() && styles.saveTextDisabled]}>Save</ThemedText>
                     </TouchableOpacity>
                   </View>
                 ) : (
@@ -575,6 +559,8 @@ const UserProfileSettings = () => {
                 editValue={tempDetails.firstName}
                 placeholder="Enter firstname"
                 fieldKey="firstName"
+                editMode={editMode}
+                updateTempDetail={updateTempDetail}
               />
 
               <DetailRow
@@ -584,6 +570,8 @@ const UserProfileSettings = () => {
                 editValue={tempDetails.lastName}
                 placeholder="Enter lastname"
                 fieldKey="lastName"
+                editMode={editMode}
+                updateTempDetail={updateTempDetail}
               />
 
               <DetailRow
@@ -593,6 +581,8 @@ const UserProfileSettings = () => {
                 editValue={tempDetails.middleName}
                 placeholder="Enter middlename"
                 fieldKey="middleName"
+                editMode={editMode}
+                updateTempDetail={updateTempDetail}
               />
 
               <DetailRow
@@ -602,6 +592,8 @@ const UserProfileSettings = () => {
                 editValue={tempDetails.username}
                 placeholder="Enter username"
                 fieldKey="username"
+                editMode={editMode}
+                updateTempDetail={updateTempDetail}
               />
 
               <View style={styles.detailsRow}>
@@ -655,6 +647,8 @@ const UserProfileSettings = () => {
                 placeholder="Enter contact number"
                 fieldKey="contactNumber"
                 keyboardType="phone-pad"
+                editMode={editMode}
+                updateTempDetail={updateTempDetail}
               />
 
               <DetailRow
@@ -664,6 +658,8 @@ const UserProfileSettings = () => {
                 editValue={tempDetails.location}
                 placeholder="Enter location"
                 fieldKey="location"
+                editMode={editMode}
+                updateTempDetail={updateTempDetail}
               />
 
               <DetailRow
@@ -676,6 +672,8 @@ const UserProfileSettings = () => {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 isLast
+                editMode={editMode}
+                updateTempDetail={updateTempDetail}
               />
             </Divboxwhite>
 
@@ -939,6 +937,21 @@ const styles = StyleSheet.create({
     color: ARGUS_BLUE,
   },
 
+  saveTextDisabled: {
+    color: "#9CA3AF",
+  },
+
+  saveButtonDisabled: {
+    opacity: 0.5,
+  },
+
+  saveButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: "transparent",
+  },
+
   detailsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -1184,6 +1197,32 @@ const styles = StyleSheet.create({
     fontFamily: "PoppinsRegular",
     color: "#6B7280",
   },
+});
+
+const DetailRow = React.memo(({ icon, label, value, editValue, placeholder, fieldKey, keyboardType = "default", autoCapitalize = "sentences", isLast = false, editMode, updateTempDetail }) => {
+  return (
+    <View style={[styles.detailsRow, isLast && styles.noBorder]}>
+      <View style={styles.detailLabelWrap}>
+        <Ionicons name={icon} size={18} color={ARGUS_BLUE} />
+        <ThemedText style={styles.label}>{label}</ThemedText>
+      </View>
+
+      {editMode ? (
+        <TextInput
+          style={styles.input}
+          value={editValue}
+          onChangeText={(text) => updateTempDetail(fieldKey, text)}
+          placeholder={placeholder}
+          placeholderTextColor="#9CA3AF"
+          keyboardType={keyboardType}
+          autoCapitalize={autoCapitalize}
+          blurOnSubmit={false}
+        />
+      ) : (
+        <ThemedText style={styles.value}>{value}</ThemedText>
+      )}
+    </View>
+  );
 });
 
 export default UserProfileSettings;
