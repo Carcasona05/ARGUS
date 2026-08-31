@@ -240,33 +240,9 @@ export default function Admin_Dashboard() {
                   </View>
 
                   <View style={styles.cardHeaderControls}>
-                    <TouchableOpacity style={styles.controlButton}>
-                      <Ionicons
-                        name="layers-outline"
-                        size={16}
-                        color="#5D6F92"
-                      />
-                      <Text style={styles.controlButtonText}>Layer</Text>
-                      <Ionicons
-                        name="chevron-down-outline"
-                        size={14}
-                        color="#5D6F92"
-                      />
-                    </TouchableOpacity>
+                    
 
-                    <TouchableOpacity style={styles.controlButton}>
-                      <Ionicons
-                        name="expand-outline"
-                        size={16}
-                        color="#5D6F92"
-                      />
-                      <Text style={styles.controlButtonText}>Zoom</Text>
-                      <Ionicons
-                        name="chevron-down-outline"
-                        size={14}
-                        color="#5D6F92"
-                      />
-                    </TouchableOpacity>
+                    
 
                     <TouchableOpacity style={styles.filterButton}>
                       <Ionicons
@@ -278,6 +254,9 @@ export default function Admin_Dashboard() {
                     </TouchableOpacity>
                   </View>
                 </View>
+
+
+                
 
                 <View style={styles.mapCardBody}>
                   <View style={styles.mapArea}>

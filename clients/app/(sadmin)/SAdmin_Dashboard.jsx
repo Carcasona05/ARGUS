@@ -430,7 +430,7 @@ export default function SAdmin_Dashboard() {
               </View>
             </View>
 
-            <View style={styles.panel}>
+            <View style={[styles.panel, { minHeight: 545 }]}>
               <View style={styles.panelHeader}>
                 <View>
                   <Text style={styles.panelTitle}>
@@ -681,6 +681,7 @@ const styles = StyleSheet.create({
     shadowColor: "#294880",
     shadowOpacity: 0.06,
     shadowRadius: 14,
+    
     shadowOffset: {
       width: 0,
       height: 8,
