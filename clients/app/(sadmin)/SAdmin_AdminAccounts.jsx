@@ -330,7 +330,7 @@ export default function SAdmin_AdminAccounts() {
               onPress={() => setIsAddAdminVisible(true)}
               activeOpacity={0.85}
             >
-              <Ionicons name="add" size={18} color="#FFFFFF" />
+              <Ionicons name="add-circle-outline" size={18} color="#FFFFFF" />
               <Text style={styles.addButtonText}>Add Admin</Text>
             </TouchableOpacity>
           </View>
