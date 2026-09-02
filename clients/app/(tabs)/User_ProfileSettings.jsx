@@ -8,9 +8,9 @@ import {
   Text,
   KeyboardAvoidingView,
   Platform,
-  Keyboard,
   TouchableWithoutFeedback,
   Alert,
+  Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFonts } from "expo-font";
@@ -26,6 +26,22 @@ import apiClient from "../../services/apiClient";
 import { getCache, setCache } from "../../services/dataStore";
 
 const ARGUS_BLUE = "#294880";
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+
+const scale = (size) => {
+  const baseWidth = 375;
+  return Math.round((SCREEN_WIDTH / baseWidth) * size);
+};
+
+const scaleVertical = (size) => {
+  const baseHeight = 667;
+  return Math.round((SCREEN_HEIGHT / baseHeight) * size);
+};
+
+const moderateScale = (size, factor = 0.5) => {
+  return Math.round(size + (scale(size) - size) * factor);
+};
 
 const validateNewPassword = (value) => {
   if (!value) return "Password is required.";
@@ -126,7 +142,7 @@ const CredibilityScore = ({ statusIndex = 3, score = 60 }) => {
         <View style={styles.credibilityIconBox}>
           <Ionicons
             name="shield-checkmark-outline"
-            size={22}
+            size={moderateScale(22)}
             color={ARGUS_BLUE}
           />
         </View>
@@ -185,7 +201,7 @@ const CredibilityScore = ({ statusIndex = 3, score = 60 }) => {
                   ]}
                 >
                   {isActive ? (
-                    <Ionicons name="checkmark" size={14} color="#FFFFFF" />
+                    <Ionicons name="checkmark" size={moderateScale(14)} color="#FFFFFF" />
                   ) : null}
                 </View>
 
@@ -618,7 +634,7 @@ const UserProfileSettings = () => {
 
                     <Ionicons
                       name="chevron-down"
-                      size={16}
+                      size={moderateScale(16)}
                       color={ARGUS_BLUE}
                     />
                   </TouchableOpacity>
@@ -882,33 +898,33 @@ const styles = StyleSheet.create({
   },
 
   content: {
-    paddingHorizontal: 12,
-    paddingTop: 12,
-    paddingBottom: 40,
+    paddingHorizontal: moderateScale(16),
+    paddingTop: scaleVertical(12),
+    paddingBottom: scaleVertical(40),
   },
 
   detailsCard: {
-    padding: 16,
-    borderRadius: 18,
-    marginBottom: 14,
+    padding: moderateScale(16),
+    borderRadius: moderateScale(18),
+    marginBottom: moderateScale(14),
   },
 
   passwordCard: {
-    padding: 16,
-    borderRadius: 18,
-    marginTop: 14,
-    marginBottom: 24,
+    padding: moderateScale(16),
+    borderRadius: moderateScale(18),
+    marginTop: moderateScale(14),
+    marginBottom: moderateScale(24),
   },
 
   cardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 14,
+    marginBottom: moderateScale(14),
   },
 
   cardTitle: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontFamily: "PoppinsSemiBold",
     color: ARGUS_BLUE,
   },
@@ -919,20 +935,20 @@ const styles = StyleSheet.create({
   },
 
   editText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontFamily: "PoppinsSemiBold",
     color: ARGUS_BLUE,
   },
 
   cancelText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontFamily: "PoppinsMedium",
     color: "#7A7A7A",
-    marginRight: 14,
+    marginRight: moderateScale(14),
   },
 
   saveText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontFamily: "PoppinsSemiBold",
     color: ARGUS_BLUE,
   },
@@ -946,9 +962,9 @@ const styles = StyleSheet.create({
   },
 
   saveButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingHorizontal: moderateScale(16),
+    paddingVertical: moderateScale(8),
+    borderRadius: moderateScale(8),
     backgroundColor: "transparent",
   },
 
@@ -956,8 +972,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 14,
-    borderBottomWidth: 1,
+    paddingVertical: moderateScale(14),
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "#E8EDF5",
   },
 
@@ -969,19 +985,19 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    marginRight: 10,
+    marginRight: moderateScale(10),
   },
 
   label: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontFamily: "PoppinsRegular",
     color: "#6B7280",
-    marginLeft: 8,
+    marginLeft: moderateScale(8),
   },
 
   value: {
     flex: 1,
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontFamily: "PoppinsMedium",
     color: "#111827",
     textAlign: "right",
@@ -989,57 +1005,57 @@ const styles = StyleSheet.create({
 
   input: {
     flex: 1,
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontFamily: "PoppinsMedium",
     color: "#111827",
     textAlign: "right",
-    borderBottomWidth: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: ARGUS_BLUE,
-    paddingVertical: 4,
+    paddingVertical: moderateScale(4),
   },
 
   dateInput: {
     flex: 1,
-    borderBottomWidth: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: ARGUS_BLUE,
-    paddingVertical: 5,
+    paddingVertical: moderateScale(5),
     flexDirection: "row",
     justifyContent: "flex-end",
     alignItems: "center",
   },
 
   dateInputText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontFamily: "PoppinsMedium",
     color: "#111827",
-    marginRight: 4,
+    marginRight: moderateScale(4),
     textAlign: "right",
   },
 
   credibilityCard: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    paddingHorizontal: 14,
-    paddingTop: 16,
-    paddingBottom: 18,
-    borderWidth: 1,
+    borderRadius: moderateScale(18),
+    paddingHorizontal: moderateScale(14),
+    paddingTop: moderateScale(16),
+    paddingBottom: moderateScale(18),
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: "#DDE7F5",
   },
 
   credibilityTop: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 26,
+    marginBottom: moderateScale(26),
   },
 
   credibilityIconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: moderateScale(44),
+    height: moderateScale(44),
+    borderRadius: moderateScale(22),
     backgroundColor: "#E8EEF9",
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 12,
+    marginRight: moderateScale(12),
   },
 
   credibilityTextWrap: {
@@ -1047,44 +1063,44 @@ const styles = StyleSheet.create({
   },
 
   credibilitySubtitle: {
-    fontSize: 12,
-    lineHeight: 17,
+    fontSize: moderateScale(12),
+    lineHeight: moderateScale(17),
     fontFamily: "PoppinsRegular",
     color: "#6B7280",
-    marginTop: 3,
+    marginTop: moderateScale(3),
   },
 
   currentBadge: {
     borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingHorizontal: moderateScale(10),
+    paddingVertical: moderateScale(6),
   },
 
   currentBadgeText: {
-    fontSize: 10,
+    fontSize: moderateScale(10),
     fontFamily: "PoppinsSemiBold",
   },
 
   timelineWrapper: {
     position: "relative",
-    paddingTop: 5,
+    paddingTop: moderateScale(5),
   },
 
   timelineLineBg: {
     position: "absolute",
-    top: 12,
+    top: moderateScale(12),
     left: "10%",
     right: "10%",
-    height: 4,
+    height: moderateScale(4),
     borderRadius: 999,
     backgroundColor: "#D9E2F0",
   },
 
   timelineLineActive: {
     position: "absolute",
-    top: 12,
+    top: moderateScale(12),
     left: "10%",
-    height: 4,
+    height: moderateScale(4),
     borderRadius: 999,
   },
 
@@ -1099,48 +1115,48 @@ const styles = StyleSheet.create({
   },
 
   timelineDot: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    borderWidth: 2,
+    width: moderateScale(14),
+    height: moderateScale(14),
+    borderRadius: moderateScale(7),
+    borderWidth: StyleSheet.hairlineWidth * 2,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 10,
+    marginBottom: moderateScale(10),
   },
 
   timelineDotActive: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    marginTop: -5,
-    marginBottom: 5,
+    width: moderateScale(24),
+    height: moderateScale(24),
+    borderRadius: moderateScale(12),
+    marginTop: moderateScale(-5),
+    marginBottom: moderateScale(5),
   },
 
   timelineLabel: {
-    fontSize: 10,
+    fontSize: moderateScale(10),
     fontFamily: "PoppinsRegular",
     color: "#7A8699",
     textAlign: "center",
-    lineHeight: 14,
+    lineHeight: moderateScale(14),
   },
 
   passwordInputWrap: {
-    minHeight: 48,
-    borderRadius: 14,
+    minHeight: moderateScale(48),
+    borderRadius: moderateScale(14),
     backgroundColor: "#F8FAFC",
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: "#E8EDF5",
-    paddingHorizontal: 12,
-    marginBottom: 10,
+    paddingHorizontal: moderateScale(12),
+    marginBottom: moderateScale(10),
     flexDirection: "row",
     alignItems: "center",
   },
 
   passwordInput: {
     flex: 1,
-    marginLeft: 10,
-    marginRight: 8,
-    fontSize: 14,
+    marginLeft: moderateScale(10),
+    marginRight: moderateScale(8),
+    fontSize: moderateScale(14),
     fontFamily: "PoppinsRegular",
     color: "#111827",
   },
@@ -1152,32 +1168,32 @@ const styles = StyleSheet.create({
   errorText: {
     width: "100%",
     color: "#C0392B",
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: moderateScale(13),
+    lineHeight: moderateScale(18),
     fontFamily: "PoppinsRegular",
-    marginTop: -4,
-    marginBottom: 8,
-    paddingHorizontal: 2,
+    marginTop: moderateScale(-4),
+    marginBottom: moderateScale(8),
+    paddingHorizontal: moderateScale(2),
   },
 
   securityPreview: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#F8FAFC",
-    borderRadius: 16,
-    padding: 12,
-    borderWidth: 1,
+    borderRadius: moderateScale(16),
+    padding: moderateScale(12),
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: "#E8EDF5",
   },
 
   securityIconWrap: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: moderateScale(42),
+    height: moderateScale(42),
+    borderRadius: moderateScale(21),
     backgroundColor: "#EEF3FF",
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 12,
+    marginRight: moderateScale(12),
   },
 
   securityTextWrap: {
@@ -1185,25 +1201,25 @@ const styles = StyleSheet.create({
   },
 
   securityTitle: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontFamily: "PoppinsSemiBold",
     color: "#1F2A37",
-    marginBottom: 3,
+    marginBottom: moderateScale(3),
   },
 
   securitySubtitle: {
-    fontSize: 12,
-    lineHeight: 18,
+    fontSize: moderateScale(12),
+    lineHeight: moderateScale(18),
     fontFamily: "PoppinsRegular",
     color: "#6B7280",
   },
 });
 
-const DetailRow = React.memo(({ icon, label, value, editValue, placeholder, fieldKey, keyboardType = "default", autoCapitalize = "sentences", isLast = false, editMode, updateTempDetail }) => {
+const DetailRow = React.memo(function DetailRow({ icon, label, value, editValue, placeholder, fieldKey, keyboardType = "default", autoCapitalize = "sentences", isLast = false, editMode, updateTempDetail }) {
   return (
     <View style={[styles.detailsRow, isLast && styles.noBorder]}>
       <View style={styles.detailLabelWrap}>
-        <Ionicons name={icon} size={18} color={ARGUS_BLUE} />
+        <Ionicons name={icon} size={moderateScale(18)} color={ARGUS_BLUE} />
         <ThemedText style={styles.label}>{label}</ThemedText>
       </View>
 
