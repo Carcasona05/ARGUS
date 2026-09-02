@@ -556,7 +556,7 @@ export default function Admin_ViewSimilarReportsModal({
               const statusStyle = getStatusStyle(report.status);
               const severityStyle = getSeverityStyle(report.severity);
 
-              const reportImage = report.image || report.photo;
+              const reportImage = report.image || report.photo || (Array.isArray(report.images) && report.images.length > 0 ? report.images[0] : null);
               const imageSource = getImageSource(reportImage);
 
               return (

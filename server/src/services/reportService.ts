@@ -690,6 +690,23 @@ export const reportService = {
       commentsByReport.set(c.report_id, list);
     });
 
+    const { data: images, error: imageError } = reportIds.length
+      ? await supabaseAdmin
+          .from("report_images")
+          .select("report_id, image_url")
+          .in("report_id", reportIds)
+          .order("position", { ascending: true })
+      : { data: [], error: null };
+
+    if (imageError) return { data: null, error: imageError.message };
+
+    const imagesByReport = new Map<string, string[]>();
+    (images || []).forEach((img: { report_id: string; image_url: string }) => {
+      const list = imagesByReport.get(img.report_id) || [];
+      list.push(img.image_url);
+      imagesByReport.set(img.report_id, list);
+    });
+
     const list = (reports || []).map((r) => {
       const info = typeMap.get(r.incident_type_id) || {
         type: "Incident",
@@ -719,6 +736,7 @@ export const reportService = {
         sentiment: analysis.sentiment ?? "Neutral",
         credibility_review: analysis.credibility_review ?? "",
         comments: commentsByReport.get(r.id) || [],
+        images: imagesByReport.get(r.id) || [],
         source: "User",
       };
     });

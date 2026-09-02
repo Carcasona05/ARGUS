@@ -80,6 +80,7 @@ create table if not exists public.report_credibility_analysis (
     check (credibility_level in ('Low', 'Medium', 'High')),
   credibility_review text not null default '',
   ai_model_version text not null default '',
+  analysis_duration_ms integer not null default 0,
   analyzed_at timestamptz not null default now()
 );
 

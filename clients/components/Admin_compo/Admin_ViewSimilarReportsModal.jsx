@@ -167,7 +167,7 @@ export default function Admin_ViewSimilarReportsModal({
       images.push(report.photo);
     }
 
-    return images.filter(Boolean).slice(0, 2);
+    return images.filter(Boolean);
   };
 
   const getSubmittedByName = (report) => {

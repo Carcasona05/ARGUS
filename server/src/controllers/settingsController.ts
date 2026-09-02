@@ -17,6 +17,10 @@ const DEFAULT_SETTINGS: Record<string, string> = {
   ai_scoring_enabled: "true",
   ai_high_threshold: "85",
   ai_medium_threshold: "60",
+  ai_ollama_url: "http://localhost:11434",
+  ai_model_name: "tinyllama:1.1b",
+  ai_temperature: "0.1",
+  ai_timeout: "30000",
 };
 
 export const getSettings = async (req: AuthRequest, res: Response) => {

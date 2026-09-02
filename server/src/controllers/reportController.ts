@@ -3,6 +3,7 @@ import { reportService } from "../services/reportService.ts";
 import { profileService } from "../services/authService.ts";
 import { notificationService } from "../services/notificationService.ts";
 import { credibilityService } from "../services/credibilityService.ts";
+import { aiService } from "../services/aiService.ts";
 
 type AuthRequest = import("express").Request & { user?: { id: string }; token?: string };
 
@@ -76,6 +77,42 @@ export const validateReport = async (req: AuthRequest, res: Response) => {
         })
         .catch(() => {});
     }
+
+    // Re-analyze with AI when report is verified (to update credibility assessment)
+    if (verified && result.data.id) {
+      const { data: fullReport } = await import("../config/supabaseAdmin.ts").then(m => m.supabaseAdmin
+        .from("reports")
+        .select(`
+          id,
+          location,
+          latitude,
+          longitude,
+          details,
+          incident_type_id,
+          incident_types!inner (
+            name,
+            incident_categories!inner (name)
+          )
+        `)
+        .eq("id", result.data.id)
+        .maybeSingle());
+
+      if (fullReport) {
+        const typeData = fullReport.incident_types as unknown as {
+          name: string;
+          incident_categories: { name: string };
+        };
+
+        aiService.analyzeReport(result.data.id, {
+          incident_category: typeData.incident_categories.name,
+          incident_type: typeData.name,
+          location: fullReport.location || "",
+          details: fullReport.details || "",
+          latitude: fullReport.latitude,
+          longitude: fullReport.longitude,
+        }).catch((err) => console.error("AI re-analysis failed:", err));
+      }
+    }
   }
 
   res.json({
@@ -116,6 +153,18 @@ export const createReport = async (req: AuthRequest, res: Response) => {
       excludeUserId: user.id,
     })
     .catch(() => {});
+
+  // Trigger AI analysis asynchronously
+  if (result.data) {
+    aiService.analyzeReport(result.data, {
+      incident_category: req.body?.incident_category || "",
+      incident_type: req.body?.incident_type || "",
+      location: req.body?.location || "",
+      details: req.body?.details || "",
+      latitude: latNum,
+      longitude: lngNum,
+    }).catch((err) => console.error("AI analysis failed:", err));
+  }
 
   res.status(201).json({
     message: "Report submitted successfully",

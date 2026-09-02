@@ -96,6 +96,7 @@ const handleAddAnnouncement = () => {
             remarks: "",
             is_verified: r.is_verified,
             comments: r.comments || [],
+            images: Array.isArray(r.images) ? r.images : [],
           }))
         );
       };
